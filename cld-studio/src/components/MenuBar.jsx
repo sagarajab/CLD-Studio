@@ -65,7 +65,7 @@ function MenuBar({ mode, setMode }) {
 
 
   return (
-    <div ref={menuRef} className="px-4 py-2 flex items-center space-x-4">
+    <div ref={menuRef} className="px-4 py-2 flex items-center space-x-8">
       {/* File Menu */}
       <div className="relative">
         <button

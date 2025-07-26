@@ -76,7 +76,7 @@ body {
 .menu-bar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 12px;
 }
 
 .menu-item {
