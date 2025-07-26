@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for CLD Studio */
+@layer base {
+  body {
+    margin: 0;
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .cld-node {
+    @apply bg-white border-2 border-gray-300 rounded-lg p-3 shadow-sm;
+  }
+  
+  .cld-node.selected {
+    @apply border-blue-500 shadow-md;
+  }
+  
+  .cld-edge-positive {
+    @apply stroke-green-600;
+  }
+  
+  .cld-edge-negative {
+    @apply stroke-red-600;
+  }
+  
+  .toolbar-button {
+    @apply px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors;
+  }
+  
+  .toolbar-button.secondary {
+    @apply bg-gray-500 hover:bg-gray-600;
+  }
+}
