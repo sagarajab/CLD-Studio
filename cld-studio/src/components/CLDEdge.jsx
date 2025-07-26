@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { BaseEdge, EdgeLabelRenderer, useReactFlow } from 'reactflow'
 import { useCLDStore } from '../stores/cldStore'
 
@@ -178,7 +178,7 @@ function CLDEdge({
   }, [])
 
   // Add global mouse event listeners for radius dragging
-  React.useEffect(() => {
+  useEffect(() => {
     if (isDraggingRadius) {
       const handleGlobalMouseMove = (event) => {
         const canvasElement = document.querySelector('.react-flow__pane')

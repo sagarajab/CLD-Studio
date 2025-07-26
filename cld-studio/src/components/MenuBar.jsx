@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useCLDStore } from '../stores/cldStore'
+import { Grid } from 'lucide-react'
 
 function MenuBar({ mode, setMode }) {
-  const { saveDiagram, loadDiagram, clearDiagram, exportMatrix } = useCLDStore()
+  const { saveDiagram, loadDiagram, clearDiagram, exportMatrix, exportAsPNG, exportAsSVG, exportAsPDF, showGrid, toggleGrid } = useCLDStore()
   const [activeMenu, setActiveMenu] = useState(null)
   const menuRef = useRef(null)
 
@@ -46,6 +47,23 @@ function MenuBar({ mode, setMode }) {
     setActiveMenu(null)
   }
 
+  const handleExportAsPNG = () => {
+    exportAsPNG()
+    setActiveMenu(null)
+  }
+
+  const handleExportAsSVG = () => {
+    exportAsSVG()
+    setActiveMenu(null)
+  }
+
+  const handleExportAsPDF = () => {
+    exportAsPDF()
+    setActiveMenu(null)
+  }
+
+
+
   return (
     <div ref={menuRef} className="px-4 py-2 flex items-center space-x-4">
       {/* File Menu */}
@@ -81,13 +99,53 @@ function MenuBar({ mode, setMode }) {
                 <span>Load Diagram</span>
               </button>
               <button
+                onClick={handleExportAsPNG}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21,15 16,10 5,21"/>
+                </svg>
+                <span>Export as PNG</span>
+              </button>
+              <button
+                onClick={handleExportAsSVG}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10,9 9,9 8,9"/>
+                </svg>
+                <span>Export as SVG</span>
+              </button>
+              <button
+                onClick={handleExportAsPDF}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10,9 9,9 8,9"/>
+                </svg>
+                <span>Export as PDF</span>
+              </button>
+              <button
                 onClick={handleExport}
                 className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <path d="M3 3h18v18H3z"/>
+                  <path d="M9 9h6v6H9z"/>
+                  <path d="M15 3v18"/>
+                  <path d="M3 15h18"/>
                 </svg>
-                <span>Export Matrix</span>
+                <span>Export Matrix (CSV)</span>
               </button>
               <div className="border-t border-gray-200 my-1"></div>
               <button
@@ -184,12 +242,6 @@ function MenuBar({ mode, setMode }) {
               <div className="border-t border-gray-200 my-1"></div>
               <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                </svg>
-                <span>Show Grid</span>
-              </button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
                 </svg>
                 <span>Show Labels</span>
@@ -197,6 +249,17 @@ function MenuBar({ mode, setMode }) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Grid Toggle Button */}
+      <div className="relative">
+        <button
+          onClick={toggleGrid}
+          className={`p-2 rounded menu-item ${showGrid ? 'bg-blue-100' : ''}`}
+          title={showGrid ? 'Hide Grid' : 'Show Grid'}
+        >
+          <Grid className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Mode Toggle */}

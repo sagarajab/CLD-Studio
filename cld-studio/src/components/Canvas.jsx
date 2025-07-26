@@ -2,8 +2,19 @@ import React, { useCallback, useRef, useState, useMemo, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import CLDNode from './CLDNode'
 import './Canvas.css'
+import { getEllipseDimensions } from '../utils/text'
+import {
+  calculateCircularArc,
+  calculateEllipseIntersection,
+  calculateLineSegmentEllipseIntersection,
+  calculateReferenceCircle,
+  findCircleEllipseIntersections,
+  findConvexHullIntersection,
+  calculateCircleEllipseIntersection,
+  calculateArcEllipseIntersection
+} from '../utils/geometry'
 
-function Canvas({ mode }) {
+function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, devMode = false, setDevMode }) {
   const canvasRef = useRef(null)
   const lastClickTimeRef = useRef(0)
   const lastClickPositionRef = useRef({ x: 0, y: 0 })
@@ -22,86 +33,25 @@ function Canvas({ mode }) {
   const [draggedNodeId, setDraggedNodeId] = useState(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   
-  // Dev mode state
-  const [devMode, setDevMode] = useState(false)
+
   
   // Handle control point dragging
   const [isDraggingControlPoint, setIsDraggingControlPoint] = useState(false)
   const [draggedEdgeId, setDraggedEdgeId] = useState(null)
   const [draggedControlPoint, setDraggedControlPoint] = useState(null)
   
+  // Add new state for direct arrow dragging
+  const [isDraggingArrow, setIsDraggingArrow] = useState(false)
+  const [draggedArrowId, setDraggedArrowId] = useState(null)
+  
   // Polarity circle hover state
   const [hoveredPolarityEdge, setHoveredPolarityEdge] = useState(null)
-
-  // Helper function to calculate ellipse dimensions with text wrapping
-  const getEllipseDimensions = (node) => {
-    const label = node.data?.label || 'New Node'
-    const baseWidth = 60
-    const baseHeight = 40
-    const padding = 32 // increased padding to match CLDNode
-    const maxTextWidth = 120
-    const lineHeight = 16
-    
-    // Wrap text to fit maximum width
-    const wrapText = (text, maxWidth) => {
-      const words = text.split(' ')
-      const lines = []
-      let currentLine = ''
-      
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word
-        const testWidth = testLine.length * 8
-        
-        if (testWidth <= maxWidth) {
-          currentLine = testLine
-        } else {
-          if (currentLine) {
-            lines.push(currentLine)
-            currentLine = word
-          } else {
-            // Single word is too long, break it into chunks
-            const wordChunks = []
-            for (let i = 0; i < word.length; i += Math.floor(maxWidth / 8)) {
-              wordChunks.push(word.slice(i, i + Math.floor(maxWidth / 8)))
-            }
-            lines.push(...wordChunks)
-            currentLine = ''
-          }
-        }
-      }
-      
-      if (currentLine) {
-        lines.push(currentLine)
-      }
-      
-      return lines
-    }
-    
-    const wrappedLines = wrapText(label, maxTextWidth)
-    
-    // Calculate the actual width needed for the text
-    const calculateLineWidth = (line) => line.length * 8 // approximate character width
-    const lineWidths = wrappedLines.map(calculateLineWidth)
-    const maxLineWidth = Math.max(...lineWidths, 0)
-    
-    // Calculate final dimensions - hug the text tightly but ensure proper containment
-    const textWidth = Math.min(maxLineWidth, maxTextWidth) // Don't exceed max width
-    const width = Math.max(baseWidth, textWidth + padding)
-    const height = Math.max(baseHeight, wrappedLines.length * lineHeight + padding)
-    
-    return {
-      x: node.position.x + width / 2,
-      y: node.position.y + height / 2,
-      radiusX: width / 2,
-      radiusY: height / 2
-    }
-  }
 
   const {
     nodes: storeNodes,
     edges: storeEdges,
     addNode,
-    addEdge: addStoreEdge,
+    addEdge,
     updateNode,
     updateEdge,
     deleteNode,
@@ -110,28 +60,58 @@ function Canvas({ mode }) {
     setSelectedEdge,
     selectedNode,
     selectedEdge,
+    highlightedLoop,
+    clearHighlightedLoop,
+    loopViewMode,
+    enterLoopViewMode,
+    exitLoopViewMode,
     viewTransform,
     setViewTransform,
     updateViewTransform,
-    globalStyles
-  } = useCLDStore()
+    globalStyles,
+    showGrid
+  } = useCLDStore();
 
-  // Debug: Log store changes
-  React.useEffect(() => {
-    console.log('🔄 Store nodes updated:', storeNodes)
-    console.log('📊 Store nodes count:', storeNodes.length)
-  }, [storeNodes])
+  // Helper functions for loop highlighting
+  const isNodeInHighlightedLoop = (nodeId) => {
+    return highlightedLoop !== null && loops[highlightedLoop] && loops[highlightedLoop].nodes.includes(nodeId)
+  }
 
-  React.useEffect(() => {
-    console.log('🔗 Store edges updated:', storeEdges)
-    console.log('🔗 Store edges count:', storeEdges.length)
-  }, [storeEdges])
+  const isEdgeInHighlightedLoop = (edge) => {
+    return highlightedLoop !== null && loops[highlightedLoop] && loops[highlightedLoop].edgeIds && loops[highlightedLoop].edgeIds.includes(edge.id)
+  }
+
+  const getHighlightedLoopColor = () => {
+    if (highlightedLoop === null || !loops[highlightedLoop]) return null
+    const loopType = loops[highlightedLoop].type
+    return loopType === 'Balancing' ? '#10b981' : '#ef4444' // Green for balancing, red for reinforcing
+  }
+
+  // Get opacity for elements based on highlighted loop and dimming toggle
+  const getElementOpacity = (isInLoop) => {
+    if (highlightedLoop === null || !dimmingEnabled) return 1
+    return isInLoop ? 1 : 0.1  // More obvious dimming
+  }
+
+  // Check if element is in hovered loop (for hover highlighting)
+  const isNodeInHoveredLoop = (nodeId) => {
+    return hoveredLoop !== null && loops[hoveredLoop] && loops[hoveredLoop].nodes.includes(nodeId)
+  }
+
+  const isEdgeInHoveredLoop = (edge) => {
+    return hoveredLoop !== null && loops[hoveredLoop] && loops[hoveredLoop].edgeIds && loops[hoveredLoop].edgeIds.includes(edge.id)
+  }
+
+  // Debug loop view mode changes
+  useEffect(() => {
+    // Loop view mode state tracking (no console logging needed)
+  }, [loopViewMode])
+
 
   // Global mouse event listeners for right-click and middle-click detection
   useEffect(() => {
     const handleMouseDown = (event) => {
       if (event.button === 2) { // Right mouse button
-        console.log('🖱️ Right mouse down detected')
         setIsRightMouseDown(true)
         
         // Check if right-click is on a node
@@ -140,7 +120,6 @@ function Canvas({ mode }) {
           const nodeId = parseInt(target.closest('[data-node-id]').getAttribute('data-node-id'))
           if (nodeId) {
             if (!isCreatingConnection) {
-              console.log('🔗 Right-click on node detected:', nodeId)
               // Auto-assign this node as the FROM node
               setIsCreatingConnection(true)
               setConnectionSource(nodeId)
@@ -148,7 +127,6 @@ function Canvas({ mode }) {
               updateNode(nodeId, { borderColor: '#f97316' }) // Orange border
             } else if (isCreatingConnection && connectionSource === nodeId) {
               // Right-click on the same node again - cancel connection
-              console.log('🔗 Right-click on same node - canceling connection')
               setIsCreatingConnection(false)
               setConnectionSource(null)
               updateNode(nodeId, { borderColor: undefined })
@@ -156,7 +134,6 @@ function Canvas({ mode }) {
           }
         }
       } else if (event.button === 1) { // Middle mouse button
-        console.log('🖱️ Middle mouse down detected')
         setIsDragging(true)
         setDragStart({ x: event.clientX, y: event.clientY })
       }
@@ -164,14 +141,12 @@ function Canvas({ mode }) {
 
     const handleMouseUp = (event) => {
       if (event.button === 2) { // Right mouse button
-        console.log('🖱️ Right mouse up detected')
         setIsRightMouseDown(false)
         
         // Don't cancel connection creation on right mouse up
         // Let the user complete the connection by clicking on another node
         // Only cancel if they right-click again or click on empty space
       } else if (event.button === 1) { // Middle mouse button
-        console.log('🖱️ Middle mouse up detected')
         setIsDragging(false)
       }
     }
@@ -190,41 +165,42 @@ function Canvas({ mode }) {
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Delete' || event.key === 'Backspace') {
-        console.log('⌨️ Delete key pressed')
-        
         // Don't delete if we're in connection creation mode
         if (isCreatingConnection) {
-          console.log('❌ Cannot delete while creating connection')
           return
         }
         
-        // Delete selected node
         if (selectedNode) {
-          console.log('🗑️ Deleting selected node:', selectedNode)
           deleteNode(selectedNode)
           setSelectedNode(null)
-          return
-        }
-        
-        // Delete selected edge
-        if (selectedEdge) {
-          console.log('🗑️ Deleting selected edge:', selectedEdge)
+        } else if (selectedEdge) {
           deleteEdge(selectedEdge)
           setSelectedEdge(null)
-          return
         }
-        
-        console.log('ℹ️ No node or edge selected for deletion')
+      } else if (event.key === 'Escape') {
+        // Exit loop view mode or clear highlighting
+        if (loopViewMode) {
+          exitLoopViewMode()
+          clearHighlightedLoop()
+        } else if (highlightedLoop !== null) {
+          clearHighlightedLoop()
+        }
+        // Also cancel connection creation
+        if (isCreatingConnection) {
+          setIsCreatingConnection(false)
+          setConnectionSource(null)
+          if (connectionSource) {
+            updateNode(connectionSource, { borderColor: undefined })
+          }
+        }
       }
     }
 
-    // Add global keyboard event listener
     document.addEventListener('keydown', handleKeyDown)
-
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [selectedNode, selectedEdge, deleteNode, deleteEdge, setSelectedNode, setSelectedEdge, isCreatingConnection])
+  }, [selectedNode, selectedEdge, deleteNode, deleteEdge, setSelectedNode, setSelectedEdge, isCreatingConnection, connectionSource, updateNode, loopViewMode, exitLoopViewMode, highlightedLoop, clearHighlightedLoop])
 
   // Handle canvas interactions
   const handleCanvasMouseDown = useCallback((event) => {
@@ -243,8 +219,6 @@ function Canvas({ mode }) {
       )
       
       if (timeDiff < 300 && positionDiff < 10) {
-        console.log('🎯 Double-click detected!')
-        
         if (mode === 'sandbox') {
           const nodeName = `var${nodeIdCounterRef.current}`
           nodeIdCounterRef.current++
@@ -254,8 +228,6 @@ function Canvas({ mode }) {
           // Base ellipse dimensions: width=92, height=40, so center is at (46, 20)
           const adjustedX = x - 46
           const adjustedY = y - 20
-          
-          console.log('🚀 Adding node:', nodeName, 'at position:', { x: adjustedX, y: adjustedY }, 'ellipse center at:', { x, y })
           
           addNode({ x: adjustedX, y: adjustedY }, nodeName)
           
@@ -268,9 +240,13 @@ function Canvas({ mode }) {
         setSelectedNode(null)
         setSelectedEdge(null)
         
+        // Clear highlighted loop when clicking on empty space
+        if (highlightedLoop !== null) {
+          clearHighlightedLoop()
+        }
+        
         // Cancel connection creation if clicking on empty space
         if (isCreatingConnection) {
-          console.log('❌ Canceling connection creation - clicked on empty space')
           setIsCreatingConnection(false)
           if (connectionSource) {
             updateNode(connectionSource, { borderColor: undefined })
@@ -282,7 +258,7 @@ function Canvas({ mode }) {
         lastClickPositionRef.current = currentPosition
       }
     }
-  }, [mode, addNode, setSelectedNode, setSelectedEdge, viewTransform, isCreatingConnection, connectionSource, updateNode])
+  }, [mode, addNode, setSelectedNode, setSelectedEdge, viewTransform, isCreatingConnection, connectionSource, updateNode, highlightedLoop, clearHighlightedLoop])
 
   // Update cursor based on interaction state
   useEffect(() => {
@@ -299,6 +275,8 @@ function Canvas({ mode }) {
     }
   }, [isCreatingConnection, isRightMouseDown, isDragging])
 
+
+
   const CONTROL_BISECTOR_TOLERANCE = 20; // px, default tolerance
 
   // Function to update control points when nodes are moved
@@ -314,13 +292,13 @@ function Canvas({ mode }) {
       
       if (!sourceNode || !targetNode) return
       
-      const sourceEllipse = getEllipseDimensions(sourceNode)
-      const targetEllipse = getEllipseDimensions(targetNode)
+      const sourceEllipse = getEllipseDimensions(sourceNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
+      const targetEllipse = getEllipseDimensions(targetNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
       
-      const sourceCenterX = sourceEllipse.x
-      const sourceCenterY = sourceEllipse.y
-      const targetCenterX = targetEllipse.x
-      const targetCenterY = targetEllipse.y
+      const sourceCenterX = sourceNode.position.x + sourceEllipse.centerX
+      const sourceCenterY = sourceNode.position.y + sourceEllipse.centerY
+      const targetCenterX = targetNode.position.x + targetEllipse.centerX
+      const targetCenterY = targetNode.position.y + targetEllipse.centerY
       
       // Get current control point
       const edgeData = edge.data || {}
@@ -356,7 +334,7 @@ function Canvas({ mode }) {
         updateEdge(edge.id, { controlPoint: { x: constrainedX, y: constrainedY } })
       }
     })
-  }, [storeEdges, storeNodes, updateEdge, getEllipseDimensions])
+  }, [storeEdges, storeNodes, updateEdge, getEllipseDimensions, globalStyles])
 
   const handleCanvasMouseMove = useCallback((event) => {
     if (isDragging) {
@@ -381,13 +359,13 @@ function Canvas({ mode }) {
       const targetNode = storeNodes.find(n => n.id === edge.target)
       if (!sourceNode || !targetNode) return
 
-      const sourceEllipse = getEllipseDimensions(sourceNode)
-      const targetEllipse = getEllipseDimensions(targetNode)
+      const sourceEllipse = getEllipseDimensions(sourceNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
+      const targetEllipse = getEllipseDimensions(targetNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
 
-      const sourceCenterX = sourceEllipse.x
-      const sourceCenterY = sourceEllipse.y
-      const targetCenterX = targetEllipse.x
-      const targetCenterY = targetEllipse.y
+      const sourceCenterX = sourceNode.position.x + sourceEllipse.centerX
+      const sourceCenterY = sourceNode.position.y + sourceEllipse.centerY
+      const targetCenterX = targetNode.position.x + targetEllipse.centerX
+      const targetCenterY = targetNode.position.y + targetEllipse.centerY
 
       // Perpendicular bisector calculation
       const midX = (sourceCenterX + targetCenterX) / 2
@@ -433,6 +411,71 @@ function Canvas({ mode }) {
       }
 
       updateEdge(draggedEdgeId, { controlPoint: newControlPoint })
+    } else if (isDraggingArrow && draggedArrowId) {
+      event.preventDefault()
+      const rect = canvasRef.current.getBoundingClientRect()
+      const x = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
+      const y = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
+
+      // Get the edge data
+      const edge = storeEdges.find(e => e.id === draggedArrowId)
+      if (!edge) return
+
+      const sourceNode = storeNodes.find(n => n.id === edge.source)
+      const targetNode = storeNodes.find(n => n.id === edge.target)
+      if (!sourceNode || !targetNode) return
+
+      const sourceEllipse = getEllipseDimensions(sourceNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
+      const targetEllipse = getEllipseDimensions(targetNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
+
+      const sourceCenterX = sourceNode.position.x + sourceEllipse.centerX
+      const sourceCenterY = sourceNode.position.y + sourceEllipse.centerY
+      const targetCenterX = targetNode.position.x + targetEllipse.centerX
+      const targetCenterY = targetNode.position.y + targetEllipse.centerY
+
+      // Use the same approach as control point dragging - project mouse position onto bisector
+      const midX = (sourceCenterX + targetCenterX) / 2
+      const midY = (sourceCenterY + targetCenterY) / 2
+      const dx = targetCenterX - sourceCenterX
+      const dy = targetCenterY - sourceCenterY
+      const perpDx = -dy
+      const perpDy = dx
+      const perpLen = Math.sqrt(perpDx * perpDx + perpDy * perpDy) || 1
+      const perpUnitX = perpDx / perpLen
+      const perpUnitY = perpDy / perpLen
+
+      // Project mouse position onto the bisector
+      const mx = x - midX
+      const my = y - midY
+      const proj = mx * perpUnitX + my * perpUnitY
+      
+      // Calculate perpendicular component (distance from bisector)
+      const perpComponent = mx * perpUnitY - my * perpUnitX
+      // Clamp perpendicular movement to tolerance band
+      const clampedPerp = Math.max(-CONTROL_BISECTOR_TOLERANCE, Math.min(CONTROL_BISECTOR_TOLERANCE, perpComponent))
+      
+      // Final constrained position: along bisector + limited perpendicular movement
+      const constrainedX = midX + perpUnitX * proj + perpUnitY * clampedPerp
+      const constrainedY = midY + perpUnitY * proj - perpUnitX * clampedPerp
+
+      // Calculate the control point that would put the dummy control point at the constrained position
+      // For a quadratic Bezier curve at t=0.5: B(0.5) = 0.25P₀ + 0.5P₁ + 0.25P₂
+      // Solving for P₁ (control point): P₁ = 2*B(0.5) - 0.5P₀ - 0.5P₂
+      const visualStartPoint = findConvexHullIntersection(
+        draggedControlPoint || { x: midX, y: midY },
+        sourceCenterX, sourceCenterY, sourceEllipse.radiusX, sourceEllipse.radiusY
+      ) || { x: sourceCenterX, y: sourceCenterY }
+      const visualEndPoint = findConvexHullIntersection(
+        draggedControlPoint || { x: midX, y: midY },
+        targetCenterX, targetCenterY, targetEllipse.radiusX, targetEllipse.radiusY
+      ) || { x: targetCenterX, y: targetCenterY }
+
+      const newControlPoint = {
+        x: 2 * constrainedX - 0.5 * visualStartPoint.x - 0.5 * visualEndPoint.x,
+        y: 2 * constrainedY - 0.5 * visualStartPoint.y - 0.5 * visualEndPoint.y
+      }
+
+      updateEdge(draggedArrowId, { controlPoint: newControlPoint })
     } else if (isCreatingConnection && connectionSource) {
       // Handle connection preview (optional)
     }
@@ -460,7 +503,7 @@ function Canvas({ mode }) {
         updateControlPointsForNodeMove(draggedNodeId, oldPosition, newPosition)
       }
     }
-  }, [isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, viewTransform, storeNodes, updateNode, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, updateControlPointsForNodeMove])
+     }, [isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, viewTransform, storeNodes, updateNode, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId])
 
   const handleCanvasMouseUp = useCallback(() => {
     setIsDragging(false)
@@ -474,8 +517,14 @@ function Canvas({ mode }) {
       setIsDraggingControlPoint(false)
       setDraggedEdgeId(null)
       setDraggedControlPoint(null)
+    } else if (isDraggingArrow) {
+      setIsDraggingArrow(false)
+      setDraggedArrowId(null)
+      setDraggedControlPoint(null)
+      // Always deselect the arrow after dragging
+      setSelectedEdge(null)
     }
-  }, [isDraggingNode, isDraggingControlPoint])
+  }, [isDraggingNode, isDraggingControlPoint, isDraggingArrow, setSelectedEdge])
 
   const handleCanvasWheel = useCallback((event) => {
     event.preventDefault()
@@ -503,21 +552,15 @@ function Canvas({ mode }) {
   }
 
   const handleNodeClick = (nodeId, event) => {
-    console.log('🖱️ Node click detected:', nodeId, 'Right mouse down:', isRightMouseDown, 'Creating connection:', isCreatingConnection, 'Source:', connectionSource)
-    
     if (isRightMouseDown && !isCreatingConnection) {
-      console.log('🔗 Starting connection creation from node:', nodeId)
       setIsCreatingConnection(true)
       setConnectionSource(nodeId)
       
       // Highlight the source node
       updateNode(nodeId, { borderColor: '#f97316' }) // Orange border
     } else if (isCreatingConnection && connectionSource && connectionSource !== nodeId) {
-      console.log('🔗 Completing connection from', connectionSource, 'to', nodeId)
-      
       // Check if connection already exists
       if (connectionExists(connectionSource, nodeId)) {
-        console.log('❌ Connection already exists between', connectionSource, 'and', nodeId)
         // Reset connection state
         setIsCreatingConnection(false)
         setConnectionSource(null)
@@ -527,11 +570,7 @@ function Canvas({ mode }) {
       }
       
       // Create the edge
-      console.log('🔗 Creating edge from', connectionSource, 'to', nodeId)
-      console.log('🔗 Before adding edge - Store edges count:', storeEdges.length)
-      addStoreEdge(connectionSource, nodeId, 'positive')
-      console.log('🔗 After adding edge - Store edges count:', storeEdges.length)
-      console.log('🔗 Current store edges:', storeEdges)
+      addEdge(connectionSource, nodeId, 'positive')
       
       // Reset connection state
       setIsCreatingConnection(false)
@@ -540,12 +579,9 @@ function Canvas({ mode }) {
       // Remove highlight from source node
       updateNode(connectionSource, { borderColor: undefined })
     } else if (isCreatingConnection && connectionSource === nodeId) {
-      console.log('🔗 Same node clicked, canceling connection')
       setIsCreatingConnection(false)
       setConnectionSource(null)
       updateNode(nodeId, { borderColor: undefined })
-    } else {
-      console.log('🔗 Connection conditions not met:', { isCreatingConnection, connectionSource, nodeId })
     }
   }
 
@@ -592,368 +628,23 @@ function Canvas({ mode }) {
     setDraggedControlPoint(currentControlPoint)
   }
 
-  // Calculate intersection between circle and ellipse
-  const calculateCircleEllipseIntersection = (circleCenterX, circleCenterY, circleRadius, ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY) => {
-    // Simple approach: find where the line from circle center to ellipse center intersects the ellipse
-    // This will give us a point on the ellipse that we can use
-    
-    return calculateEllipseIntersection(
-      circleCenterX, circleCenterY, ellipseCenterX, ellipseCenterY,
-      ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY
-    )
+  // Handle direct arrow dragging
+  const handleArrowMouseDown = (e, edgeId, currentControlPoint) => {
+    e.stopPropagation()
+    setIsDraggingArrow(true)
+    setDraggedArrowId(edgeId)
+    setDraggedControlPoint(currentControlPoint)
   }
 
-  // Calculate intersection between circular arc and ellipse
-  const calculateArcEllipseIntersection = (arcCenterX, arcCenterY, arcRadius, ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY, startAngle, endAngle) => {
-    // For now, let's use a simple approach: find where the line from arc center to ellipse center intersects the ellipse
-    // This will give us a reasonable approximation
-    
-    const intersection = calculateEllipseIntersection(
-      arcCenterX, arcCenterY, ellipseCenterX, ellipseCenterY,
-      ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY
-    )
-    
-    if (!intersection) return null
-    
-    // Check if this intersection point is within the arc range
-    const intersectionAngle = Math.atan2(intersection.y - arcCenterY, intersection.x - arcCenterX)
-    
-    // Normalize angles to [0, 2π]
-    let normalizedStartAngle = startAngle
-    let normalizedEndAngle = endAngle
-    let normalizedIntersectionAngle = intersectionAngle
-    
-    while (normalizedStartAngle < 0) normalizedStartAngle += 2 * Math.PI
-    while (normalizedEndAngle < 0) normalizedEndAngle += 2 * Math.PI
-    while (normalizedIntersectionAngle < 0) normalizedIntersectionAngle += 2 * Math.PI
-    
-    // Ensure startAngle <= endAngle
-    if (normalizedStartAngle > normalizedEndAngle) {
-      normalizedEndAngle += 2 * Math.PI
-    }
-    
-    // Check if intersection angle is within arc range
-    if (normalizedIntersectionAngle >= normalizedStartAngle && normalizedIntersectionAngle <= normalizedEndAngle) {
-      return intersection
-    }
-    
-    // If not, use the closest endpoint
-    const distToStart = Math.min(
-      Math.abs(normalizedIntersectionAngle - normalizedStartAngle),
-      Math.abs(normalizedIntersectionAngle - (normalizedStartAngle + 2 * Math.PI))
-    )
-    const distToEnd = Math.min(
-      Math.abs(normalizedIntersectionAngle - normalizedEndAngle),
-      Math.abs(normalizedIntersectionAngle - (normalizedEndAngle - 2 * Math.PI))
-    )
-    
-    // Use the closest endpoint
-    const useStart = distToStart < distToEnd
-    const endpointAngle = useStart ? normalizedStartAngle : normalizedEndAngle
-    
-    // Calculate the endpoint on the circle
-    const endpointX = arcCenterX + arcRadius * Math.cos(endpointAngle)
-    const endpointY = arcCenterY + arcRadius * Math.sin(endpointAngle)
-    
-    // Find where the line from arc center to endpoint intersects the ellipse
-    return calculateEllipseIntersection(
-      arcCenterX, arcCenterY, endpointX, endpointY,
-      ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY
-    )
-  }
-
-  // Calculate a circular arc through three points
-  const calculateCircularArc = (startX, startY, controlX, controlY, endX, endY) => {
-    console.log('🔧 Calculating circular arc for points:', { startX, startY, controlX, controlY, endX, endY })
-    
-    // Find the center of the circle that passes through all three points
-    // Using the perpendicular bisectors of two chords
-    
-    // Midpoint of start-control chord
-    const mid1X = (startX + controlX) / 2
-    const mid1Y = (startY + controlY) / 2
-    
-    // Direction vector of start-control chord
-    const dir1X = controlX - startX
-    const dir1Y = controlY - startY
-    
-    // Perpendicular direction (rotate 90 degrees)
-    const perp1X = -dir1Y
-    const perp1Y = dir1X
-    
-    // Midpoint of control-end chord
-    const mid2X = (controlX + endX) / 2
-    const mid2Y = (controlY + endY) / 2
-    
-    // Direction vector of control-end chord
-    const dir2X = endX - controlX
-    const dir2Y = endY - controlY
-    
-    // Perpendicular direction (rotate 90 degrees)
-    const perp2X = -dir2Y
-    const perp2Y = dir2X
-    
-    // Find intersection of the two perpendicular bisectors
-    // This is the center of the circle
-    
-    // Line 1: mid1 + t1 * perp1
-    // Line 2: mid2 + t2 * perp2
-    
-    // Solve for t1 and t2 where the lines intersect
-    const det = perp1X * perp2Y - perp1Y * perp2X
-    
-    console.log('🔧 Determinant:', det)
-    
-    if (Math.abs(det) < 1e-10) {
-      // Lines are parallel, use a fallback
-      console.log('❌ Lines are parallel, no arc calculated')
-      
-      // Fallback: create a straight line path
-      console.log('🔧 Using fallback straight line path')
-      return {
-        centerX: (startX + endX) / 2,
-        centerY: (startY + endY) / 2,
-        radius: Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2) / 2,
-        startAngle: Math.atan2(startY - (startY + endY) / 2, startX - (startX + endX) / 2),
-        endAngle: Math.atan2(endY - (startY + endY) / 2, endX - (startX + endX) / 2),
-        isStraightLine: true
+  // Handle canvas background click to exit loop view mode
+  const handleCanvasClick = (event) => {
+    // Only exit if clicking on the canvas background (not on nodes or edges)
+    if (event.target === event.currentTarget || event.target.tagName === 'rect') {
+      if (loopViewMode) {
+        exitLoopViewMode()
+        clearHighlightedLoop()
       }
     }
-    
-    const t1 = ((mid2X - mid1X) * perp2Y - (mid2Y - mid1Y) * perp2X) / det
-    
-    const centerX = mid1X + t1 * perp1X
-    const centerY = mid1Y + t1 * perp1Y
-    
-    // Calculate radius
-    const radius = Math.sqrt((startX - centerX) ** 2 + (startY - centerY) ** 2)
-    
-    // Calculate angles
-    const startAngle = Math.atan2(startY - centerY, startX - centerX)
-    const endAngle = Math.atan2(endY - centerY, endX - centerX)
-    
-    console.log('🔧 Arc calculated successfully:', { centerX, centerY, radius, startAngle, endAngle })
-    
-    return { centerX, centerY, radius, startAngle, endAngle }
-  }
-
-  // Calculate intersection between line and ellipse
-  const calculateEllipseIntersection = (lineStartX, lineStartY, lineEndX, lineEndY, ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY) => {
-    // Translate line to ellipse coordinate system
-    const dx = lineEndX - lineStartX
-    const dy = lineEndY - lineStartY
-    const translatedStartX = lineStartX - ellipseCenterX
-    const translatedStartY = lineStartY - ellipseCenterY
-    
-    // Normalize ellipse to unit circle
-    const normalizedStartX = translatedStartX / ellipseRadiusX
-    const normalizedStartY = translatedStartY / ellipseRadiusY
-    const normalizedDx = dx / ellipseRadiusX
-    const normalizedDy = dy / ellipseRadiusY
-    
-    // Solve quadratic equation for intersection
-    const a = normalizedDx * normalizedDx + normalizedDy * normalizedDy
-    const b = 2 * (normalizedStartX * normalizedDx + normalizedStartY * normalizedDy)
-    const c = normalizedStartX * normalizedStartX + normalizedStartY * normalizedStartY - 1
-    
-    const discriminant = b * b - 4 * a * c
-    
-    if (discriminant < 0) {
-      // No intersection
-      return null
-    }
-    
-    const sqrtDiscriminant = Math.sqrt(discriminant)
-    const t1 = (-b + sqrtDiscriminant) / (2 * a)
-    const t2 = (-b - sqrtDiscriminant) / (2 * a)
-    
-    // Convert back to original coordinate system
-    const intersection1 = {
-      x: lineStartX + t1 * dx,
-      y: lineStartY + t1 * dy
-    }
-    
-    const intersection2 = {
-      x: lineStartX + t2 * dx,
-      y: lineStartY + t2 * dy
-    }
-    
-    // Return the intersection point that's in the direction of the line
-    const lineLength = Math.sqrt(dx * dx + dy * dy)
-    const dist1 = Math.sqrt((intersection1.x - lineStartX) ** 2 + (intersection1.y - lineStartY) ** 2)
-    const dist2 = Math.sqrt((intersection2.x - lineStartX) ** 2 + (intersection2.y - lineStartY) ** 2)
-    
-    // Return the intersection point that's further along the line direction
-    return dist1 > dist2 ? intersection1 : intersection2
-  }
-
-  // Calculate intersection between line segment and ellipse
-  const calculateLineSegmentEllipseIntersection = (lineStartX, lineStartY, lineEndX, lineEndY, ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY) => {
-    // Translate line to ellipse coordinate system
-    const dx = lineEndX - lineStartX
-    const dy = lineEndY - lineStartY
-    const translatedStartX = lineStartX - ellipseCenterX
-    const translatedStartY = lineStartY - ellipseCenterY
-    
-    // Normalize ellipse to unit circle
-    const normalizedStartX = translatedStartX / ellipseRadiusX
-    const normalizedStartY = translatedStartY / ellipseRadiusY
-    const normalizedDx = dx / ellipseRadiusX
-    const normalizedDy = dy / ellipseRadiusY
-    
-    // Solve quadratic equation for intersection
-    const a = normalizedDx * normalizedDx + normalizedDy * normalizedDy
-    const b = 2 * (normalizedStartX * normalizedDx + normalizedStartY * normalizedDy)
-    const c = normalizedStartX * normalizedStartX + normalizedStartY * normalizedStartY - 1
-    
-    const discriminant = b * b - 4 * a * c
-    
-    if (discriminant < 0) {
-      // No intersection
-      return null
-    }
-    
-    const sqrtDiscriminant = Math.sqrt(discriminant)
-    const t1 = (-b + sqrtDiscriminant) / (2 * a)
-    const t2 = (-b - sqrtDiscriminant) / (2 * a)
-    
-    // Convert back to original coordinate system
-    const intersection1 = {
-      x: lineStartX + t1 * dx,
-      y: lineStartY + t1 * dy
-    }
-    
-    const intersection2 = {
-      x: lineStartX + t2 * dx,
-      y: lineStartY + t2 * dy
-    }
-    
-    // For line segment, we want the intersection point that's in the direction of the line
-    // Check which intersection is closer to the line end point
-    const dist1 = Math.sqrt((intersection1.x - lineEndX) ** 2 + (intersection1.y - lineEndY) ** 2)
-    const dist2 = Math.sqrt((intersection2.x - lineEndX) ** 2 + (intersection2.y - lineEndY) ** 2)
-    
-    // Return the intersection point that's closer to the line end point
-    // This ensures we get the intersection in the direction of the line segment
-    return dist1 < dist2 ? intersection1 : intersection2
-  }
-
-  // Step 1: Calculate reference circle through two ellipse centers
-  const calculateReferenceCircle = (center1X, center1Y, center2X, center2Y) => {
-    // The reference circle passes through both centers
-    // Its center is the midpoint of the line between centers
-    const centerX = (center1X + center2X) / 2
-    const centerY = (center1Y + center2Y) / 2
-    
-    // Its radius is half the distance between centers
-    const radius = Math.sqrt((center2X - center1X) ** 2 + (center2Y - center1Y) ** 2) / 2
-    
-    return { centerX, centerY, radius }
-  }
-
-  // Step 2: Find intersections between circle and ellipse
-  const findCircleEllipseIntersections = (circleCenterX, circleCenterY, circleRadius, ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY) => {
-    console.log('🔍 Finding circle-ellipse intersections for:', {
-      circleCenter: { x: circleCenterX, y: circleCenterY },
-      circleRadius,
-      ellipseCenter: { x: ellipseCenterX, y: ellipseCenterY },
-      ellipseRadii: { x: ellipseRadiusX, y: ellipseRadiusY }
-    })
-    
-    // Method: Find intersections by checking multiple points around the circle
-    const intersections = []
-    const numPoints = 360 // Check every degree around the circle
-    
-    for (let i = 0; i < numPoints; i++) {
-      const angle = (i * 2 * Math.PI) / numPoints
-      
-      // Point on the circle
-      const circlePointX = circleCenterX + circleRadius * Math.cos(angle)
-      const circlePointY = circleCenterY + circleRadius * Math.sin(angle)
-      
-      // Check if this point is on the ellipse
-      const dx = circlePointX - ellipseCenterX
-      const dy = circlePointY - ellipseCenterY
-      const normalizedX = dx / ellipseRadiusX
-      const normalizedY = dy / ellipseRadiusY
-      const distance = normalizedX * normalizedX + normalizedY * normalizedY
-      
-      // If distance is close to 1, this point is on the ellipse
-      if (Math.abs(distance - 1) < 0.1) {
-        const intersection = { x: circlePointX, y: circlePointY }
-        
-        // Check if this intersection is already found (avoid duplicates)
-        const isDuplicate = intersections.some(existing => 
-          Math.abs(existing.x - intersection.x) < 1 && Math.abs(existing.y - intersection.y) < 1
-        )
-        
-        if (!isDuplicate) {
-          intersections.push(intersection)
-          console.log('🔍 Found intersection:', intersection)
-        }
-      }
-    }
-    
-    console.log('🔍 Total intersections found:', intersections.length)
-    return intersections
-  }
-
-  // Find intersection points that lie inside the convex hull of the Bezier curve
-  const findConvexHullIntersection = (controlPoint, ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY) => {
-    // Calculate the direction from control point to ellipse center
-    const dx = ellipseCenterX - controlPoint.x
-    const dy = ellipseCenterY - controlPoint.y
-    const distance = Math.sqrt(dx * dx + dy * dy)
-    
-    if (distance === 0) return null
-    
-    // Normalize direction
-    const dirX = dx / distance
-    const dirY = dy / distance
-    
-    // Find intersection using the line from control point to ellipse center
-    const intersection = calculateEllipseIntersection(
-      controlPoint.x, controlPoint.y, ellipseCenterX, ellipseCenterY,
-      ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY
-    )
-    
-    if (!intersection) return null
-    
-    // Check if the intersection point lies between control point and ellipse center
-    // This ensures it's inside the convex hull of the Bezier curve
-    const intersectionToControl = {
-      x: intersection.x - controlPoint.x,
-      y: intersection.y - controlPoint.y
-    }
-    
-    const intersectionToCenter = {
-      x: intersection.x - ellipseCenterX,
-      y: intersection.y - ellipseCenterY
-    }
-    
-    // Check if intersection is between control point and center
-    // by verifying the dot products have opposite signs
-    const dot1 = intersectionToControl.x * dirX + intersectionToControl.y * dirY
-    const dot2 = intersectionToCenter.x * dirX + intersectionToCenter.y * dirY
-    
-    // If dot1 is positive and dot2 is negative, intersection is between them
-    if (dot1 > 0 && dot2 < 0) {
-      return intersection
-    }
-    
-    // If not, find the other intersection point
-    // Extend the line beyond the ellipse center
-    const extendedPoint = {
-      x: ellipseCenterX + dirX * distance,
-      y: ellipseCenterY + dirY * distance
-    }
-    
-    const otherIntersection = calculateEllipseIntersection(
-      extendedPoint.x, extendedPoint.y, ellipseCenterX, ellipseCenterY,
-      ellipseCenterX, ellipseCenterY, ellipseRadiusX, ellipseRadiusY
-    )
-    
-    return otherIntersection
   }
 
 
@@ -967,13 +658,13 @@ function Canvas({ mode }) {
       
       if (!sourceNode || !targetNode) return null
       
-      const sourceEllipse = getEllipseDimensions(sourceNode)
-      const targetEllipse = getEllipseDimensions(targetNode)
+      const sourceEllipse = getEllipseDimensions(sourceNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
+      const targetEllipse = getEllipseDimensions(targetNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
       
-      const sourceCenterX = sourceEllipse.x
-      const sourceCenterY = sourceEllipse.y
-      const targetCenterX = targetEllipse.x
-      const targetCenterY = targetEllipse.y
+      const sourceCenterX = sourceNode.position.x + sourceEllipse.centerX
+      const sourceCenterY = sourceNode.position.y + sourceEllipse.centerY
+      const targetCenterX = targetNode.position.x + targetEllipse.centerX
+      const targetCenterY = targetNode.position.y + targetEllipse.centerY
       
       const sourceRadiusX = sourceEllipse.radiusX
       const sourceRadiusY = sourceEllipse.radiusY
@@ -1116,43 +807,51 @@ function Canvas({ mode }) {
 
   // Render nodes
   const renderNodes = () => {
-    return storeNodes.map(node => (
-      <g key={node.id} transform={`translate(${node.position.x}, ${node.position.y})`} data-node-id={node.id}>
-        <CLDNode 
-          id={node.id}
-          data={node.data}
-          selected={selectedNode === node.id}
-          onClick={(e) => handleNodeClick(node.id, e)}
-          onMouseDown={(e) => handleNodeMouseDown(e, node)}
-          devMode={devMode}
-          isFromNode={isCreatingConnection && connectionSource === node.id}
-          isCreatingConnection={isCreatingConnection}
-          isRightMouseDown={isRightMouseDown}
-        />
-      </g>
-    ))
+    return storeNodes.map(node => {
+      const isInLoop = isNodeInHighlightedLoop(node.id)
+      const isInHoveredLoop = isNodeInHoveredLoop(node.id)
+      const shouldHighlight = isInLoop || isInHoveredLoop
+      const opacity = getElementOpacity(shouldHighlight)
+      
+      return (
+        <g key={node.id} transform={`translate(${node.position.x}, ${node.position.y})`} data-node-id={node.id} style={{ opacity }}>
+          <CLDNode 
+            id={node.id}
+            data={node.data}
+            selected={selectedNode === node.id}
+            isInHighlightedLoop={isInLoop}
+            isInHoveredLoop={isInHoveredLoop}
+            highlightedLoopType={highlightedLoop !== null && loops[highlightedLoop] ? loops[highlightedLoop].type : null}
+            hoveredLoopType={hoveredLoop !== null && loops[hoveredLoop] ? loops[hoveredLoop].type : null}
+            onClick={(e) => handleNodeClick(node.id, e)}
+            onMouseDown={(e) => handleNodeMouseDown(e, node)}
+            devMode={devMode}
+            isFromNode={isCreatingConnection && connectionSource === node.id}
+            isCreatingConnection={isCreatingConnection}
+            isRightMouseDown={isRightMouseDown}
+          />
+        </g>
+      )
+    })
   }
 
   // Render edges
   const renderEdges = () => {
-    console.log('🔍 Rendering edges. Total edges:', storeEdges.length)
-    
     return storeEdges.map(edge => {
       const sourceNode = storeNodes.find(n => n.id === edge.source)
       const targetNode = storeNodes.find(n => n.id === edge.target)
       
       if (!sourceNode || !targetNode) {
-        console.log('❌ Missing source or target node for edge:', edge.id)
         return null
       }
       
-      const sourceEllipse = getEllipseDimensions(sourceNode)
-      const targetEllipse = getEllipseDimensions(targetNode)
+      const sourceEllipse = getEllipseDimensions(sourceNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
+      const targetEllipse = getEllipseDimensions(targetNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
       
-      const sourceCenterX = sourceEllipse.x
-      const sourceCenterY = sourceEllipse.y
-      const targetCenterX = targetEllipse.x
-      const targetCenterY = targetEllipse.y
+      const sourceCenterX = sourceNode.position.x + sourceEllipse.centerX
+      const sourceCenterY = sourceNode.position.y + sourceEllipse.centerY
+      const targetCenterX = targetNode.position.x + targetEllipse.centerX
+      const targetCenterY = targetNode.position.y + targetEllipse.centerY
       
       // Use ellipse centers as Bezier curve endpoints
       const startPoint = { x: sourceCenterX, y: sourceCenterY }
@@ -1221,7 +920,17 @@ function Canvas({ mode }) {
       
       const polarity = edge.data?.polarity || 'positive'
       const strokeColor = polarity === 'positive' ? '#059669' : '#dc2626'
-      const arrowColor = edge.data?.color || '#6b7280' // Use individual edge color or default gray
+      const isInLoop = isEdgeInHighlightedLoop(edge)
+      const isInHoveredLoop = isEdgeInHoveredLoop(edge)
+      const shouldHighlight = isInLoop || isInHoveredLoop
+      const loopColor = getHighlightedLoopColor()
+      const arrowColor = isInLoop ? loopColor : (edge.data?.color || '#6b7280') // Only change color for selected loops, not hovered
+      const arrowTransparency = globalStyles.arrowTransparency || 0.3
+      const arrowHeadSize = globalStyles.arrowHeadSize || 3
+      const opacity = getElementOpacity(shouldHighlight)
+      
+      // Add shadow effect ONLY for hovered loops (not selected loops)
+      const shadowFilter = isInHoveredLoop && !isInLoop ? 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' : 'none'
       
       // Calculate position for polarity symbol (based on arrow head position)
       // First, calculate where the arrow head is positioned (at the end of the curve)
@@ -1265,20 +974,24 @@ function Canvas({ mode }) {
         y: (1-t)*(1-t) * visualStartPoint.y + 2*(1-t)*t * controlPoint.y + t*t * visualEndPoint.y
       }
       
-      console.log('🎯 Rendering edge:', edge.id, 'with path:', arcPath)
-      
       return (
-        <g key={edge.id}>
+        <g key={edge.id} style={{ opacity }}>
           {/* Edge path with wider hit area */}
           <path
             d={arcPath}
             stroke="transparent"
             strokeWidth="20"
             fill="none"
-            cursor="pointer"
-            onClick={() => setSelectedEdge(edge.id)}
+            cursor={isDraggingArrow && draggedArrowId === edge.id ? "pointer" : "pointer"}
+            onClick={(e) => {
+              // Only select if we're not dragging
+              if (!isDraggingArrow) {
+                setSelectedEdge(edge.id)
+              }
+            }}
+            onMouseDown={(e) => handleArrowMouseDown(e, edge.id, controlPoint)}
             onMouseEnter={(event) => {
-              if (selectedEdge !== edge.id) {
+              if (selectedEdge !== edge.id && !isDraggingArrow) {
                 // Add hover effect - increase stroke width of visual path
                 const visualPath = event.target.nextElementSibling
                 if (visualPath) {
@@ -1287,7 +1000,7 @@ function Canvas({ mode }) {
               }
             }}
             onMouseLeave={(event) => {
-              if (selectedEdge !== edge.id) {
+              if (selectedEdge !== edge.id && !isDraggingArrow) {
                 // Remove hover effect - restore normal stroke width
                 const visualPath = event.target.nextElementSibling
                 if (visualPath) {
@@ -1301,26 +1014,38 @@ function Canvas({ mode }) {
           <path
             d={arcPath}
             stroke={arrowColor}
-            strokeWidth={selectedEdge === edge.id ? globalStyles.arrowWidth + 2 : globalStyles.arrowWidth}
+            strokeOpacity={arrowTransparency}
+            strokeWidth={
+              selectedEdge === edge.id ? globalStyles.arrowWidth + 2 : 
+              shouldHighlight ? globalStyles.arrowWidth + 1 : 
+              globalStyles.arrowWidth
+            }
             fill="none"
             markerEnd={`url(#arrowhead-${edge.id})`}
-            style={{ pointerEvents: 'none' }}
+            style={{ 
+              pointerEvents: 'none',
+              filter: shadowFilter
+            }}
           />
           
           {/* Individual arrowhead marker for this edge */}
           <defs>
             <marker
               id={`arrowhead-${edge.id}`}
-              markerWidth="20"
-              markerHeight="14"
-              refX="14"
-              refY="7"
+              markerWidth={20 * arrowHeadSize / 3}
+              markerHeight={14 * arrowHeadSize / 3}
+              refX={14 * arrowHeadSize / 3}
+              refY={7 * arrowHeadSize / 3}
               orient="auto"
               markerUnits="userSpaceOnUse"
             >
               <polygon
-                points="0 0, 20 7, 0 14"
-                fill={arrowColor}
+                points={`0 0, ${20 * arrowHeadSize / 3} ${7 * arrowHeadSize / 3}, 0 ${14 * arrowHeadSize / 3}`}
+                fill={isInLoop ? loopColor : arrowColor}
+                fillOpacity={arrowTransparency}
+                style={{
+                  filter: shadowFilter
+                }}
               />
             </marker>
           </defs>
@@ -1372,9 +1097,14 @@ function Canvas({ mode }) {
               cy={dummyControlPoint.y}
               r={devMode ? "5" : "8"}
               fill={devMode ? "red" : arrowColor}
+              fillOpacity={devMode ? 1 : arrowTransparency}
               stroke="white"
               strokeWidth={devMode ? "2" : "3"}
-              cursor="move"
+              cursor={isDraggingArrow && draggedArrowId === edge.id ? "pointer" : "pointer"}
+              style={{
+                pointerEvents: 'all',
+                transition: 'opacity 0.2s ease'
+              }}
               onMouseDown={(e) => handleDummyControlPointMouseDown(e, edge.id, controlPoint)}
             />
           )}
@@ -1385,30 +1115,6 @@ function Canvas({ mode }) {
 
   return (
     <div className="canvas-container" ref={canvasRef}>
-      {/* Dev mode toggle */}
-      <div style={{
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        zIndex: 1000,
-        background: 'white',
-        border: '1px solid #ccc',
-        borderRadius: '4px',
-        padding: '8px',
-        fontSize: '12px'
-      }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <input
-            type="checkbox"
-            checked={devMode}
-            onChange={(e) => setDevMode(e.target.checked)}
-          />
-          Dev Mode
-        </label>
-      </div>
-      
-
-      
       <svg
         width="100%"
         height="100%"
@@ -1417,8 +1123,11 @@ function Canvas({ mode }) {
         onMouseUp={handleCanvasMouseUp}
         onWheel={handleCanvasWheel}
         onContextMenu={(e) => e.preventDefault()}
+        onClick={handleCanvasClick}
         style={{ 
-          cursor: isRightMouseDown ? 'crosshair' : (isDragging ? 'grabbing' : 'default'),
+          cursor: isRightMouseDown ? 'crosshair' : 
+                 (isDragging ? 'grabbing' : 
+                 (isDraggingArrow ? 'pointer' : 'default')),
           userSelect: 'none'
         }}
       >
@@ -1446,16 +1155,16 @@ function Canvas({ mode }) {
         
         <g transform={`translate(${viewTransform.x}, ${viewTransform.y}) scale(${viewTransform.scale})`}>
           {/* Background grid */}
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          {showGrid && <rect width="100%" height="100%" fill="url(#grid)" />}
           
           {/* Construction objects (dev mode) */}
           {renderConstructionObjects()}
           
-          {/* Edges */}
-          {renderEdges()}
-          
           {/* Nodes */}
           {renderNodes()}
+          
+          {/* Edges */}
+          {renderEdges()}
         </g>
       </svg>
     </div>

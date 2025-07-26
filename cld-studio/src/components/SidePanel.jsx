@@ -130,12 +130,6 @@ function SidePanel({ mode }) {
 
       {/* Loops Section */}
       <div className="panel-section">
-        <div className="panel-title">
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          Loops in Diagram
-        </div>
         <div className="panel-content">
           {loops.length === 0 ? (
             <div className="no-loops">

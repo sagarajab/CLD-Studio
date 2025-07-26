@@ -1,7 +1,22 @@
 import React, { useState, useRef, useMemo } from 'react'
 import { useCLDStore } from '../stores/cldStore'
+import { getEllipseDimensions } from '../utils/text'
 
-function CLDNode({ id, data, selected, onClick, onMouseDown, devMode = false, isFromNode = false, isCreatingConnection = false, isRightMouseDown = false }) {
+function CLDNode({ 
+  id, 
+  data, 
+  selected, 
+  isInHighlightedLoop, 
+  isInHoveredLoop,
+  highlightedLoopType, 
+  hoveredLoopType,
+  onClick, 
+  onMouseDown, 
+  devMode = false, 
+  isFromNode = false, 
+  isCreatingConnection = false, 
+  isRightMouseDown = false 
+}) {
   const [isEditing, setIsEditing] = useState(false)
   const [label, setLabel] = useState(data.label || 'New Node')
   const [isHovered, setIsHovered] = useState(false)
@@ -9,81 +24,12 @@ function CLDNode({ id, data, selected, onClick, onMouseDown, devMode = false, is
   const textRef = useRef(null)
   const { updateNode, globalStyles } = useCLDStore()
 
-  // Function to wrap text to fit maximum width
-  const wrapText = (text, maxWidth) => {
-    // Split by line breaks first to preserve user-created breaks
-    const lines = text.split('\n')
-    const wrappedLines = []
-    
-    for (const line of lines) {
-      const words = line.split(' ')
-      let currentLine = ''
-      
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word
-        const testWidth = testLine.length * (globalStyles.nodeFontSize * 0.6) // approximate character width based on font size
-        
-        if (testWidth <= maxWidth) {
-          currentLine = testLine
-        } else {
-          if (currentLine) {
-            wrappedLines.push(currentLine)
-            currentLine = word
-          } else {
-            // Single word is too long, break it into chunks
-            const wordChunks = []
-            const charWidth = globalStyles.nodeFontSize * 0.6
-            for (let i = 0; i < word.length; i += Math.floor(maxWidth / charWidth)) {
-              wordChunks.push(word.slice(i, i + Math.floor(maxWidth / charWidth)))
-            }
-            wrappedLines.push(...wordChunks)
-            currentLine = ''
-          }
-        }
-      }
-      
-      if (currentLine) {
-        wrappedLines.push(currentLine)
-      }
-    }
-    
-    return wrappedLines
-  }
-
   // Calculate ellipse dimensions based on text content with wrapping
   const ellipseDimensions = useMemo(() => {
-    // Base dimensions with padding
-    const baseWidth = 60
-    const baseHeight = 40
-    const padding = 32 // increased padding to ensure text stays within bounds
-    const maxTextWidth = 120 // maximum text width before wrapping
-    const lineHeight = globalStyles.nodeFontSize + 4 // height per line of text
-    
-    // Wrap text to fit maximum width
-    const wrappedLines = wrapText(label, maxTextWidth)
-    
-    // Calculate the actual width needed for the text
-    const calculateLineWidth = (line) => line.length * (globalStyles.nodeFontSize * 0.6) // approximate character width based on font size
-    const lineWidths = wrappedLines.map(calculateLineWidth)
-    const maxLineWidth = Math.max(...lineWidths, 0)
-    
-    // Calculate final dimensions - ensure text is properly contained
-    const textWidth = Math.min(maxLineWidth, maxTextWidth) // Don't exceed max width
-    const width = Math.max(baseWidth, textWidth + padding)
-    const height = Math.max(baseHeight, wrappedLines.length * lineHeight + padding)
-    
-    return {
-      width,
-      height,
-      centerX: width / 2,
-      centerY: height / 2,
-      radiusX: width / 2,
-      radiusY: height / 2,
-      wrappedLines,
-      lineHeight,
-      textPadding: padding / 2 // half padding for text positioning
-    }
-  }, [label])
+    return getEllipseDimensions(label, {
+      fontSize: globalStyles.nodeFontSize
+    })
+  }, [label, globalStyles.nodeFontSize])
 
   const handleLabelChange = (e) => {
     setLabel(e.target.value)
@@ -144,8 +90,6 @@ function CLDNode({ id, data, selected, onClick, onMouseDown, devMode = false, is
 
   return (
     <g>
-      {console.log('🔍 CLDNode devMode:', devMode, 'selected:', selected)}
-      
       {/* Only one ellipse is visible at a time and handles all pointer events */}
       {devMode ? (
         <ellipse
@@ -168,19 +112,36 @@ function CLDNode({ id, data, selected, onClick, onMouseDown, devMode = false, is
           cy={ellipseDimensions.centerY}
           rx={ellipseDimensions.radiusX}
           ry={ellipseDimensions.radiusY}
-          fill="none"
+          fill={
+            isInHighlightedLoop
+              ? highlightedLoopType === 'Balancing'
+                ? '#bbf7d0' // light green
+                : '#fca5a5' // light red
+              : isInHoveredLoop
+                ? hoveredLoopType === 'Balancing'
+                  ? '#d1fae5' // lighter green for hover
+                  : '#fee2e2' // lighter red for hover
+                : 'none'
+          }
           stroke={
-            isFromNode ? "#f97316" : // Orange for FROM node
-            selected ? "#3b82f6" : // Blue for selected
-            isHovered ? "rgba(59, 130, 246, 0.3)" : // Transparent light blue for hover
-            "none"
+            isInHighlightedLoop || isInHoveredLoop
+              ? 'none'
+              : isFromNode ? "#f97316" // Orange for FROM node
+              : selected ? "#3b82f6" // Blue for selected
+              : isHovered ? "rgba(59, 130, 246, 0.3)" // Transparent light blue for hover
+              : "none"
           }
           strokeWidth={
-            isFromNode ? "3" : // Orange border width
-            selected ? "3" : // Selected border width
-            isHovered ? "3" : // Hover border width
-            "0"
+            isInHighlightedLoop || isInHoveredLoop
+              ? "0"
+              : isFromNode ? "3"
+              : selected ? "3"
+              : isHovered ? "3"
+              : "0"
           }
+          style={{
+            filter: isInHoveredLoop && !isInHighlightedLoop ? 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' : 'none'
+          }}
           cursor={(isCreatingConnection || isRightMouseDown) ? "crosshair" : "pointer"}
           onClick={handleClick}
           onMouseDown={handleMouseDown}

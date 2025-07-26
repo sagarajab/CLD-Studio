@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useRef, useEffect } from 'react'
 import ReactFlow, {
   Background,
   Controls,
@@ -38,19 +38,26 @@ function CLDEditor({ mode }) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(storeEdges)
 
   // Sync with store
-  React.useEffect(() => {
+  useEffect(() => {
     setNodes(storeNodes)
   }, [storeNodes, setNodes])
 
-  React.useEffect(() => {
+  useEffect(() => {
     setEdges(storeEdges)
   }, [storeEdges, setEdges])
 
   const onConnect = useCallback(
     (params) => {
+      // Find the next available integer ID
+      const existingIds = storeEdges.map(edge => edge.id)
+      let nextId = 1
+      while (existingIds.includes(nextId)) {
+        nextId++
+      }
+      
       const newEdge = {
         ...params,
-        id: storeEdges.length + 1,
+        id: nextId,
         type: 'cldEdge',
         data: { polarity: 'positive' },
         style: {
@@ -64,7 +71,7 @@ function CLDEditor({ mode }) {
       }
       addStoreEdge(params.source, params.target, 'positive')
     },
-    [addStoreEdge, storeEdges.length]
+    [addStoreEdge, storeEdges]
   )
 
   const onNodeDragStop = useCallback(
@@ -132,7 +139,7 @@ function CLDEditor({ mode }) {
   )
 
   return (
-    <div className="w-full h-full" ref={reactFlowWrapper} style={{ minHeight: '400px' }}>
+    <div className="w-full h-full cld-diagram-container" ref={reactFlowWrapper} style={{ minHeight: '400px' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
