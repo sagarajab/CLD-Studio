@@ -22,7 +22,7 @@ function CLDNode({
   const [isHovered, setIsHovered] = useState(false)
   const inputRef = useRef(null)
   const textRef = useRef(null)
-  const { updateNode, globalStyles } = useCLDStore()
+  const { updateNode, globalStyles, simulationMode, simulationState, nodes } = useCLDStore()
 
   // Calculate ellipse dimensions based on text content with wrapping
   const ellipseDimensions = useMemo(() => {
@@ -86,7 +86,12 @@ function CLDNode({
     setIsHovered(false)
   }
 
-
+  // Get node values from simulation state
+  const nodeIndex = simulationState.accumulatedValues.length > 0 ? 
+    nodes.findIndex(node => node.id === id) : -1
+  
+  const nodeValue = nodeIndex !== -1 ? simulationState.accumulatedValues[nodeIndex] || 0 : 0
+  const lastIncrement = nodeIndex !== -1 ? simulationState.stateVector[nodeIndex] || 0 : 0
 
   return (
     <g>
@@ -230,6 +235,72 @@ function CLDNode({
         })
       )}
 
+      {/* Value bar for simulation mode */}
+      {simulationMode && simulationState.stateVector.length > 0 && (
+        <g className="value-bar-group">
+          {/* Background bar with center line */}
+          <rect
+            x={ellipseDimensions.centerX + ellipseDimensions.radiusX + 10}
+            y={ellipseDimensions.centerY - 50}
+            width="8"
+            height="100"
+            fill="#f3f4f6"
+            stroke="#d1d5db"
+            strokeWidth="1"
+            rx="2"
+          />
+          
+          {/* Center line */}
+          <line
+            x1={ellipseDimensions.centerX + ellipseDimensions.radiusX + 10}
+            y1={ellipseDimensions.centerY}
+            x2={ellipseDimensions.centerX + ellipseDimensions.radiusX + 18}
+            y2={ellipseDimensions.centerY}
+            stroke="#9ca3af"
+            strokeWidth="1"
+          />
+          
+          {/* Value bar - proportional fill from center */}
+          {nodeValue !== 0 && (
+            <rect
+              x={ellipseDimensions.centerX + ellipseDimensions.radiusX + 10}
+              y={nodeValue > 0 ? 
+                ellipseDimensions.centerY - Math.min(Math.abs(nodeValue) * 2, 50) : 
+                ellipseDimensions.centerY
+              }
+              width="8"
+              height={Math.min(Math.abs(nodeValue) * 2, 50)}
+              fill={nodeValue > 0 ? '#28a745' : '#dc3545'}
+              rx="2"
+              style={{ transition: 'all 0.3s ease' }}
+            />
+          )}
+          
+          {/* Accumulated value text */}
+          <text
+            x={ellipseDimensions.centerX + ellipseDimensions.radiusX + 25}
+            y={ellipseDimensions.centerY - 8}
+            fontSize="12"
+            fill="#333"
+            textAnchor="start"
+            dominantBaseline="middle"
+          >
+            {nodeValue.toFixed(1)}
+          </text>
+          
+          {/* Last increment text */}
+          <text
+            x={ellipseDimensions.centerX + ellipseDimensions.radiusX + 25}
+            y={ellipseDimensions.centerY + 8}
+            fontSize="10"
+            fill="#666"
+            textAnchor="start"
+            dominantBaseline="middle"
+          >
+            Δ: {lastIncrement.toFixed(1)}
+          </text>
+        </g>
+      )}
 
     </g>
   )

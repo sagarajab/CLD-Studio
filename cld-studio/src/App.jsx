@@ -6,6 +6,9 @@ import Canvas from './components/Canvas'
 import SysLoopHeader from './components/SysLoopHeader'
 import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
+import SimulationControls from './components/SimulationControls'
+import SimulationVisualization from './components/SimulationVisualization'
+import SimulationDebug from './components/SimulationDebug'
 import { useCLDStore } from './stores/cldStore'
 
 function App() {
@@ -26,7 +29,12 @@ function App() {
     viewTransform,
     allLoops,
     updateGraphAnalysis,
-    diagramName
+    diagramName,
+    simulationMode,
+    simulationState,
+    toggleSimulationMode,
+    stepSimulation,
+    stepBackSimulation
   } = useCLDStore()
 
   // Set initial browser title based on diagram name
@@ -47,7 +55,7 @@ function App() {
     return allLoops
   }, [allLoops])
 
-  // Handle ESC key to close all modals and reset app state
+  // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -66,13 +74,25 @@ function App() {
         // Reset dimming to enabled
         setDimmingEnabled(true)
       }
+      
+      // Spacebar for step-by-step simulation
+      if (event.key === ' ' && simulationMode && simulationState.perturbedNode && !simulationState.isRunning) {
+        event.preventDefault()
+        stepSimulation()
+      }
+      
+      // Left arrow for step back simulation
+      if (event.key === 'ArrowLeft' && simulationMode && simulationState.perturbedNode && !simulationState.isRunning && simulationState.currentStep > 0) {
+        event.preventDefault()
+        stepBackSimulation()
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [loopViewMode, exitLoopViewMode, clearHighlightedLoop])
+  }, [loopViewMode, exitLoopViewMode, clearHighlightedLoop, simulationMode, simulationState, stepSimulation, stepBackSimulation])
 
   // Handle clicking outside to exit loop view mode
   const handleAppClick = (event) => {
@@ -113,6 +133,17 @@ function App() {
             />
           </ReactFlowProvider>
         </div>
+        
+        {/* Simulation Panel */}
+        {simulationMode && (
+          <div className="simulation-panel">
+            <SimulationControls />
+            <SimulationVisualization />
+          </div>
+        )}
+        
+        {/* Simulation Debug Panel */}
+        <SimulationDebug />
       </div>
 
       {/* Status Bar */}
@@ -138,6 +169,14 @@ function App() {
                'None'}
             </span>
           </div>
+          
+          {/* Simulation Mode Indicator */}
+          {simulationMode && (
+            <div className="status-item simulation">
+              <span className="status-label">SIMULATION</span>
+              <span className="status-count">ACTIVE</span>
+            </div>
+          )}
         </div>
         <div className="status-right">
           <span className="status-text">
@@ -189,6 +228,28 @@ function App() {
             >
               <span style={{ fontSize: '12px' }}>🔧</span>
               {devMode ? 'DEV' : ''}
+            </button>
+
+            {/* Simulation Toggle Button */}
+            <button
+              onClick={toggleSimulationMode}
+              style={{
+                background: simulationMode ? '#dc3545' : 'transparent',
+                color: simulationMode ? 'white' : '#6b7280',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                cursor: 'pointer',
+                marginLeft: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Toggle Simulation Mode"
+            >
+              <span style={{ fontSize: '12px' }}>⚡</span>
+              {simulationMode ? 'SIM' : 'SIM'}
             </button>
 
             {/* Settings Button */}

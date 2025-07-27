@@ -1923,3 +1923,270 @@ body {
 .loops-scroll-container::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Simulation Panel */
+.simulation-panel {
+  position: fixed;
+  right: 0;
+  top: 60px;
+  width: 300px;
+  height: calc(100vh - 60px);
+  background: white;
+  border-left: 1px solid #e5e7eb;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.simulation-controls {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.simulation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.simulation-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.control-group {
+  margin-bottom: 15px;
+}
+
+.control-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.control-group select,
+.control-group input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.control-group input[type="range"] {
+  width: 100%;
+  margin: 5px 0;
+}
+
+.simulation-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-success,
+.btn-warning,
+.btn-secondary,
+.btn-info {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #059669;
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #4b5563;
+}
+
+.btn-primary:disabled,
+.btn-success:disabled,
+.btn-warning:disabled,
+.btn-secondary:disabled,
+.btn-info:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.simulation-status {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f9fafb;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.simulation-status > div {
+  margin-bottom: 5px;
+}
+
+.simulation-visualization {
+  padding: 20px;
+}
+
+.value-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.value-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.value-bar-label {
+  min-width: 100px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.value-bar-wrapper {
+  position: relative;
+  width: 20px;
+  height: 100px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.value-bar-wrapper::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 1px;
+  background: #9ca3af;
+  z-index: 1;
+}
+
+.value-bar {
+  border-radius: 2px;
+  transition: height 0.3s ease;
+  position: absolute;
+  width: 100%;
+  z-index: 2;
+}
+
+.value-text {
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 40px;
+}
+
+.simulation-history {
+  margin-top: 20px;
+}
+
+.simulation-history h4 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.history-chart {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.history-step {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+  padding: 5px;
+  border-radius: 4px;
+  background: #f9fafb;
+}
+
+.step-label {
+  min-width: 60px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.step-values {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+
+.history-value {
+  transition: all 0.2s ease;
+}
+
+.history-value:hover {
+  transform: scale(1.2);
+}
+
+/* Status bar simulation indicator */
+.status-item.simulation {
+  background: #dc3545;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Value bar in nodes */
+.value-bar-group {
+  pointer-events: none;
+}
+
+/* Propagation animation */
+@keyframes propagate {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -20; }
+}
+
+.propagate-animation {
+  animation: propagate 1s linear infinite;
+}

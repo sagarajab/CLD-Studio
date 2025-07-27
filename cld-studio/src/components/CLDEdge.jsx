@@ -13,7 +13,7 @@ function CLDEdge({
   data,
   selected
 }) {
-  const { updateEdge, selectedEdge, globalStyles } = useCLDStore()
+  const { updateEdge, selectedEdge, globalStyles, simulationMode, simulationState } = useCLDStore()
   const { getNode } = useReactFlow()
   const polarity = data?.polarity || 'positive'
   const isSelected = selectedEdge === id
@@ -250,6 +250,21 @@ function CLDEdge({
         style={getEdgeStyle()}
         onClick={handleEdgeClick}
       />
+      
+      {/* Propagation animation during simulation */}
+      {simulationMode && simulationState.isRunning && (
+        <path
+          d={edgePath}
+          stroke="#007bff"
+          strokeWidth="3"
+          fill="none"
+          strokeDasharray="10,10"
+          style={{ 
+            animation: 'propagate 1s linear infinite',
+            pointerEvents: 'none'
+          }}
+        />
+      )}
       
       {/* Radius Control Point */}
       <circle
