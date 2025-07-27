@@ -57,11 +57,13 @@ function CLDNode({
 
   const handleDoubleClick = (e) => {
     e.stopPropagation()
-    setIsEditing(true)
-    setTimeout(() => {
-      inputRef.current?.focus()
-      inputRef.current?.select()
-    }, 0)
+    if (!simulationMode) {
+      setIsEditing(true)
+      setTimeout(() => {
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }, 0)
+    }
   }
 
   const handleClick = (e) => {

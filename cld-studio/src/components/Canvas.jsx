@@ -69,7 +69,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     setViewTransform,
     updateViewTransform,
     globalStyles,
-    showGrid
+    showGrid,
+    simulationMode
   } = useCLDStore();
 
   // Helper functions for loop highlighting
@@ -165,8 +166,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Delete' || event.key === 'Backspace') {
-        // Don't delete if we're in connection creation mode
-        if (isCreatingConnection) {
+        // Don't delete if we're in connection creation mode or simulation mode
+        if (isCreatingConnection || simulationMode) {
           return
         }
         
@@ -219,7 +220,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       )
       
       if (timeDiff < 300 && positionDiff < 10) {
-        if (mode === 'sandbox') {
+        if (mode === 'sandbox' && !simulationMode) {
           const nodeName = `var${nodeIdCounterRef.current}`
           nodeIdCounterRef.current++
           
@@ -552,7 +553,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   }
 
   const handleNodeClick = (nodeId, event) => {
-    if (isRightMouseDown && !isCreatingConnection) {
+    if (isRightMouseDown && !isCreatingConnection && !simulationMode) {
       setIsCreatingConnection(true)
       setConnectionSource(nodeId)
       
@@ -595,7 +596,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     
     event.stopPropagation()
     
-    if (event.button === 0 && !isRightMouseDown) { // Left click only, not during connection creation
+    if (event.button === 0 && !isRightMouseDown && !simulationMode) { // Left click only, not during connection creation or simulation mode
       const rect = canvasRef.current.getBoundingClientRect()
       const mouseX = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
       const mouseY = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
@@ -611,7 +612,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       // Select the node
       setSelectedNode(node.id)
     }
-  }, [isRightMouseDown, viewTransform, setSelectedNode])
+  }, [isRightMouseDown, viewTransform, setSelectedNode, simulationMode])
 
   // Handle control point dragging
   const handleControlPointMouseDown = (e, edgeId) => {
@@ -1153,10 +1154,10 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           </marker>
         </defs>
         
+        {/* Background grid - outside transform to cover full canvas */}
+        {showGrid && <rect width="100%" height="100%" fill="url(#grid)" />}
+        
         <g transform={`translate(${viewTransform.x}, ${viewTransform.y}) scale(${viewTransform.scale})`}>
-          {/* Background grid */}
-          {showGrid && <rect width="100%" height="100%" fill="url(#grid)" />}
-          
           {/* Construction objects (dev mode) */}
           {renderConstructionObjects()}
           

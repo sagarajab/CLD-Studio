@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useCLDStore } from '../stores/cldStore'
+import StateVectorModal from './StateVectorModal'
+import PlotsModal from './PlotsModal'
 
 function Toolbar() {
   const [showExportDropdown, setShowExportDropdown] = useState(false)
+  const [showSimSettingsDropdown, setShowSimSettingsDropdown] = useState(false)
+  const [selectedNode, setSelectedNode] = useState('')
+  const [perturbationValue, setPerturbationValue] = useState(1)
+  const [showPlotsModal, setShowPlotsModal] = useState(false)
+  const [showStateVectorModal, setShowStateVectorModal] = useState(false)
+  
   const dropdownRef = useRef(null)
+  const simSettingsRef = useRef(null)
   
   const { 
     clearDiagram, 
@@ -14,7 +23,15 @@ function Toolbar() {
     nodes, 
     edges,
     mode,
-    submitAssessment 
+    submitAssessment,
+    simulationState,
+    initializeSimulation,
+    runSimulation,
+    pauseSimulation,
+    stepSimulation,
+    stepBackSimulation,
+    resetSimulation,
+    updateSimulationSettings
   } = useCLDStore()
 
   const handleClear = () => {
@@ -63,11 +80,29 @@ function Toolbar() {
     setShowExportDropdown(!showExportDropdown)
   }
 
-  // Close dropdown when clicking outside
+  const toggleSimSettingsDropdown = () => {
+    setShowSimSettingsDropdown(!showSimSettingsDropdown)
+  }
+
+  const handleStartSimulation = () => {
+    if (selectedNode && perturbationValue !== 0) {
+      initializeSimulation(parseInt(selectedNode), perturbationValue)
+    }
+  }
+
+  const handlePerturbationChange = (value) => {
+    const clampedValue = Math.max(-100, Math.min(100, value))
+    setPerturbationValue(clampedValue)
+  }
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowExportDropdown(false)
+      }
+      if (simSettingsRef.current && !simSettingsRef.current.contains(event.target)) {
+        setShowSimSettingsDropdown(false)
       }
     }
 
@@ -85,7 +120,7 @@ function Toolbar() {
   }
 
   return (
-    <div className="px-4 py-3">
+    <div className="toolbar px-4 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <h3 className="text-sm font-medium text-gray-700">Quick Actions</h3>
@@ -165,6 +200,171 @@ function Toolbar() {
           </div>
         </div>
 
+        {/* Simulation Controls Group */}
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 border-l border-gray-300 pl-4">
+            <span className="text-sm font-medium text-gray-700">Simulation</span>
+            
+            {/* Node Selection */}
+            <select 
+              value={selectedNode} 
+              onChange={(e) => setSelectedNode(e.target.value)}
+              disabled={simulationState.isRunning}
+              className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              style={{ minWidth: '120px' }}
+            >
+              <option value="">Select node...</option>
+              {nodes.map(node => (
+                <option key={node.id} value={node.id}>
+                  {node.data.label || `Node ${node.id}`}
+                </option>
+              ))}
+            </select>
+            
+            {/* Perturbation Value */}
+            <input
+              type="number"
+              min="-100"
+              max="100"
+              value={perturbationValue}
+              onChange={(e) => handlePerturbationChange(parseInt(e.target.value))}
+              disabled={simulationState.isRunning}
+              className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              style={{ width: '60px' }}
+            />
+            
+            {/* Initialize Button */}
+            <button
+              onClick={handleStartSimulation}
+              disabled={!selectedNode || simulationState.isRunning}
+              className="toolbar-button"
+              title="Initialize simulation"
+            >
+              Init
+            </button>
+            
+            {/* Control Buttons */}
+            <button
+              onClick={runSimulation}
+              disabled={!simulationState.perturbedNode || simulationState.isRunning}
+              className="toolbar-button"
+              title="Start simulation"
+            >
+              ▶
+            </button>
+            
+            <button
+              onClick={pauseSimulation}
+              disabled={!simulationState.isRunning}
+              className="toolbar-button"
+              title="Pause simulation"
+            >
+              ⏸
+            </button>
+            
+            <button
+              onClick={stepBackSimulation}
+              disabled={!simulationState.perturbedNode || simulationState.isRunning || simulationState.currentStep <= 0}
+              className="toolbar-button"
+              title="Step back"
+            >
+              ⏮
+            </button>
+            
+            <button
+              onClick={stepSimulation}
+              disabled={!simulationState.perturbedNode || simulationState.isRunning}
+              className="toolbar-button"
+              title="Step forward"
+            >
+              ⏭
+            </button>
+            
+            <button
+              onClick={resetSimulation}
+              className="toolbar-button"
+              title="Reset simulation"
+            >
+              ⏹
+            </button>
+            
+            {/* Settings Dropdown */}
+            <div className="relative" ref={simSettingsRef}>
+              <button
+                onClick={toggleSimSettingsDropdown}
+                className="toolbar-button"
+                title="Simulation settings"
+              >
+                ⚙
+              </button>
+              {showSimSettingsDropdown && (
+                <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-64 p-3">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">Speed:</span>
+                      <input
+                        type="range"
+                        min="100"
+                        max="2000"
+                        step="100"
+                        value={simulationState.stepDelay}
+                        onChange={(e) => updateSimulationSettings({ stepDelay: parseInt(e.target.value) })}
+                        disabled={simulationState.isRunning}
+                        className="w-24"
+                      />
+                      <span className="text-xs min-w-12">{simulationState.stepDelay}ms</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">Max Steps:</span>
+                      <input
+                        type="number"
+                        min="10"
+                        max="200"
+                        value={simulationState.maxSteps}
+                        onChange={(e) => updateSimulationSettings({ maxSteps: parseInt(e.target.value) })}
+                        disabled={simulationState.isRunning}
+                        className="px-2 py-1 text-xs border border-gray-300 rounded w-16"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Modal Buttons */}
+            <button
+              onClick={() => setShowStateVectorModal(true)}
+              className="toolbar-button"
+              title="Show state vectors"
+            >
+              📊
+            </button>
+            
+            <button
+              onClick={() => setShowPlotsModal(true)}
+              className="toolbar-button"
+              title="Show plots"
+            >
+              📈
+            </button>
+            
+            {/* LED Status Indicator */}
+            <div 
+              className={`simulation-led ${
+                !simulationState.perturbedNode ? 'inactive' :
+                simulationState.isRunning ? 'running' :
+                simulationState.isPaused ? 'paused' : 'ready'
+              }`}
+              title={
+                !simulationState.perturbedNode ? 'Simulation not initialized' :
+                simulationState.isRunning ? 'Simulation running' :
+                simulationState.isPaused ? 'Simulation paused' : 'Simulation ready'
+              }
+            />
+          </div>
+        </div>
+
         <div className="flex items-center space-x-4">
           {mode === 'assessment' && (
             <button
@@ -187,6 +387,21 @@ function Toolbar() {
         <div className="assessment-box mt-3 text-sm">
           📝 Assessment Mode: Complete the diagram according to the problem requirements
         </div>
+      )}
+
+      {/* Modals */}
+      {showStateVectorModal && (
+        <StateVectorModal 
+          isOpen={showStateVectorModal} 
+          onClose={() => setShowStateVectorModal(false)} 
+        />
+      )}
+      
+      {showPlotsModal && (
+        <PlotsModal 
+          isOpen={showPlotsModal} 
+          onClose={() => setShowPlotsModal(false)} 
+        />
       )}
     </div>
   )

@@ -31,6 +31,7 @@ const useCLDStore = create((set, get) => ({
   simulationMode: false,
   simulationState: {
     isRunning: false,
+    isPaused: false,
     currentStep: 0,
     maxSteps: 50,
     stepDelay: 500, // milliseconds
@@ -41,6 +42,9 @@ const useCLDStore = create((set, get) => ({
     perturbedNode: null, // Node that was perturbed
     perturbationValue: 0
   },
+  
+  // Events log for status bar
+  eventsLog: [],
   
   // View transform operations
   setViewTransform: (transform) => {
@@ -64,7 +68,13 @@ const useCLDStore = create((set, get) => ({
   
   // Node operations
   addNode: (position, label = 'New Node') => {
-    const { nodes, config, updateGraphAnalysis } = get()
+    const { nodes, config, updateGraphAnalysis, simulationState, simulationMode, addEvent } = get()
+    
+    // Disable node addition during simulation mode
+    if (simulationMode || simulationState.isRunning) {
+      console.warn('Cannot add nodes while simulation mode is enabled')
+      return false
+    }
     
     // Check node limit constraint
     if (nodes.length >= config.constraints.maxNodes) {
@@ -87,10 +97,19 @@ const useCLDStore = create((set, get) => ({
       nodes: [...state.nodes, newNode]
     }))
     updateGraphAnalysis()
+    addEvent(`Node "${label}" added`)
     return true
   },
   
   updateNode: (nodeId, updates) => {
+    const { simulationState, simulationMode } = get()
+    
+    // Disable node updates during simulation mode
+    if (simulationMode || simulationState.isRunning) {
+      console.warn('Cannot update nodes while simulation mode is enabled')
+      return false
+    }
+    
     set((state) => ({
       nodes: state.nodes.map(node => 
         node.id === nodeId 
@@ -121,6 +140,17 @@ const useCLDStore = create((set, get) => ({
   },
   
   deleteNode: (nodeId) => {
+    const { simulationState, simulationMode, addEvent } = get()
+    
+    // Disable node deletion during simulation mode
+    if (simulationMode || simulationState.isRunning) {
+      console.warn('Cannot delete nodes while simulation mode is enabled')
+      return false
+    }
+    
+    const nodeToDelete = get().nodes.find(node => node.id === nodeId)
+    const nodeLabel = nodeToDelete?.data?.label || `Node ${nodeId}`
+    
     set((state) => ({
       nodes: state.nodes.filter(node => node.id !== nodeId),
       edges: state.edges.filter(edge => 
@@ -128,11 +158,18 @@ const useCLDStore = create((set, get) => ({
       )
     }))
     get().updateGraphAnalysis()
+    addEvent(`Node "${nodeLabel}" deleted`)
   },
   
   // Edge operations
   addEdge: (source, target, polarity = 'positive') => {
-    const { edges, config, updateGraphAnalysis } = get()
+    const { edges, config, updateGraphAnalysis, simulationState, simulationMode, addEvent, nodes } = get()
+    
+    // Disable edge addition during simulation mode
+    if (simulationMode || simulationState.isRunning) {
+      console.warn('Cannot add edges while simulation mode is enabled')
+      return false
+    }
     
     // Check edge limit constraint
     if (edges.length >= config.constraints.maxEdges) {
@@ -146,6 +183,11 @@ const useCLDStore = create((set, get) => ({
     while (existingIds.includes(nextId)) {
       nextId++
     }
+    
+    const sourceNode = nodes.find(n => n.id === source)
+    const targetNode = nodes.find(n => n.id === target)
+    const sourceLabel = sourceNode?.data?.label || `Node ${source}`
+    const targetLabel = targetNode?.data?.label || `Node ${target}`
     
     const newEdge = {
       id: nextId, // Using integer IDs as per user preference
@@ -174,10 +216,19 @@ const useCLDStore = create((set, get) => ({
       edges: [...state.edges, newEdge]
     }))
     updateGraphAnalysis()
+    addEvent(`Arrow "${sourceLabel}" → "${targetLabel}" added`)
     return true
   },
   
   updateEdge: (edgeId, updates) => {
+    const { simulationState, simulationMode } = get()
+    
+    // Disable edge updates during simulation mode
+    if (simulationMode || simulationState.isRunning) {
+      console.warn('Cannot update edges while simulation mode is enabled')
+      return false
+    }
+    
     set((state) => ({
       edges: state.edges.map(edge => 
         edge.id === edgeId 
@@ -192,6 +243,14 @@ const useCLDStore = create((set, get) => ({
   },
 
   updateEdgeDescription: (edgeId, description) => {
+    const { simulationState } = get()
+    
+    // Disable edge description updates during simulation
+    if (simulationState.isRunning) {
+      console.warn('Cannot update edge descriptions while simulation is running')
+      return false
+    }
+    
     set((state) => ({
       edges: state.edges.map(edge => 
         edge.id === edgeId 
@@ -206,10 +265,25 @@ const useCLDStore = create((set, get) => ({
   },
   
   deleteEdge: (edgeId) => {
+    const { simulationState, simulationMode, addEvent, nodes } = get()
+    
+    // Disable edge deletion during simulation mode
+    if (simulationMode || simulationState.isRunning) {
+      console.warn('Cannot delete edges while simulation mode is enabled')
+      return false
+    }
+    
+    const edgeToDelete = get().edges.find(edge => edge.id === edgeId)
+    const sourceNode = nodes.find(n => n.id === edgeToDelete?.source)
+    const targetNode = nodes.find(n => n.id === edgeToDelete?.target)
+    const sourceLabel = sourceNode?.data?.label || `Node ${edgeToDelete?.source}`
+    const targetLabel = targetNode?.data?.label || `Node ${edgeToDelete?.target}`
+    
     set((state) => ({
       edges: state.edges.filter(edge => edge.id !== edgeId)
     }))
     get().updateGraphAnalysis()
+    addEvent(`Arrow "${sourceLabel}" → "${targetLabel}" deleted`)
   },
   
   // Selection
@@ -237,6 +311,25 @@ const useCLDStore = create((set, get) => ({
 
   exitLoopViewMode: () => {
     set({ loopViewMode: false, highlightedLoop: null })
+  },
+  
+  // Events log operations
+  addEvent: (event) => {
+    const timestamp = new Date().toLocaleTimeString()
+    const newEvent = {
+      id: Date.now(),
+      timestamp,
+      message: event,
+      type: 'info'
+    }
+    
+    set((state) => ({
+      eventsLog: [newEvent, ...state.eventsLog.slice(0, 4)] // Keep only last 5 events
+    }))
+  },
+  
+  clearEventsLog: () => {
+    set({ eventsLog: [] })
   },
   
   // Diagram operations
@@ -917,11 +1010,15 @@ const useCLDStore = create((set, get) => ({
 
   // Simulation operations
   toggleSimulationMode: () => {
+    const { addEvent } = get()
+    const currentMode = get().simulationMode
+    
     set((state) => ({ 
       simulationMode: !state.simulationMode,
       simulationState: {
         ...state.simulationState,
         isRunning: false,
+        isPaused: false,
         currentStep: 0,
         stateVector: [],
         history: [],
@@ -929,6 +1026,8 @@ const useCLDStore = create((set, get) => ({
         perturbationValue: 0
       }
     }))
+    
+    addEvent(`Simulation mode ${!currentMode ? 'activated' : 'deactivated'}`)
   },
   
   initializeSimulation: (perturbedNodeId, perturbationValue) => {
@@ -994,7 +1093,8 @@ const useCLDStore = create((set, get) => ({
     set((state) => ({
       simulationState: {
         ...state.simulationState,
-        isRunning: true
+        isRunning: true,
+        isPaused: false
       }
     }))
     
@@ -1040,7 +1140,8 @@ const useCLDStore = create((set, get) => ({
     set((state) => ({
       simulationState: {
         ...state.simulationState,
-        isRunning: false
+        isRunning: false,
+        isPaused: true
       }
     }))
   },
@@ -1102,6 +1203,7 @@ const useCLDStore = create((set, get) => ({
       simulationState: {
         ...state.simulationState,
         isRunning: false,
+        isPaused: false,
         currentStep: 0,
         stateVector: [],
         accumulatedValues: [],

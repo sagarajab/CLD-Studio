@@ -4,7 +4,8 @@ import { useCLDStore } from '../stores/cldStore'
 function SimulationDebug() {
   const { nodes, edges, simulationMode, simulationState } = useCLDStore()
   
-  if (!simulationMode) return null
+  // Hide debug info in simulation mode
+  if (simulationMode) return null
   
   // Create adjacency matrix for debugging
   const createAdjacencyMatrix = () => {
@@ -36,7 +37,7 @@ function SimulationDebug() {
     <div className="simulation-debug" style={{ 
       position: 'fixed', 
       top: '70px', 
-      left: '10px', 
+      right: '10px', 
       background: 'white', 
       border: '1px solid #ccc', 
       padding: '10px', 

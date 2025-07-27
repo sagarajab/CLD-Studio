@@ -54,9 +54,11 @@ function CLDEdge({
   const [isDraggingRadius, setIsDraggingRadius] = useState(false)
 
   const handleEdgeClick = () => {
-    // Toggle polarity on click
-    const newPolarity = polarity === 'positive' ? 'negative' : 'positive'
-    updateEdge(id, { polarity: newPolarity })
+    // Toggle polarity on click (disabled during simulation mode)
+    if (!simulationMode) {
+      const newPolarity = polarity === 'positive' ? 'negative' : 'positive'
+      updateEdge(id, { polarity: newPolarity })
+    }
   }
 
   // Calculate circular arc path

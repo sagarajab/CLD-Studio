@@ -9,6 +9,7 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
   const [sidebarWidth, setSidebarWidth] = useState(300)
   const [isResizing, setIsResizing] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+
   const sidebarRef = useRef(null)
   const { 
     highlightedLoop, 
@@ -17,7 +18,9 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
     enterLoopViewMode,
     exitLoopViewMode,
     nodes,
-    adjacencyMatrix
+    adjacencyMatrix,
+    simulationMode,
+    toggleSimulationMode
   } = useCLDStore()
 
   // Constants for sidebar dimensions
@@ -225,6 +228,8 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
       case 'analysis':
         return <AnalysisTab />
       
+
+      
       default:
         return null
     }
@@ -309,6 +314,7 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
           </svg>
           Analysis
         </button>
+
         </div>
       )}
 
@@ -318,6 +324,8 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
           {renderTabContent()}
         </div>
       )}
+      
+
     </div>
   )
 }
