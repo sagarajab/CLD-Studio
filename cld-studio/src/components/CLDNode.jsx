@@ -15,7 +15,7 @@ function CLDNode({
   devMode = false, 
   isFromNode = false, 
   isCreatingConnection = false, 
-
+  isMultiSelected = false,
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [label, setLabel] = useState(data.label || 'New Node')
@@ -179,7 +179,7 @@ function CLDNode({
             isInHighlightedLoop || isInHoveredLoop
               ? 'none'
               : isFromNode ? "#f97316" // Orange for FROM node
-              : selected ? "#3b82f6" // Modern blue for selected
+              : (selected || isMultiSelected) ? "#3b82f6" // Modern blue for selected (single or multi)
               : (isHovered || hoveredNode === id) ? "rgba(59, 130, 246, 0.6)" // Lighter shade of blue for hover
               : "none"
           }
@@ -187,7 +187,7 @@ function CLDNode({
             isInHighlightedLoop || isInHoveredLoop
               ? "0"
               : isFromNode ? "3"
-              : selected ? "3"
+              : (selected || isMultiSelected) ? "3"
               : (isHovered || hoveredNode === id) ? "3"
               : "0"
           }

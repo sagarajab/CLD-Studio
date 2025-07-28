@@ -8,6 +8,8 @@ const useCLDStore = create((set, get) => ({
   edges: [],
   selectedNode: null,
   selectedEdge: null,
+  selectedNodes: [], // Multiselect: array of selected node IDs
+  selectedEdges: [], // Multiselect: array of selected edge IDs
   highlightedLoop: null, // Currently highlighted loop
   hoveredNode: null, // Currently hovered node
   hoveredEdge: null, // Currently hovered edge
@@ -365,6 +367,91 @@ const useCLDStore = create((set, get) => ({
   setSelectedEdge: (edgeId) => {
     set({ selectedEdge: edgeId })
   },
+
+  // Multiselect functions
+  addToNodeSelection: (nodeId) => {
+    set((state) => ({
+      selectedNodes: state.selectedNodes.includes(nodeId) 
+        ? state.selectedNodes 
+        : [...state.selectedNodes, nodeId]
+    }))
+  },
+
+  removeFromNodeSelection: (nodeId) => {
+    set((state) => ({
+      selectedNodes: state.selectedNodes.filter(id => id !== nodeId)
+    }))
+  },
+
+  clearNodeSelection: () => {
+    set({ selectedNodes: [] })
+  },
+
+  setNodeSelection: (nodeIds) => {
+    set({ selectedNodes: nodeIds })
+  },
+
+  addToEdgeSelection: (edgeId) => {
+    set((state) => ({
+      selectedEdges: state.selectedEdges.includes(edgeId) 
+        ? state.selectedEdges 
+        : [...state.selectedEdges, edgeId]
+    }))
+  },
+
+  removeFromEdgeSelection: (edgeId) => {
+    set((state) => ({
+      selectedEdges: state.selectedEdges.filter(id => id !== edgeId)
+    }))
+  },
+
+  clearEdgeSelection: () => {
+    set({ selectedEdges: [] })
+  },
+
+  setEdgeSelection: (edgeIds) => {
+    set({ selectedEdges: edgeIds })
+  },
+
+  clearAllSelections: () => {
+    set({ 
+      selectedNode: null, 
+      selectedEdge: null, 
+      selectedNodes: [], 
+      selectedEdges: [] 
+    })
+  },
+
+  // Bulk operations for multiselect
+  updateSelectedNodesColor: (color) => {
+    const { selectedNodes, updateNode } = get()
+    selectedNodes.forEach(nodeId => {
+      updateNode(nodeId, { color })
+    })
+  },
+
+  updateSelectedEdgesColor: (color) => {
+    const { selectedEdges, updateEdge } = get()
+    selectedEdges.forEach(edgeId => {
+      updateEdge(edgeId, { color })
+    })
+  },
+
+  deleteSelectedNodes: () => {
+    const { selectedNodes, deleteNode, clearNodeSelection } = get()
+    selectedNodes.forEach(nodeId => {
+      deleteNode(nodeId)
+    })
+    clearNodeSelection()
+  },
+
+  deleteSelectedEdges: () => {
+    const { selectedEdges, deleteEdge, clearEdgeSelection } = get()
+    selectedEdges.forEach(edgeId => {
+      deleteEdge(edgeId)
+    })
+    clearEdgeSelection()
+  },
   
   // Loop highlighting
   setHighlightedLoop: (loopIndex) => {
@@ -437,6 +524,8 @@ const useCLDStore = create((set, get) => ({
       edges: [], 
       selectedNode: null, 
       selectedEdge: null, 
+      selectedNodes: [],
+      selectedEdges: [],
       highlightedLoop: null,
       adjacencyMatrix: [],
       allLoops: [],

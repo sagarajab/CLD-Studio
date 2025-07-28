@@ -65,6 +65,17 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     setSelectedEdge,
     selectedNode,
     selectedEdge,
+    selectedNodes,
+    selectedEdges,
+    addToNodeSelection,
+    removeFromNodeSelection,
+    clearNodeSelection,
+    addToEdgeSelection,
+    removeFromEdgeSelection,
+    clearEdgeSelection,
+    setNodeSelection,
+    setEdgeSelection,
+    clearAllSelections,
     highlightedLoop,
     clearHighlightedLoop,
     loopViewMode,
@@ -162,7 +173,14 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           return
         }
         
-        if (selectedNode) {
+        // Handle multiselect deletion
+        if (selectedNodes.length > 0) {
+          selectedNodes.forEach(nodeId => deleteNode(nodeId))
+          clearNodeSelection()
+        } else if (selectedEdges.length > 0) {
+          selectedEdges.forEach(edgeId => deleteEdge(edgeId))
+          clearEdgeSelection()
+        } else if (selectedNode) {
           deleteNode(selectedNode)
           setSelectedNode(null)
         } else if (selectedEdge) {
@@ -186,6 +204,19 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             updateNode(connectionSource, { borderColor: undefined })
           }
         }
+        // Clear all selections
+        clearAllSelections()
+      } else if (event.ctrlKey && event.key === 'a') {
+        // Ctrl+A: Select all nodes and edges
+        event.preventDefault()
+        const allNodeIds = storeNodes.map(node => node.id)
+        const allEdgeIds = storeEdges.map(edge => edge.id)
+        setNodeSelection(allNodeIds)
+        setEdgeSelection(allEdgeIds)
+      } else if (event.ctrlKey && event.key === 'd') {
+        // Ctrl+D: Deselect all
+        event.preventDefault()
+        clearAllSelections()
       }
     }
 
@@ -239,6 +270,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         // Single click - deselect and cancel connection creation if active
         setSelectedNode(null)
         setSelectedEdge(null)
+        clearNodeSelection()
+        clearEdgeSelection()
         
         // Clear highlighted loop when clicking on empty space
         if (highlightedLoop !== null) {
@@ -516,10 +549,10 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       const newX = mouseX - dragOffset.x
       const newY = mouseY - dragOffset.y
       
-      // Update node position in store
-      const node = storeNodes.find(n => n.id === draggedNodeId)
-      if (node) {
-        const oldPosition = node.position
+      // Update dragged node position in store
+      const draggedNode = storeNodes.find(n => n.id === draggedNodeId)
+      if (draggedNode) {
+        const oldPosition = draggedNode.position
         const newPosition = { x: newX, y: newY }
         
         updateNode(draggedNodeId, { 
@@ -528,9 +561,36 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         
         // Update control points for connected edges to maintain constraints
         updateControlPointsForNodeMove(draggedNodeId, oldPosition, newPosition)
+        
+        // If there are multiselected nodes, move them as a group
+        if (selectedNodes.length > 0 && selectedNodes.includes(draggedNodeId)) {
+          const deltaX = newPosition.x - oldPosition.x
+          const deltaY = newPosition.y - oldPosition.y
+          
+          // Move all other selected nodes by the same delta
+          selectedNodes.forEach(nodeId => {
+            if (nodeId !== draggedNodeId) {
+              const otherNode = storeNodes.find(n => n.id === nodeId)
+              if (otherNode) {
+                const otherOldPosition = otherNode.position
+                const otherNewPosition = {
+                  x: otherOldPosition.x + deltaX,
+                  y: otherOldPosition.y + deltaY
+                }
+                
+                updateNode(nodeId, { 
+                  position: otherNewPosition
+                })
+                
+                // Update control points for connected edges to maintain constraints
+                updateControlPointsForNodeMove(nodeId, otherOldPosition, otherNewPosition)
+              }
+            }
+          })
+        }
       }
     }
-     }, [isPanning, panStart, isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, viewTransform, storeNodes, updateNode, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId])
+     }, [isPanning, panStart, isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, viewTransform, storeNodes, updateNode, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId, selectedNodes])
 
   const handleCanvasMouseUp = useCallback(() => {
     setIsDragging(false)
@@ -643,9 +703,24 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         // Remove highlight from source node
         updateNode(connectionSource, { borderColor: undefined })
       } else if (!isCreatingConnection && !simulationMode) {
-        // Normal left-click - just select it
-        setSelectedNode(nodeId)
-        setSelectedEdge(null)
+        // Handle multiselect with Ctrl+click
+        if (event.ctrlKey || event.metaKey) {
+          // Ctrl/Cmd+click: toggle selection
+          if (selectedNodes.includes(nodeId)) {
+            removeFromNodeSelection(nodeId)
+          } else {
+            addToNodeSelection(nodeId)
+          }
+          // Clear single selection when multiselecting
+          setSelectedNode(null)
+          setSelectedEdge(null)
+        } else {
+          // Normal left-click - select single node
+          setSelectedNode(nodeId)
+          setSelectedEdge(null)
+          clearNodeSelection()
+          clearEdgeSelection()
+        }
       }
     }
   }
@@ -673,10 +748,10 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       setDraggedNodeId(node.id)
       setDragOffset({ x: offsetX, y: offsetY })
       
-      // Select the node
-      setSelectedNode(node.id)
+      // Don't change selection state here - let the click handler manage selection
+      // This prevents interference with multiselect functionality
     }
-  }, [viewTransform, setSelectedNode])
+  }, [viewTransform])
 
   // Handle control point dragging
   const handleControlPointMouseDown = (e, edgeId) => {
@@ -884,6 +959,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             id={node.id}
             data={node.data}
             selected={selectedNode === node.id}
+            isMultiSelected={selectedNodes.includes(node.id)}
             isInHighlightedLoop={isInLoop}
             isInHoveredLoop={isInHoveredLoop}
             highlightedLoopType={highlightedLoop !== null && loops[highlightedLoop] ? loops[highlightedLoop].type : null}
@@ -893,7 +969,6 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             devMode={devMode}
             isFromNode={isCreatingConnection && connectionSource === node.id}
             isCreatingConnection={isCreatingConnection}
-
           />
         </g>
       )
@@ -1051,12 +1126,29 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             onClick={(e) => {
               // Only select if we're not dragging
               if (!isDraggingArrow) {
-                setSelectedEdge(edge.id)
+                // Handle multiselect with Ctrl+click
+                if (e.ctrlKey || e.metaKey) {
+                  // Ctrl/Cmd+click: toggle selection
+                  if (selectedEdges.includes(edge.id)) {
+                    removeFromEdgeSelection(edge.id)
+                  } else {
+                    addToEdgeSelection(edge.id)
+                  }
+                  // Clear single selection when multiselecting
+                  setSelectedNode(null)
+                  setSelectedEdge(null)
+                } else {
+                  // Normal left-click - select single edge
+                  setSelectedEdge(edge.id)
+                  setSelectedNode(null)
+                  clearNodeSelection()
+                  clearEdgeSelection()
+                }
               }
             }}
             onMouseDown={(e) => handleArrowMouseDown(e, edge.id, controlPoint)}
             onMouseEnter={(event) => {
-              if (selectedEdge !== edge.id && !isDraggingArrow) {
+              if (selectedEdge !== edge.id && !selectedEdges.includes(edge.id) && !isDraggingArrow) {
                 // Add hover effect - increase stroke width of visual path
                 const visualPath = event.target.nextElementSibling
                 if (visualPath) {
@@ -1065,7 +1157,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
               }
             }}
             onMouseLeave={(event) => {
-              if (selectedEdge !== edge.id && !isDraggingArrow) {
+              if (selectedEdge !== edge.id && !selectedEdges.includes(edge.id) && !isDraggingArrow) {
                 // Remove hover effect - restore normal stroke width
                 const visualPath = event.target.nextElementSibling
                 if (visualPath) {
@@ -1081,7 +1173,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             stroke={arrowColor}
             strokeOpacity={arrowTransparency}
             strokeWidth={
-              selectedEdge === edge.id ? globalStyles.arrowWidth + 2 : 
+              (selectedEdge === edge.id || selectedEdges.includes(edge.id)) ? globalStyles.arrowWidth + 2 : 
               shouldHighlight ? globalStyles.arrowWidth + 1 : 
               hoveredEdge === edge.id ? globalStyles.arrowWidth + 2 :
               globalStyles.arrowWidth
@@ -1157,7 +1249,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           </text>
           
           {/* Dummy control point (visible when selected or in dev mode) */}
-          {(selectedEdge === edge.id || devMode) && (
+          {(selectedEdge === edge.id || selectedEdges.includes(edge.id) || devMode) && (
             <circle
               cx={dummyControlPoint.x}
               cy={dummyControlPoint.y}

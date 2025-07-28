@@ -33,10 +33,14 @@ function SysLoopHeader({ mode, setMode }) {
     resetGlobalStyles,
     updateSelectedNodeColor,
     updateSelectedEdgeColor,
+    updateSelectedNodesColor,
+    updateSelectedEdgesColor,
     setSelectedNodeColor,
     setSelectedArrowColor,
     selectedNodeColor,
     selectedArrowColor,
+    selectedNodes,
+    selectedEdges,
     diagramName,
     setDiagramName,
     showGrid,
@@ -197,8 +201,12 @@ function SysLoopHeader({ mode, setMode }) {
   }
 
   const handleNodeColorClick = () => {
-    // Like PowerPoint: apply the currently selected color to the selected node
-    if (selectedNode) {
+    // Like PowerPoint: apply the currently selected color to the selected node(s)
+    if (selectedNodes.length > 0) {
+      // Apply to multiselected nodes
+      updateSelectedNodesColor(selectedNodeColor)
+    } else if (selectedNode) {
+      // Apply to single selected node
       updateSelectedNodeColor(selectedNodeColor)
     }
   }
@@ -220,15 +228,21 @@ function SysLoopHeader({ mode, setMode }) {
     if (showArrowColorDropdown) {
       setShowArrowColorDropdown(false)
     }
-    // Apply the color directly to the selected node if one is selected
-    if (selectedNode) {
+    // Apply the color directly to the selected node(s) if any are selected
+    if (selectedNodes.length > 0) {
+      updateSelectedNodesColor(color)
+    } else if (selectedNode) {
       updateSelectedNodeColor(color)
     }
   }
 
   const handleArrowColorClick = () => {
-    // Like PowerPoint: apply the currently selected color to the selected edge
-    if (selectedEdge) {
+    // Like PowerPoint: apply the currently selected color to the selected edge(s)
+    if (selectedEdges.length > 0) {
+      // Apply to multiselected edges
+      updateSelectedEdgesColor(selectedArrowColor)
+    } else if (selectedEdge) {
+      // Apply to single selected edge
       updateSelectedEdgeColor(selectedArrowColor)
     }
   }
@@ -250,8 +264,10 @@ function SysLoopHeader({ mode, setMode }) {
     if (showNodeColorDropdown) {
       setShowNodeColorDropdown(false)
     }
-    // Apply the color directly to the selected edge if one is selected
-    if (selectedEdge) {
+    // Apply the color directly to the selected edge(s) if any are selected
+    if (selectedEdges.length > 0) {
+      updateSelectedEdgesColor(color)
+    } else if (selectedEdge) {
       updateSelectedEdgeColor(color)
     }
   }
@@ -1895,6 +1911,8 @@ function SysLoopHeader({ mode, setMode }) {
             simulationState.currentStep >= simulationState.maxSteps ? 'Simulation completed' : 'Simulation ready'
           }
         />
+
+
         </div>
       </div>
 
