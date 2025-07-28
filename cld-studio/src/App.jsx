@@ -8,7 +8,7 @@ import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
 import ExamplesBrowser from './components/ExamplesBrowser'
 import { useCLDStore } from './stores/cldStore'
-import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2 } from 'lucide-react'
+import { Wrench, Settings as SettingsIcon, Info, HelpCircle } from 'lucide-react'
 import './components/StatusBar.css'
 
 function App() {
@@ -35,8 +35,6 @@ function App() {
     eventsLog,
     undo,
     redo,
-    undoStack,
-    redoStack,
     viewTransform
   } = useCLDStore()
 

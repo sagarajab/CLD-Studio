@@ -69,8 +69,6 @@ export const defaultConfig = {
     minZoom: 0.1,
     maxZoom: 3.0,
     showStatusBar: true,
-    showToolbar: true,
-    showSidebar: true,
     showGrid: false,
   },
   

@@ -453,17 +453,7 @@ function SettingsModal({ isOpen, onClose }) {
                   </label>
                 </div>
 
-                                 <div style={{ marginBottom: '6px' }}>
-                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-                     <input
-                       type="checkbox"
-                       checked={localConfig.ui.showToolbar}
-                       onChange={(e) => updateLocalConfig('ui.showToolbar', e.target.checked)}
-                       style={{ width: '12px', height: '12px' }}
-                     />
-                     Show Toolbar
-                   </label>
-                 </div>
+                
 
                  <div style={{ marginBottom: '6px' }}>
                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>

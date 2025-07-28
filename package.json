@@ -1,7 +1,6 @@
 {
   "name": "cld-studio",
   "version": "1.0.0",
-  "main": "postcss.config.js",
   "scripts": {
     "dev": "cd cld-studio && npm run dev",
     "build": "cd cld-studio && npm run build",
