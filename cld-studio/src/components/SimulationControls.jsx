@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { TimerReset } from 'lucide-react'
 import { useCLDStore } from '../stores/cldStore'
 
 function SimulationControls() {
@@ -19,7 +20,27 @@ function SimulationControls() {
   
   const handleStartSimulation = () => {
     if (selectedNode && perturbationValue !== 0) {
-      initializeSimulation(parseInt(selectedNode), perturbationValue)
+      const success = initializeSimulation(parseInt(selectedNode), perturbationValue)
+      if (success) {
+        console.log('Simulation initialized successfully')
+      } else {
+        console.error('Failed to initialize simulation')
+      }
+    }
+  }
+
+  const handlePlayWithAutoInit = () => {
+    // If simulation is not initialized, initialize it first
+    if (!simulationState.isInitialized && selectedNode && perturbationValue !== 0) {
+      const success = initializeSimulation(parseInt(selectedNode), perturbationValue)
+      if (!success) {
+        console.error('Failed to initialize simulation')
+        return
+      }
+    }
+    // Run the simulation (either after initialization or if already initialized)
+    if (simulationState.isInitialized && !simulationState.isRunning) {
+      runSimulation()
     }
   }
   
@@ -80,20 +101,43 @@ function SimulationControls() {
       
       {/* Control Buttons */}
       <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+        {/* Settings Button - moved before play button */}
         <button
-          onClick={runSimulation}
-          disabled={!simulationState.perturbedNode || simulationState.isRunning}
+          onClick={() => updateSimulationSettings({ stepDelay: simulationState.stepDelay })}
           style={{
             padding: '4px 8px',
             fontSize: '11px',
             border: '1px solid #d1d5db',
             borderRadius: '3px',
             background: '#ffffff',
-            cursor: !simulationState.perturbedNode || simulationState.isRunning ? 'not-allowed' : 'pointer',
-            opacity: !simulationState.perturbedNode || simulationState.isRunning ? 0.5 : 1
+            cursor: 'pointer'
           }}
+          title="Simulation Settings"
         >
-          {simulationState.isRunning ? 'Running' : 'Start'}
+          ⚙️
+        </button>
+        
+        <button
+          onClick={handlePlayWithAutoInit}
+          disabled={!simulationState.isInitialized || simulationState.isRunning}
+          style={{
+            padding: '4px 8px',
+            fontSize: '11px',
+            border: '1px solid #d1d5db',
+            borderRadius: '3px',
+            background: '#ffffff',
+            cursor: !simulationState.isInitialized || simulationState.isRunning ? 'not-allowed' : 'pointer',
+            opacity: !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1
+          }}
+          title={
+            !simulationState.isInitialized ? "Initialize simulation first" :
+            simulationState.isRunning ? "Simulation is running" :
+            simulationState.isPaused ? "Resume simulation" :
+            simulationState.currentStep >= simulationState.maxSteps ? "Re-run simulation from beginning" :
+            "Start simulation"
+          }
+        >
+          {simulationState.isRunning ? 'Running' : simulationState.isPaused ? 'Resume' : simulationState.currentStep >= simulationState.maxSteps ? 'Re-run' : 'Start'}
         </button>
         
         <button
@@ -114,15 +158,15 @@ function SimulationControls() {
         
         <button
           onClick={stepBackSimulation}
-          disabled={!simulationState.perturbedNode || simulationState.isRunning || simulationState.currentStep <= 0}
+          disabled={!simulationState.isInitialized || simulationState.isRunning || simulationState.currentStep <= 0}
           style={{
             padding: '4px 8px',
             fontSize: '11px',
             border: '1px solid #d1d5db',
             borderRadius: '3px',
             background: '#ffffff',
-            cursor: !simulationState.perturbedNode || simulationState.isRunning || simulationState.currentStep <= 0 ? 'not-allowed' : 'pointer',
-            opacity: !simulationState.perturbedNode || simulationState.isRunning || simulationState.currentStep <= 0 ? 0.5 : 1
+            cursor: !simulationState.isInitialized || simulationState.isRunning || simulationState.currentStep <= 0 ? 'not-allowed' : 'pointer',
+            opacity: !simulationState.isInitialized || simulationState.isRunning || simulationState.currentStep <= 0 ? 0.5 : 1
           }}
         >
           ←
@@ -130,15 +174,15 @@ function SimulationControls() {
         
         <button
           onClick={stepSimulation}
-          disabled={!simulationState.perturbedNode || simulationState.isRunning}
+          disabled={!simulationState.isInitialized || simulationState.isRunning}
           style={{
             padding: '4px 8px',
             fontSize: '11px',
             border: '1px solid #d1d5db',
             borderRadius: '3px',
             background: '#ffffff',
-            cursor: !simulationState.perturbedNode || simulationState.isRunning ? 'not-allowed' : 'pointer',
-            opacity: !simulationState.perturbedNode || simulationState.isRunning ? 0.5 : 1
+            cursor: !simulationState.isInitialized || simulationState.isRunning ? 'not-allowed' : 'pointer',
+            opacity: !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1
           }}
         >
           →
@@ -152,9 +196,13 @@ function SimulationControls() {
             border: '1px solid #d1d5db',
             borderRadius: '3px',
             background: '#ffffff',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
           }}
         >
+          <TimerReset style={{ width: '12px', height: '12px' }} />
           Reset
         </button>
       </div>
@@ -165,15 +213,15 @@ function SimulationControls() {
           <span style={{ fontSize: '11px' }}>Speed:</span>
           <input
             type="range"
-            min="100"
-            max="2000"
-            step="100"
-            value={simulationState.stepDelay}
-            onChange={(e) => updateSimulationSettings({ stepDelay: parseInt(e.target.value) })}
+            min="1"
+            max="40"
+            step="0.5"
+            value={Math.round(2000 / simulationState.stepDelay * 10) / 10}
+            onChange={(e) => updateSimulationSettings({ stepDelay: Math.round(2000 / parseFloat(e.target.value)) })}
             disabled={simulationState.isRunning}
             style={{ width: '80px' }}
           />
-          <span style={{ fontSize: '11px', minWidth: '40px' }}>{simulationState.stepDelay}ms</span>
+          <span style={{ fontSize: '11px', minWidth: '40px' }}>{Math.round(2000 / simulationState.stepDelay * 10) / 10}x</span>
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -198,17 +246,20 @@ function SimulationControls() {
           {simulationState.perturbedNode && (
             <span> | Node: {nodes.find(n => n.id === simulationState.perturbedNode)?.data.label || `Node ${simulationState.perturbedNode}`}</span>
           )}
+          {simulationState.isInitialized && (
+            <span> | ✓ Initialized</span>
+          )}
         </div>
         
         {/* LED Status Indicator */}
         <div 
           className={`simulation-led ${
-            !simulationState.perturbedNode ? 'inactive' :
+            !simulationState.isInitialized ? 'inactive' :
             simulationState.isRunning ? 'running' :
             simulationState.isPaused ? 'paused' : 'ready'
           }`}
           title={
-            !simulationState.perturbedNode ? 'Simulation not initialized' :
+            !simulationState.isInitialized ? 'Simulation not initialized' :
             simulationState.isRunning ? 'Simulation running' :
             simulationState.isPaused ? 'Simulation paused' : 'Simulation ready'
           }

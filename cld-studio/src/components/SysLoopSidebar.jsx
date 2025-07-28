@@ -4,7 +4,6 @@ import AnalysisTab from './AnalysisTab'
 import { Infinity } from 'lucide-react'
 
 function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hoveredLoop, setHoveredLoop }) {
-  const [problemStatement, setProblemStatement] = useState('Describe the problem here...')
   const [showMatrix, setShowMatrix] = useState(false)
   const [activeTab, setActiveTab] = useState('problem') // 'problem', 'loops', 'analysis'
   const [sidebarWidth, setSidebarWidth] = useState(300)
@@ -34,7 +33,9 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
     adjacencyMatrix,
     simulationMode,
     toggleSimulationMode,
-    updateLoopDescription
+    updateLoopDescription,
+    problemStatement,
+    updateProblemStatement
   } = useCLDStore()
 
   // Constants for sidebar dimensions
@@ -272,7 +273,7 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
             <textarea
               className="problem-textarea"
               value={problemStatement}
-              onChange={(e) => setProblemStatement(e.target.value)}
+              onChange={(e) => updateProblemStatement(e.target.value)}
               placeholder="Describe the problem here..."
             />
           </div>

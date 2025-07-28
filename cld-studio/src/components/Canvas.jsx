@@ -29,6 +29,10 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   
+  // Panning state
+  const [isPanning, setIsPanning] = useState(false)
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  
   // Node dragging state
   const [isDraggingNode, setIsDraggingNode] = useState(false)
   const [draggedNodeId, setDraggedNodeId] = useState(null)
@@ -69,6 +73,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     viewTransform,
     setViewTransform,
     updateViewTransform,
+    panningMode,
     globalStyles,
     showGrid,
     simulationMode,
@@ -197,6 +202,13 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     const y = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
     
     if (event.button === 0) { // Left mouse button
+      // Handle panning mode
+      if (panningMode) {
+        setIsPanning(true)
+        setPanStart({ x: event.clientX, y: event.clientY })
+        return
+      }
+      
       // Check for double-click to add node
       const currentTime = Date.now()
       const currentPosition = { x: event.clientX, y: event.clientY }
@@ -257,14 +269,18 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         setMousePosition({ x: 0, y: 0 })
       }
     }
-  }, [mode, addNode, setSelectedNode, setSelectedEdge, viewTransform, isCreatingConnection, connectionSource, updateNode, highlightedLoop, clearHighlightedLoop])
+  }, [mode, addNode, setSelectedNode, setSelectedEdge, viewTransform, isCreatingConnection, connectionSource, updateNode, highlightedLoop, clearHighlightedLoop, panningMode])
 
   // Update cursor based on interaction state
   useEffect(() => {
     if (isCreatingConnection) {
       document.body.style.cursor = 'crosshair'
+    } else if (isPanning) {
+      document.body.style.cursor = 'move'
     } else if (isDragging) {
       document.body.style.cursor = 'grabbing'
+    } else if (panningMode) {
+      document.body.style.cursor = 'move'
     } else {
       document.body.style.cursor = 'default'
     }
@@ -272,7 +288,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     return () => {
       document.body.style.cursor = 'default'
     }
-  }, [isCreatingConnection, isDragging])
+  }, [isCreatingConnection, isPanning, isDragging, panningMode])
 
 
 
@@ -336,7 +352,15 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   }, [storeEdges, storeNodes, updateEdge, getEllipseDimensions, globalStyles])
 
   const handleCanvasMouseMove = useCallback((event) => {
-    if (isDragging) {
+    if (isPanning) {
+      const deltaX = event.clientX - panStart.x
+      const deltaY = event.clientY - panStart.y
+      updateViewTransform({
+        x: viewTransform.x + deltaX,
+        y: viewTransform.y + deltaY
+      })
+      setPanStart({ x: event.clientX, y: event.clientY })
+    } else if (isDragging) {
       const deltaX = event.clientX - dragStart.x
       const deltaY = event.clientY - dragStart.y
       updateViewTransform({
@@ -506,10 +530,11 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         updateControlPointsForNodeMove(draggedNodeId, oldPosition, newPosition)
       }
     }
-     }, [isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, viewTransform, storeNodes, updateNode, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId])
+     }, [isPanning, panStart, isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, viewTransform, storeNodes, updateNode, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId])
 
   const handleCanvasMouseUp = useCallback(() => {
     setIsDragging(false)
+    setIsPanning(false)
     
     // Stop node dragging
     if (isDraggingNode) {
@@ -635,7 +660,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     
     event.stopPropagation()
     
-    if (event.button === 0 && !simulationMode) { // Left click only, not during simulation mode
+    if (event.button === 0) { // Left click - allow during simulation mode
       const rect = canvasRef.current.getBoundingClientRect()
       const mouseX = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
       const mouseY = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
@@ -651,7 +676,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       // Select the node
       setSelectedNode(node.id)
     }
-  }, [viewTransform, setSelectedNode, simulationMode])
+  }, [viewTransform, setSelectedNode])
 
   // Handle control point dragging
   const handleControlPointMouseDown = (e, edgeId) => {
@@ -1182,7 +1207,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   }
 
   return (
-    <div className="canvas-container" ref={canvasRef}>
+    <div className={`canvas-container ${simulationMode ? 'simulation-mode' : ''}`} ref={canvasRef}>
       <svg
         width="100%"
         height="100%"
@@ -1193,8 +1218,10 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         onContextMenu={(e) => e.preventDefault()}
         onClick={handleCanvasClick}
         style={{ 
-          cursor: isDragging ? 'grabbing' : 
-                 (isDraggingArrow ? 'pointer' : 'default'),
+          cursor: isPanning ? 'move' : 
+                 (isDragging ? 'grabbing' : 
+                 (panningMode ? 'move' :
+                 (isDraggingArrow ? 'pointer' : 'default'))),
           userSelect: 'none'
         }}
       >
@@ -1233,11 +1260,31 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           {/* Edges */}
           {renderEdges()}
           
-          {/* Connection guide line */}
-          {renderConnectionGuideLine()}
-        </g>
-      </svg>
-    </div>
+                  {/* Connection guide line */}
+        {renderConnectionGuideLine()}
+      </g>
+    </svg>
+    
+    {/* Simulation Mode Indicator */}
+    {simulationMode && (
+      <div style={{
+        position: 'absolute',
+        top: '10px',
+        right: '10px',
+        background: 'rgba(220, 38, 38, 0.9)',
+        color: 'white',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        pointerEvents: 'none',
+        zIndex: 1000,
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+      }}>
+        SIMULATION MODE
+      </div>
+    )}
+  </div>
   )
 }
 

@@ -157,8 +157,11 @@ function AdjacencyMatrix({ onClose }) {
     }
   }
 
-  const handleCellLeave = () => {
-    setHoveredCell(null)
+  const handleCellLeave = (rowIndex, colIndex) => {
+    // Only clear hover state if we're actually leaving the cell
+    if (hoveredCell && hoveredCell.rowIndex === rowIndex && hoveredCell.colIndex === colIndex) {
+      setHoveredCell(null)
+    }
   }
 
 
@@ -172,8 +175,8 @@ function AdjacencyMatrix({ onClose }) {
     
     // Add highlight effect for hovered cells (except diagonal)
     if (isHovered && !isDiagonal) {
-      // Add prominent border for hovered cells
-      border = '2px solid #007bff' // Blue border for hovered cells
+      // Use outline instead of border to avoid layout shifts
+      border = '1px solid #007bff' // Keep same border width
     }
     
     return {
@@ -184,7 +187,7 @@ function AdjacencyMatrix({ onClose }) {
       textAlign: 'center',
       verticalAlign: 'middle',
       cursor: isDiagonal ? 'default' : 'pointer',
-      transition: 'all 0.2s ease'
+      boxSizing: 'border-box'
     }
   }
 
@@ -235,7 +238,7 @@ function AdjacencyMatrix({ onClose }) {
                         className="matrix-cell"
                         style={getCellStyle(rowIndex, colIndex, cell)}
                         onMouseEnter={() => handleCellHover(rowIndex, colIndex)}
-                        onMouseLeave={handleCellLeave}
+                        onMouseLeave={() => handleCellLeave(rowIndex, colIndex)}
                       >
                         {/* Empty cell - no text */}
                       </td>
@@ -248,22 +251,17 @@ function AdjacencyMatrix({ onClose }) {
 
           {/* Static Node Info Display */}
           <div className="node-info-display">
-            {hoveredCell ? (
-              <div className="node-relationship">
-                <span className="source-node">{getNodeLabel(adjacencyMatrix.nodeIds[hoveredCell.rowIndex])}</span>
-                <span className="arrow">→</span>
-                <span className="target-node">{getNodeLabel(adjacencyMatrix.nodeIds[hoveredCell.colIndex])}</span>
-                <span className={`connection-type ${adjacencyMatrix.matrix[hoveredCell.rowIndex][hoveredCell.colIndex] === 1 ? 'positive' : 
-                   adjacencyMatrix.matrix[hoveredCell.rowIndex][hoveredCell.colIndex] === -1 ? 'negative' : 'none'}`}>
-                  {adjacencyMatrix.matrix[hoveredCell.rowIndex][hoveredCell.colIndex] === 1 ? 'Positive' : 
-                   adjacencyMatrix.matrix[hoveredCell.rowIndex][hoveredCell.colIndex] === -1 ? 'Negative' : 'No Connection'}
-                </span>
-              </div>
-            ) : (
-              <div className="node-info-placeholder">
-                Hover over a cell to see the relationship
-              </div>
-            )}
+            <div className="node-relationship">
+              {hoveredCell && adjacencyMatrix.matrix[hoveredCell.rowIndex][hoveredCell.colIndex] !== 0 ? (
+                <>
+                  <span className="source-node">{getNodeLabel(adjacencyMatrix.nodeIds[hoveredCell.rowIndex])}</span>
+                  <span className="arrow">→</span>
+                  <span className="target-node">{getNodeLabel(adjacencyMatrix.nodeIds[hoveredCell.colIndex])}</span>
+                </>
+              ) : (
+                <span className="placeholder-text">Hover over a connection</span>
+              )}
+            </div>
           </div>
 
           <div className="matrix-legend">

@@ -34,6 +34,7 @@ const useCLDStore = create((set, get) => ({
   simulationState: {
     isRunning: false,
     isPaused: false,
+    isInitialized: false, // Track if simulation is properly initialized
     currentStep: 0,
     maxSteps: 50,
     stepDelay: 500, // milliseconds
@@ -45,8 +46,14 @@ const useCLDStore = create((set, get) => ({
     perturbationValue: 0
   },
   
+  // Panning mode state
+  panningMode: false,
+  
   // Events log for status bar
   eventsLog: [],
+  
+  // Problem statement for sandbox mode
+  problemStatement: '',
   
   // Selected colors state (like PowerPoint)
   selectedNodeColor: loadConfig().colors.defaultSelected.nodeColor,
@@ -65,6 +72,11 @@ const useCLDStore = create((set, get) => ({
   
   resetView: () => {
     set({ viewTransform: { x: 0, y: 0, scale: 1 } })
+  },
+  
+  // Panning mode operations
+  togglePanningMode: () => {
+    set((state) => ({ panningMode: !state.panningMode }))
   },
   
   // Grid operations
@@ -110,10 +122,26 @@ const useCLDStore = create((set, get) => ({
   updateNode: (nodeId, updates) => {
     const { simulationState, simulationMode } = get()
     
-    // Disable node updates during simulation mode
+    // Allow position updates during simulation (for dragging), but prevent other changes
     if (simulationMode || simulationState.isRunning) {
-      console.warn('Cannot update nodes while simulation mode is enabled')
-      return false
+      // Only allow position updates during simulation
+      if (updates.position) {
+        // Allow dragging nodes during simulation
+        set((state) => ({
+          nodes: state.nodes.map(node => 
+            node.id === nodeId 
+              ? { 
+                  ...node, 
+                  position: updates.position
+                }
+              : node
+          )
+        }))
+        return true
+      } else {
+        console.warn('Cannot update node properties while simulation mode is enabled (except position)')
+        return false
+      }
     }
     
     set((state) => ({
@@ -229,10 +257,26 @@ const useCLDStore = create((set, get) => ({
   updateEdge: (edgeId, updates) => {
     const { simulationState, simulationMode } = get()
     
-    // Disable edge updates during simulation mode
+    // Allow radius updates during simulation (for dragging), but prevent other changes
     if (simulationMode || simulationState.isRunning) {
-      console.warn('Cannot update edges while simulation mode is enabled')
-      return false
+      // Only allow radius updates during simulation
+      if (updates.radius !== undefined) {
+        // Allow dragging edge radius during simulation
+        set((state) => ({
+          edges: state.edges.map(edge => 
+            edge.id === edgeId 
+              ? { 
+                  ...edge, 
+                  data: { ...edge.data, radius: updates.radius }
+                }
+              : edge
+          )
+        }))
+        return true
+      } else {
+        console.warn('Cannot update edge properties while simulation mode is enabled (except radius)')
+        return false
+      }
     }
     
     set((state) => ({
@@ -377,6 +421,15 @@ const useCLDStore = create((set, get) => ({
     set({ eventsLog: [] })
   },
   
+  // Problem statement operations
+  updateProblemStatement: (statement) => {
+    set({ problemStatement: statement })
+  },
+  
+  clearProblemStatement: () => {
+    set({ problemStatement: '' })
+  },
+  
   // Diagram operations
   clearDiagram: () => {
     set({ 
@@ -387,18 +440,152 @@ const useCLDStore = create((set, get) => ({
       highlightedLoop: null,
       adjacencyMatrix: [],
       allLoops: [],
-      diagramName: 'Untitled'
+      diagramName: 'Untitled',
+      problemStatement: ''
     })
   },
   
   saveDiagram: () => {
-    const { nodes, edges, diagramName } = get()
+    const { 
+      nodes, 
+      edges, 
+      diagramName, 
+      mode, 
+      currentProblem, 
+      viewTransform, 
+      globalStyles, 
+      adjacencyMatrix, 
+      allLoops,
+      simulationState,
+      showGrid,
+      config,
+      problemStatement
+    } = get()
+    
+    // Enhanced diagram data with comprehensive metadata
     const diagramData = {
-      nodes,
-      edges,
+      // Basic diagram info
       diagramName,
       timestamp: new Date().toISOString(),
-      version: '1.0'
+      version: '2.0',
+      createdWith: 'CLD Studio',
+      
+      // Problem statement and context
+      problemStatement: {
+        mode,
+        currentProblem: currentProblem ? {
+          id: currentProblem.id,
+          title: currentProblem.title,
+          description: currentProblem.description
+        } : null,
+        // For sandbox mode, capture the problem statement from the sidebar
+        description: mode === 'sandbox' ? problemStatement || 'Free-form causal loop diagram' : currentProblem?.description || '',
+        customStatement: problemStatement || ''
+      },
+      
+      // Complete node information
+      nodes: nodes.map(node => ({
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        data: {
+          label: node.data.label || 'New Node',
+          type: node.data.type || 'variable', // variable, constant, parameter
+          color: node.data.color || '#000000',
+          description: node.data.description || '',
+          value: node.data.value || 0, // For simulation
+          // Any other custom node properties
+          ...node.data
+        }
+      })),
+      
+      // Complete edge information
+      edges: edges.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: edge.type,
+        data: {
+          polarity: edge.data.polarity || 'positive',
+          color: edge.data.color || '#6b7280',
+          width: edge.data.width || 1.5,
+          transparency: edge.data.transparency || 1.0,
+          radius: edge.data.radius || 30,
+          description: edge.data.description || '',
+          // Any other custom edge properties
+          ...edge.data
+        },
+        style: edge.style,
+        markerEnd: edge.markerEnd
+      })),
+      
+      // View and layout information
+      viewTransform,
+      showGrid,
+      
+      // Global styling settings
+      globalStyles,
+      
+      // Analysis data
+      analysis: {
+        adjacencyMatrix,
+        allLoops: allLoops.map(loop => ({
+          nodes: loop.nodes,
+          edges: loop.edges,
+          type: loop.type, // 'Reinforcing' or 'Balancing'
+          description: loop.description || '',
+          length: loop.nodes.length
+        })),
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+        positiveEdges: edges.filter(e => e.data.polarity === 'positive').length,
+        negativeEdges: edges.filter(e => e.data.polarity === 'negative').length
+      },
+      
+      // Simulation state (if any)
+      simulation: simulationState.isInitialized ? {
+        isRunning: simulationState.isRunning,
+        isPaused: simulationState.isPaused,
+        isInitialized: simulationState.isInitialized,
+        currentStep: simulationState.currentStep,
+        maxSteps: simulationState.maxSteps,
+        stepDelay: simulationState.stepDelay,
+        stateVector: simulationState.stateVector,
+        accumulatedValues: simulationState.accumulatedValues,
+        history: simulationState.history,
+        valueHistory: simulationState.valueHistory,
+        perturbedNode: simulationState.perturbedNode,
+        perturbationValue: simulationState.perturbationValue
+      } : null,
+      
+      // Configuration snapshot
+      config: {
+        constraints: config.constraints,
+        colors: config.colors,
+        performance: config.performance,
+        ui: config.ui,
+        file: config.file
+      },
+      
+      // Metadata
+      metadata: {
+        totalNodes: nodes.length,
+        totalEdges: edges.length,
+        nodeTypes: {
+          variable: nodes.filter(n => n.data.type === 'variable').length,
+          constant: nodes.filter(n => n.data.type === 'constant').length,
+          parameter: nodes.filter(n => n.data.type === 'parameter').length
+        },
+        edgePolarities: {
+          positive: edges.filter(e => e.data.polarity === 'positive').length,
+          negative: edges.filter(e => e.data.polarity === 'negative').length
+        },
+        loops: {
+          total: allLoops.length,
+          reinforcing: allLoops.filter(l => l.type === 'Reinforcing').length,
+          balancing: allLoops.filter(l => l.type === 'Balancing').length
+        }
+      }
     }
     
     // Create JSON file for download
@@ -428,22 +615,96 @@ const useCLDStore = create((set, get) => ({
         reader.onload = (e) => {
           try {
             const diagramData = JSON.parse(e.target.result)
-            set({
-              nodes: diagramData.nodes || [],
-              edges: diagramData.edges || [],
-              diagramName: diagramData.diagramName || 'Untitled',
-              selectedNode: null,
-              selectedEdge: null,
-              isLoading: false
-            })
+            
+            // Handle both new enhanced format (v2.0) and legacy format (v1.0)
+            const isEnhancedFormat = diagramData.version === '2.0' || diagramData.problemStatement
+            
+            if (isEnhancedFormat) {
+              // Enhanced format - load all available data
+              set({
+                // Basic diagram data
+                nodes: diagramData.nodes || [],
+                edges: diagramData.edges || [],
+                diagramName: diagramData.diagramName || 'Untitled',
+                
+                // Problem statement and mode
+                mode: diagramData.problemStatement?.mode || 'sandbox',
+                currentProblem: diagramData.problemStatement?.currentProblem || null,
+                problemStatement: diagramData.problemStatement?.customStatement || '',
+                
+                // View and layout
+                viewTransform: diagramData.viewTransform || { x: 0, y: 0, scale: 1 },
+                showGrid: diagramData.showGrid !== undefined ? diagramData.showGrid : false,
+                
+                // Global styles (merge with current config)
+                globalStyles: diagramData.globalStyles ? 
+                  { ...get().globalStyles, ...diagramData.globalStyles } : 
+                  get().globalStyles,
+                
+                // Analysis data
+                adjacencyMatrix: diagramData.analysis?.adjacencyMatrix || [],
+                allLoops: diagramData.analysis?.allLoops || [],
+                
+                // Simulation state (if available)
+                simulationState: diagramData.simulation ? {
+                  ...get().simulationState,
+                  ...diagramData.simulation,
+                  isInitialized: diagramData.simulation.isInitialized || false
+                } : get().simulationState,
+                
+                // Reset selection states
+                selectedNode: null,
+                selectedEdge: null,
+                highlightedLoop: null,
+                isLoading: false
+              })
+              
+              // Update config if provided
+              if (diagramData.config) {
+                const currentConfig = get().config
+                const newConfig = { ...currentConfig, ...diagramData.config }
+                set({ config: newConfig })
+                saveConfig(newConfig)
+              }
+              
+              // Log loading information
+              console.log('Loaded enhanced diagram:', {
+                name: diagramData.diagramName,
+                version: diagramData.version,
+                nodes: diagramData.nodes?.length || 0,
+                edges: diagramData.edges?.length || 0,
+                mode: diagramData.problemStatement?.mode,
+                hasSimulation: !!diagramData.simulation,
+                metadata: diagramData.metadata
+              })
+              
+            } else {
+              // Legacy format - load basic data only
+              set({
+                nodes: diagramData.nodes || [],
+                edges: diagramData.edges || [],
+                diagramName: diagramData.diagramName || 'Untitled',
+                selectedNode: null,
+                selectedEdge: null,
+                isLoading: false
+              })
+              
+              console.log('Loaded legacy diagram:', {
+                name: diagramData.diagramName,
+                version: diagramData.version || '1.0',
+                nodes: diagramData.nodes?.length || 0,
+                edges: diagramData.edges?.length || 0
+              })
+            }
             
             // Update graph analysis asynchronously to avoid blocking UI
             setTimeout(() => {
               get().updateGraphAnalysis()
             }, 0)
+            
           } catch (error) {
             console.error('Error loading diagram:', error)
-            alert('Error loading diagram file')
+            alert('Error loading diagram file. Please check if the file is a valid CLD Studio diagram.')
             set({ isLoading: false })
           }
         }
@@ -688,6 +949,165 @@ const useCLDStore = create((set, get) => ({
       console.error('Error exporting as PDF:', error)
       alert('Failed to export as PDF. Please try again.')
     }
+  },
+  
+  // Export detailed diagram data for analysis
+  exportDetailedData: () => {
+    const { 
+      nodes, 
+      edges, 
+      diagramName, 
+      mode, 
+      currentProblem, 
+      viewTransform, 
+      globalStyles, 
+      adjacencyMatrix, 
+      allLoops,
+      simulationState,
+      showGrid,
+      config,
+      problemStatement
+    } = get()
+    
+    // Create comprehensive analysis data
+    const analysisData = {
+      // Basic info
+      diagramName,
+      timestamp: new Date().toISOString(),
+      version: '2.0',
+      createdWith: 'CLD Studio',
+      
+      // Problem context
+      problemStatement: {
+        mode,
+        currentProblem: currentProblem ? {
+          id: currentProblem.id,
+          title: currentProblem.title,
+          description: currentProblem.description
+        } : null,
+        description: mode === 'sandbox' ? problemStatement || 'Free-form causal loop diagram' : currentProblem?.description || '',
+        customStatement: problemStatement || ''
+      },
+      
+      // Complete node analysis
+      nodes: nodes.map(node => ({
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        data: {
+          label: node.data.label || 'New Node',
+          type: node.data.type || 'variable',
+          color: node.data.color || '#000000',
+          description: node.data.description || '',
+          value: node.data.value || 0
+        },
+        // Analysis data
+        inDegree: edges.filter(e => e.target === node.id).length,
+        outDegree: edges.filter(e => e.source === node.id).length,
+        totalDegree: edges.filter(e => e.source === node.id || e.target === node.id).length
+      })),
+      
+      // Complete edge analysis
+      edges: edges.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: edge.type,
+        data: {
+          polarity: edge.data.polarity || 'positive',
+          color: edge.data.color || '#6b7280',
+          width: edge.data.width || 1.5,
+          transparency: edge.data.transparency || 1.0,
+          radius: edge.data.radius || 30,
+          description: edge.data.description || ''
+        },
+        style: edge.style,
+        markerEnd: edge.markerEnd
+      })),
+      
+      // Graph analysis
+      graphAnalysis: {
+        totalNodes: nodes.length,
+        totalEdges: edges.length,
+        density: nodes.length > 1 ? edges.length / (nodes.length * (nodes.length - 1)) : 0,
+        averageDegree: nodes.length > 0 ? (2 * edges.length) / nodes.length : 0,
+        nodeTypes: {
+          variable: nodes.filter(n => n.data.type === 'variable').length,
+          constant: nodes.filter(n => n.data.type === 'constant').length,
+          parameter: nodes.filter(n => n.data.type === 'parameter').length
+        },
+        edgePolarities: {
+          positive: edges.filter(e => e.data.polarity === 'positive').length,
+          negative: edges.filter(e => e.data.polarity === 'negative').length
+        },
+        // Node degree distribution
+        degreeDistribution: {
+          isolated: nodes.filter(n => edges.filter(e => e.source === n.id || e.target === n.id).length === 0).length,
+          leaf: nodes.filter(n => edges.filter(e => e.source === n.id || e.target === n.id).length === 1).length,
+          hub: nodes.filter(n => edges.filter(e => e.source === n.id || e.target === n.id).length > 3).length
+        }
+      },
+      
+      // Loop analysis
+      loopAnalysis: {
+        totalLoops: allLoops.length,
+        reinforcingLoops: allLoops.filter(l => l.type === 'Reinforcing').length,
+        balancingLoops: allLoops.filter(l => l.type === 'Balancing').length,
+        loopLengths: allLoops.map(l => l.nodes.length),
+        averageLoopLength: allLoops.length > 0 ? allLoops.reduce((sum, l) => sum + l.nodes.length, 0) / allLoops.length : 0,
+        loops: allLoops.map(loop => ({
+          nodes: loop.nodes,
+          edges: loop.edges,
+          type: loop.type,
+          description: loop.description || '',
+          length: loop.nodes.length
+        }))
+      },
+      
+      // Adjacency matrix
+      adjacencyMatrix,
+      
+      // View and styling
+      viewTransform,
+      showGrid,
+      globalStyles,
+      
+      // Simulation data (if available)
+      simulation: simulationState.isInitialized ? {
+        isRunning: simulationState.isRunning,
+        isPaused: simulationState.isPaused,
+        isInitialized: simulationState.isInitialized,
+        currentStep: simulationState.currentStep,
+        maxSteps: simulationState.maxSteps,
+        stepDelay: simulationState.stepDelay,
+        stateVector: simulationState.stateVector,
+        accumulatedValues: simulationState.accumulatedValues,
+        history: simulationState.history,
+        valueHistory: simulationState.valueHistory,
+        perturbedNode: simulationState.perturbedNode,
+        perturbationValue: simulationState.perturbationValue
+      } : null,
+      
+      // Configuration
+      config: {
+        constraints: config.constraints,
+        colors: config.colors,
+        performance: config.performance,
+        ui: config.ui,
+        file: config.file
+      }
+    }
+    
+    // Create JSON file for download
+    const dataStr = JSON.stringify(analysisData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    const safeName = diagramName && diagramName.trim() !== '' ? diagramName.trim() : 'Untitled'
+    link.download = `${safeName}-analysis.json`
+    link.click()
+    URL.revokeObjectURL(url)
   },
   
   // Mode operations
@@ -1073,6 +1493,7 @@ const useCLDStore = create((set, get) => ({
         ...state.simulationState,
         isRunning: false,
         isPaused: false,
+        isInitialized: false,
         currentStep: 0,
         stateVector: [],
         history: [],
@@ -1089,14 +1510,14 @@ const useCLDStore = create((set, get) => ({
     
     if (nodes.length === 0) {
       console.warn('No nodes available for simulation')
-      return
+      return false
     }
     
     // Find the node index
     const nodeIndex = nodes.findIndex(node => node.id === perturbedNodeId)
     if (nodeIndex === -1) {
       console.warn(`Node ${perturbedNodeId} not found`)
-      return
+      return false
     }
     
     // Calculate clamped value
@@ -1131,14 +1552,40 @@ const useCLDStore = create((set, get) => ({
         perturbedNode: perturbedNodeId,
         perturbationValue,
         currentStep: 0,
-        isRunning: false
+        isRunning: false,
+        isPaused: false, // Ensure paused state is reset on initialization
+        isInitialized: true
       }
     }))
+    
+    return true
   },
   
   runSimulation: () => {
     const { simulationState, nodes, edges } = get()
     if (simulationState.isRunning) return
+    
+    // Check if simulation is properly initialized
+    if (!simulationState.isInitialized) {
+      console.warn('Cannot run simulation: not initialized')
+      return
+    }
+    
+    // If simulation is completed, reset it to step 0 to allow re-running
+    if (simulationState.currentStep >= simulationState.maxSteps) {
+      console.log('Simulation completed, resetting to allow re-run')
+      set((state) => ({
+        simulationState: {
+          ...state.simulationState,
+          currentStep: 0,
+          stateVector: state.simulationState.history[0] || [],
+          accumulatedValues: state.simulationState.valueHistory[0] || [],
+          history: [state.simulationState.history[0] || []],
+          valueHistory: [state.simulationState.valueHistory[0] || []],
+          isPaused: false // Reset paused state when re-running
+        }
+      }))
+    }
     
     console.log('Starting simulation with:', {
       nodes: nodes.length,
@@ -1156,11 +1603,14 @@ const useCLDStore = create((set, get) => ({
     
     const runStep = () => {
       const currentState = get().simulationState
-      if (!currentState.isRunning || currentState.currentStep >= currentState.maxSteps) {
+      // Don't proceed if simulation is paused or completed
+      if (!currentState.isRunning || currentState.isPaused || currentState.currentStep >= currentState.maxSteps) {
         set((state) => ({
           simulationState: {
             ...state.simulationState,
-            isRunning: false
+            isRunning: false,
+            // Preserve paused state when simulation completes
+            isPaused: currentState.isPaused
           }
         }))
         return
@@ -1205,8 +1655,20 @@ const useCLDStore = create((set, get) => ({
   stepSimulation: () => {
     const { simulationState, nodes, edges } = get()
     
+    // Check if simulation is properly initialized
+    if (!simulationState.isInitialized) {
+      console.warn('Cannot step simulation: not initialized')
+      return
+    }
+    
+    // Check if simulation is already completed
+    if (simulationState.currentStep >= simulationState.maxSteps) {
+      console.warn('Simulation already completed')
+      return
+    }
+    
     // Only step if we have a valid state vector
-    if (simulationState.stateVector.length === 0 || simulationState.currentStep >= simulationState.maxSteps) {
+    if (simulationState.stateVector.length === 0) {
       return
     }
     
@@ -1232,6 +1694,12 @@ const useCLDStore = create((set, get) => ({
 
   stepBackSimulation: () => {
     const { simulationState } = get()
+    
+    // Check if simulation is properly initialized
+    if (!simulationState.isInitialized) {
+      console.warn('Cannot step back simulation: not initialized')
+      return
+    }
     
     // Only step back if we have history and not at the beginning
     if (simulationState.history.length <= 1 || simulationState.currentStep <= 0) {
@@ -1260,6 +1728,7 @@ const useCLDStore = create((set, get) => ({
         ...state.simulationState,
         isRunning: false,
         isPaused: false,
+        isInitialized: false,
         currentStep: 0,
         stateVector: [],
         accumulatedValues: [],
@@ -1331,6 +1800,12 @@ const useCLDStore = create((set, get) => ({
         ...settings
       }
     }))
+  },
+  
+  // Helper function to check if simulation is completed
+  isSimulationCompleted: () => {
+    const { simulationState } = get()
+    return simulationState.currentStep >= simulationState.maxSteps
   },
   
   // Test function for debugging propagation

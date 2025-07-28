@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { TimerReset } from 'lucide-react'
 import { useCLDStore } from '../stores/cldStore'
 import StateVectorModal from './StateVectorModal'
 import PlotsModal from './PlotsModal'
@@ -20,6 +21,7 @@ function Toolbar() {
     exportAsPNG,
     exportAsSVG,
     exportAsPDF,
+    exportDetailedData,
     nodes, 
     edges,
     mode,
@@ -76,6 +78,15 @@ function Toolbar() {
     setShowExportDropdown(false)
   }
 
+  const handleExportDetailedData = () => {
+    if (nodes.length === 0) {
+      alert('No nodes to export. Please add some nodes to your diagram.')
+      return
+    }
+    exportDetailedData()
+    setShowExportDropdown(false)
+  }
+
   const toggleExportDropdown = () => {
     setShowExportDropdown(!showExportDropdown)
   }
@@ -86,7 +97,27 @@ function Toolbar() {
 
   const handleStartSimulation = () => {
     if (selectedNode && perturbationValue !== 0) {
-      initializeSimulation(parseInt(selectedNode), perturbationValue)
+      const success = initializeSimulation(parseInt(selectedNode), perturbationValue)
+      if (success) {
+        console.log('Simulation initialized successfully')
+      } else {
+        console.error('Failed to initialize simulation')
+      }
+    }
+  }
+
+  const handlePlayWithAutoInit = () => {
+    // If simulation is not initialized, initialize it first
+    if (!simulationState.isInitialized && selectedNode && perturbationValue !== 0) {
+      const success = initializeSimulation(parseInt(selectedNode), perturbationValue)
+      if (!success) {
+        console.error('Failed to initialize simulation')
+        return
+      }
+    }
+    // Run the simulation (either after initialization or if already initialized)
+    if (simulationState.isInitialized && !simulationState.isRunning) {
+      runSimulation()
     }
   }
 
@@ -183,6 +214,19 @@ function Toolbar() {
                   </button>
                   <div className="border-t border-gray-200 my-1"></div>
                   <button
+                    onClick={handleExportDetailedData}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14,2 14,8 20,8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10,9 9,9 8,9"/>
+                    </svg>
+                    <span>Export Detailed Data (JSON)</span>
+                  </button>
+                  <button
                     onClick={handleExportMatrix}
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2"
                   >
@@ -245,10 +289,16 @@ function Toolbar() {
             
             {/* Control Buttons */}
             <button
-              onClick={runSimulation}
-              disabled={!simulationState.perturbedNode || simulationState.isRunning}
+              onClick={handlePlayWithAutoInit}
+              disabled={!simulationState.isInitialized || simulationState.isRunning}
               className="toolbar-button"
-              title="Start simulation"
+              title={
+                !simulationState.isInitialized ? "Initialize simulation first" :
+                simulationState.isRunning ? "Simulation is running" :
+                simulationState.isPaused ? "Resume simulation" :
+                simulationState.currentStep >= simulationState.maxSteps ? "Re-run simulation from beginning" :
+                "Start simulation"
+              }
             >
               ▶
             </button>
@@ -264,7 +314,7 @@ function Toolbar() {
             
             <button
               onClick={stepBackSimulation}
-              disabled={!simulationState.perturbedNode || simulationState.isRunning || simulationState.currentStep <= 0}
+              disabled={!simulationState.isInitialized || simulationState.isRunning || simulationState.currentStep <= 0}
               className="toolbar-button"
               title="Step back"
             >
@@ -273,7 +323,7 @@ function Toolbar() {
             
             <button
               onClick={stepSimulation}
-              disabled={!simulationState.perturbedNode || simulationState.isRunning}
+              disabled={!simulationState.isInitialized || simulationState.isRunning}
               className="toolbar-button"
               title="Step forward"
             >
@@ -285,7 +335,7 @@ function Toolbar() {
               className="toolbar-button"
               title="Reset simulation"
             >
-              ⏹
+              <TimerReset className="w-4 h-4" />
             </button>
             
             {/* Settings Dropdown */}
@@ -304,15 +354,15 @@ function Toolbar() {
                       <span className="text-xs font-medium">Speed:</span>
                       <input
                         type="range"
-                        min="100"
-                        max="2000"
-                        step="100"
-                        value={simulationState.stepDelay}
-                        onChange={(e) => updateSimulationSettings({ stepDelay: parseInt(e.target.value) })}
+                        min="1"
+                        max="40"
+                        step="0.5"
+                        value={Math.round(2000 / simulationState.stepDelay * 10) / 10}
+                        onChange={(e) => updateSimulationSettings({ stepDelay: Math.round(2000 / parseFloat(e.target.value)) })}
                         disabled={simulationState.isRunning}
                         className="w-24"
                       />
-                      <span className="text-xs min-w-12">{simulationState.stepDelay}ms</span>
+                      <span className="text-xs min-w-12">{Math.round(2000 / simulationState.stepDelay * 10) / 10}x</span>
                     </div>
                     
                     <div className="flex items-center justify-between">

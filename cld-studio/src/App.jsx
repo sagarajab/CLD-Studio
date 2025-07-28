@@ -157,7 +157,14 @@ function App() {
           
           {/* Events Log - Show only latest event */}
           <div className="status-item events">
-            <div className="events-log">
+            <div className="events-log" style={{ 
+              width: '400px', 
+              minWidth: '400px',
+              maxWidth: '400px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}>
               {eventsLog.length > 0 ? (
                 <span className="event-item" title={eventsLog[0].timestamp}>
                   {eventsLog[0].message}
@@ -175,7 +182,6 @@ function App() {
             <span style={{ fontSize: '12px', color: '#6b7280' }}>Auth: <b>[auth-status]</b></span>
           </div>
           <div className="status-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span className="zoom-level">{Math.round(viewTransform.scale * 100)}%</span>
             {/* Dev Mode Toggle */}
             <button
               onClick={() => setDevMode(!devMode)}

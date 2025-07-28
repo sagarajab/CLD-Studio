@@ -1,0 +1,156 @@
+{
+  "diagramName": "Test Enhanced Diagram",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "version": "2.0",
+  "createdWith": "CLD Studio",
+  "problemStatement": {
+    "mode": "sandbox",
+    "currentProblem": null,
+    "description": "This is a test problem statement for the enhanced save format",
+    "customStatement": "This is a test problem statement for the enhanced save format"
+  },
+  "nodes": [
+    {
+      "id": 1,
+      "type": "cldNode",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "data": {
+        "label": "Population",
+        "type": "variable",
+        "color": "#000000",
+        "description": "Total population size",
+        "value": 0
+      }
+    },
+    {
+      "id": 2,
+      "type": "cldNode",
+      "position": {
+        "x": 300,
+        "y": 100
+      },
+      "data": {
+        "label": "Birth Rate",
+        "type": "variable",
+        "color": "#000000",
+        "description": "Rate of population growth",
+        "value": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": 1,
+      "source": 1,
+      "target": 2,
+      "type": "cldEdge",
+      "data": {
+        "polarity": "positive",
+        "color": "#6b7280",
+        "width": 1.5,
+        "transparency": 1.0,
+        "radius": 30,
+        "description": "Population affects birth rate positively"
+      },
+      "style": {
+        "stroke": "#059669",
+        "strokeWidth": 2
+      },
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#059669"
+      }
+    }
+  ],
+  "viewTransform": {
+    "x": 0,
+    "y": 0,
+    "scale": 1
+  },
+  "showGrid": false,
+  "globalStyles": {
+    "nodeFont": "Inter",
+    "nodeFontSize": 14,
+    "arrowColor": "#6b7280",
+    "arrowWidth": 1.5,
+    "arrowTransparency": 1.0,
+    "arrowHeadSize": 2.0
+  },
+  "analysis": {
+    "adjacencyMatrix": [
+      [0, 1],
+      [0, 0]
+    ],
+    "allLoops": [],
+    "nodeCount": 2,
+    "edgeCount": 1,
+    "positiveEdges": 1,
+    "negativeEdges": 0
+  },
+  "simulation": null,
+  "config": {
+    "constraints": {
+      "maxNodes": 50,
+      "maxEdges": 200,
+      "maxLoopsForAnalysis": 50
+    },
+    "colors": {
+      "palette": [
+        "#000000",
+        "#FFFFFF",
+        "#FF0000",
+        "#00FF00",
+        "#0000FF"
+      ],
+      "defaultSelected": {
+        "nodeColor": "#000000",
+        "arrowColor": "#6b7280"
+      },
+      "defaults": {
+        "nodeColor": "#000000",
+        "arrowColor": "#6b7280"
+      }
+    },
+    "performance": {
+      "enableLoopDetection": true,
+      "enableAdjacencyMatrix": true,
+      "asyncGraphAnalysis": true
+    },
+    "ui": {
+      "defaultZoom": 1.0,
+      "minZoom": 0.1,
+      "maxZoom": 3.0,
+      "showStatusBar": true,
+      "showToolbar": true,
+      "showSidebar": true,
+      "showGrid": false
+    },
+    "file": {
+      "defaultExtension": ".cld",
+      "supportedExtensions": [".cld", ".json"],
+      "autoSave": false,
+      "autoSaveInterval": 30000
+    }
+  },
+  "metadata": {
+    "totalNodes": 2,
+    "totalEdges": 1,
+    "nodeTypes": {
+      "variable": 2,
+      "constant": 0,
+      "parameter": 0
+    },
+    "edgePolarities": {
+      "positive": 1,
+      "negative": 0
+    },
+    "loops": {
+      "total": 0,
+      "reinforcing": 0,
+      "balancing": 0
+    }
+  }
+} 
