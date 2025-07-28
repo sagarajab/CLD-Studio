@@ -171,6 +171,11 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           return
         }
         
+        // Don't delete if user is editing text (check if target is an input/textarea)
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+          return
+        }
+        
         if (selectedNode) {
           deleteNode(selectedNode)
           setSelectedNode(null)

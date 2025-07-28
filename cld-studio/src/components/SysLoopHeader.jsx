@@ -516,15 +516,16 @@ function SysLoopHeader({ mode, setMode }) {
 
       {/* Menu Bar - Centered */}
       <div className="header-center">
-        {/* Hamburger Menu */}
-        <div className="hamburger-container" style={{ position: 'relative', marginRight: '16px' }}>
-          <button
-            className="menu-icon-btn"
-            onClick={toggleHamburgerDropdown}
-            title="File Menu"
-          >
-            <Menu className="menu-icon" />
-          </button>
+        <div className="menu-bar">
+          {/* Hamburger Menu - Now part of the main menu bar */}
+          <div className="menu-item hamburger-container" style={{ position: 'relative' }}>
+            <button
+              className="menu-icon-btn"
+              onClick={toggleHamburgerDropdown}
+              title="File Menu"
+            >
+              <Menu className="menu-icon" />
+            </button>
           {showHamburgerDropdown && (
             <div 
               className="hamburger-dropdown" 
@@ -774,9 +775,9 @@ function SysLoopHeader({ mode, setMode }) {
             </div>
           )}
         </div>
-        
-        <div className="menu-bar">
-          {menuItems.map((item, index) => (
+        {/* <-- This closes the hamburger menu container */}
+
+        {menuItems.map((item, index) => (
             <div key={index} className="menu-item">
               {item.type === 'color' ? (
                 <div className="color-picker-container">
@@ -815,7 +816,7 @@ function SysLoopHeader({ mode, setMode }) {
                       position: 'absolute',
                       bottom: '-3px',
                       left: '0',
-                      right: '0',
+                      width: '32px', // Width of the main icon button only
                       height: '3px',
                       backgroundColor: getCurrentNodeColor(),
                       borderRadius: '1px',
@@ -887,7 +888,7 @@ function SysLoopHeader({ mode, setMode }) {
                       position: 'absolute',
                       bottom: '-3px',
                       left: '0',
-                      right: '0',
+                      width: '32px', // Width of the main icon button only
                       height: '3px',
                       backgroundColor: getCurrentArrowColor(),
                       borderRadius: '1px',
@@ -1322,8 +1323,8 @@ function SysLoopHeader({ mode, setMode }) {
             </div>
           ))}
         </div>
+      
       </div>
-
       {/* Simulation Controls */}
       <div className="header-center" style={{ 
         display: 'flex', 

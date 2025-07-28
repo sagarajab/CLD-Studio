@@ -22,17 +22,32 @@ function CLDNode({
   const [isHovered, setIsHovered] = useState(false)
   const inputRef = useRef(null)
   const textRef = useRef(null)
-  const { updateNode, globalStyles, simulationMode, simulationState, nodes } = useCLDStore()
+  const { updateNode, globalStyles, simulationMode, simulationState, nodes, addEvent } = useCLDStore()
 
   // Calculate ellipse dimensions based on text content with wrapping
   const ellipseDimensions = useMemo(() => {
     return getEllipseDimensions(label, {
-      fontSize: globalStyles.nodeFontSize
+      fontSize: globalStyles.nodeFontSize,
+      onConstraintViolation: addEvent
     })
-  }, [label, globalStyles.nodeFontSize])
+  }, [label, globalStyles.nodeFontSize, addEvent])
 
   const handleLabelChange = (e) => {
-    setLabel(e.target.value)
+    const newValue = e.target.value
+    const lines = newValue.split('\n')
+    
+    // Check character limit
+    if (newValue.length > 80) {
+      addEvent('⚠️ Character limit exceeded (max 80 characters)')
+      return
+    }
+    
+    // Check if adding this change would exceed 4 lines
+    if (lines.length <= 4) {
+      setLabel(newValue)
+    } else {
+      addEvent('⚠️ Line limit exceeded (max 4 lines)')
+    }
   }
 
   const handleLabelBlur = () => {
@@ -166,7 +181,7 @@ function CLDNode({
           x={ellipseDimensions.textPadding}
           y={ellipseDimensions.textPadding}
           width={ellipseDimensions.width - ellipseDimensions.textPadding * 2}
-          height={ellipseDimensions.height - ellipseDimensions.textPadding * 2}
+          height={Math.max(ellipseDimensions.height - ellipseDimensions.textPadding * 2, 100)}
           style={{ overflow: 'visible' }}
         >
           <textarea
@@ -188,19 +203,17 @@ function CLDNode({
               resize: 'none',
               fontFamily: globalStyles.nodeFont,
               lineHeight: `${globalStyles.nodeFontSize + 4}px`,
-              padding: '0',
+              padding: '4px',
               margin: '0',
-              verticalAlign: 'middle',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              verticalAlign: 'top',
+              display: 'block',
               wordWrap: 'break-word',
               overflowWrap: 'break-word',
               whiteSpace: 'pre-wrap',
-              pointerEvents: 'auto'
+              pointerEvents: 'auto',
+              overflow: 'hidden'
             }}
             placeholder="Enter label..."
-            maxLength={100} // Prevent extremely long text
           />
         </foreignObject>
       ) : (

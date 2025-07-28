@@ -6,8 +6,8 @@ import Canvas from './components/Canvas'
 import SysLoopHeader from './components/SysLoopHeader'
 import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
-import SimulationDebug from './components/SimulationDebug'
 import { useCLDStore } from './stores/cldStore'
+import { Wrench, Settings as SettingsIcon, Info, HelpCircle } from 'lucide-react'
 
 function App() {
   const [mode, setMode] = useState('sandbox')
@@ -134,8 +134,7 @@ function App() {
           </ReactFlowProvider>
         </div>
         
-        {/* Simulation Debug Panel */}
-        <SimulationDebug />
+        {/* Simulation Debug Panel - Removed */}
       </div>
 
       {/* Status Bar */}
@@ -155,16 +154,9 @@ function App() {
           </div>
           
           {/* Simulation Mode Indicator */}
-          {simulationMode && (
-            <div className="status-item simulation">
-              <span className="status-label">SIMULATION</span>
-              <span className="status-count">ACTIVE</span>
-            </div>
-          )}
           
           {/* Events Log - Show only latest event */}
           <div className="status-item events">
-            <span className="status-label">Latest:</span>
             <div className="events-log">
               {eventsLog.length > 0 ? (
                 <span className="event-item" title={eventsLog[0].timestamp}>
@@ -177,29 +169,88 @@ function App() {
           </div>
         </div>
         <div className="status-right">
-          <div className="status-controls">
+          <div className="status-user-session-auth" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginRight: '16px' }}>
+            <span style={{ fontSize: '12px', color: '#6b7280' }}>User: <b>[username]</b></span>
+            <span style={{ fontSize: '12px', color: '#6b7280' }}>Session: <b>[session-id]</b></span>
+            <span style={{ fontSize: '12px', color: '#6b7280' }}>Auth: <b>[auth-status]</b></span>
+          </div>
+          <div className="status-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className="zoom-level">{Math.round(viewTransform.scale * 100)}%</span>
-            
             {/* Dev Mode Toggle */}
             <button
               onClick={() => setDevMode(!devMode)}
               style={{
-                background: devMode ? '#3b82f6' : 'transparent',
-                color: devMode ? 'white' : '#6b7280',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                padding: '4px 8px',
-                fontSize: '11px',
-                cursor: 'pointer',
+                background: 'none',
+                border: 'none',
+                padding: '4px',
                 marginLeft: '10px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px'
+                cursor: 'pointer',
+                color: devMode ? 'red' : '#6b7280',
+                transition: 'color 0.2s',
               }}
               title="Toggle Dev Mode"
+              className="statusbar-icon-btn"
             >
-              <span style={{ fontSize: '12px' }}>🔧</span>
-              {devMode ? 'DEV' : ''}
+              <Wrench size={18} style={{ verticalAlign: 'middle' }} />
+            </button>
+            {/* Settings Button */}
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '4px',
+                marginLeft: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                color: '#6b7280',
+                transition: 'color 0.2s',
+              }}
+              title="Application Settings"
+              className="statusbar-icon-btn"
+            >
+              <SettingsIcon size={18} style={{ verticalAlign: 'middle' }} />
+            </button>
+            {/* About Button */}
+            <button
+              onClick={() => alert('About: CLD Studio v1.0')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '4px',
+                marginLeft: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                color: '#6b7280',
+                transition: 'color 0.2s',
+              }}
+              title="About"
+              className="statusbar-icon-btn"
+            >
+              <Info size={18} style={{ verticalAlign: 'middle' }} />
+            </button>
+            {/* Help Button */}
+            <button
+              onClick={() => alert('Help: For assistance, visit the documentation.')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '4px',
+                marginLeft: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                color: '#6b7280',
+                transition: 'color 0.2s',
+              }}
+              title="Help"
+              className="statusbar-icon-btn"
+            >
+              <HelpCircle size={18} style={{ verticalAlign: 'middle' }} />
             </button>
           </div>
         </div>

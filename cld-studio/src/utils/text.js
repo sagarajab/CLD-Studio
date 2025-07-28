@@ -7,16 +7,19 @@
  * @param {number} [fontSize=16] - The font size in pixels.
  * @returns {string[]} Array of wrapped lines.
  */
-export function wrapText(text, maxWidth, fontSize = 16) {
-  const charWidth = fontSize * 0.6
+export function wrapText(text, maxWidth, fontSize = 16, onConstraintViolation = null) {
+  const charWidth = fontSize * 0.7
   const lines = text.split('\n')
   const wrappedLines = []
+  
   for (const line of lines) {
     const words = line.split(' ')
     let currentLine = ''
+    
     for (const word of words) {
       const testLine = currentLine ? `${currentLine} ${word}` : word
       const testWidth = testLine.length * charWidth
+      
       if (testWidth <= maxWidth) {
         currentLine = testLine
       } else {
@@ -26,19 +29,34 @@ export function wrapText(text, maxWidth, fontSize = 16) {
         } else {
           // Single word is too long, break it into chunks
           const wordChunks = []
-          for (let i = 0; i < word.length; i += Math.floor(maxWidth / charWidth)) {
-            wordChunks.push(word.slice(i, i + Math.floor(maxWidth / charWidth)))
+          const charsPerLine = Math.max(1, Math.floor(maxWidth / charWidth))
+          
+          for (let i = 0; i < word.length; i += charsPerLine) {
+            const chunk = word.slice(i, i + charsPerLine)
+            if (chunk.length > 0) {
+              wordChunks.push(chunk)
+            }
           }
           wrappedLines.push(...wordChunks)
           currentLine = ''
         }
       }
     }
+    
     if (currentLine) {
       wrappedLines.push(currentLine)
     }
   }
-  return wrappedLines
+  
+  // Check if we need to truncate due to line limit
+  const originalLineCount = wrappedLines.length
+  const truncatedLines = wrappedLines.slice(0, 4)
+  
+  if (originalLineCount > 4 && onConstraintViolation) {
+    onConstraintViolation('⚠️ Text truncated: too many lines (max 4)')
+  }
+  
+  return truncatedLines
 }
 
 /**
@@ -57,12 +75,13 @@ export function getEllipseDimensions(label, options = {}) {
     baseWidth = 60,
     baseHeight = 40,
     padding = 32,
-    maxTextWidth = 120,
+    maxTextWidth = 200,
     fontSize = 16,
+    onConstraintViolation = null,
   } = options
   const lineHeight = fontSize + 4
-  const wrappedLines = wrapText(label, maxTextWidth, fontSize)
-  const calculateLineWidth = (line) => line.length * fontSize * 0.6
+  const wrappedLines = wrapText(label, maxTextWidth, fontSize, onConstraintViolation)
+  const calculateLineWidth = (line) => line.length * fontSize * 0.7
   const lineWidths = wrappedLines.map(calculateLineWidth)
   const maxLineWidth = Math.max(...lineWidths, 0)
   const textWidth = Math.min(maxLineWidth, maxTextWidth)
