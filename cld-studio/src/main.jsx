@@ -1,26 +1,27 @@
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { getUrl } from 'aws-amplify/storage';
+
 fetch('/amplify_outputs.json')
-  .then(res => res.json())
+  .then(res => {
+    if (!res.ok) throw new Error('Failed to load amplify_outputs.json');
+    return res.json();
+  })
   .then(outputs => {
     Amplify.configure(outputs);
+
+    // Optional: expose for debugging
+    window.Amplify = Amplify;
+    window.generateClient = generateClient;
+    window.getUrl = getUrl;
+
+    console.log('Amplify configured successfully:', outputs);
+
+    // You can initialize your app here too if needed
+  })
+  .catch(err => {
+    console.error('Amplify config error:', err);
   });
-
-console.log('Amplify imported:', !!Amplify);
-console.log('generateClient imported:', !!generateClient);
-console.log('getUrl imported:', !!getUrl);
-console.log('Outputs loaded:', !!outputs);
-
-Amplify.configure(outputs);
-
-// Make Amplify functions available globally for debugging
-window.Amplify = Amplify;
-window.generateClient = generateClient;
-window.getUrl = getUrl;
-console.log('Amplify set on window:', !!window.Amplify);
-console.log('generateClient set on window:', !!window.generateClient);
-console.log('getUrl set on window:', !!window.getUrl);
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
