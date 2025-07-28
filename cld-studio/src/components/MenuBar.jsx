@@ -1,9 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useCLDStore } from '../stores/cldStore'
-import { Grid } from 'lucide-react'
+import { Grid, Undo2, Redo2 } from 'lucide-react'
 
 function MenuBar({ mode, setMode }) {
-  const { saveDiagram, loadDiagram, clearDiagram, exportMatrix, exportAsPNG, exportAsSVG, exportAsPDF, exportDetailedData, showGrid, toggleGrid } = useCLDStore()
+  const { 
+    saveDiagram, 
+    loadDiagram, 
+    clearDiagram, 
+    exportMatrix, 
+    exportAsPNG, 
+    exportAsSVG, 
+    exportAsPDF, 
+    exportDetailedData, 
+    showGrid, 
+    toggleGrid,
+    undo,
+    redo,
+    undoStack,
+    redoStack
+  } = useCLDStore()
   const [activeMenu, setActiveMenu] = useState(null)
   const menuRef = useRef(null)
 
@@ -64,6 +79,16 @@ function MenuBar({ mode, setMode }) {
 
   const handleExportDetailedData = () => {
     exportDetailedData()
+    setActiveMenu(null)
+  }
+
+  const handleUndo = () => {
+    undo()
+    setActiveMenu(null)
+  }
+
+  const handleRedo = () => {
+    redo()
     setActiveMenu(null)
   }
 
@@ -193,17 +218,25 @@ function MenuBar({ mode, setMode }) {
         {activeMenu === 'edit' && (
           <div className="absolute top-full left-0 mt-1 w-48 menu-dropdown">
             <div className="py-1">
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                </svg>
-                <span>Undo</span>
+              <button 
+                onClick={handleUndo}
+                disabled={undoStack.length === 0}
+                className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 ${
+                  undoStack.length > 0 ? 'hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Undo2 className="w-4 h-4" />
+                <span>Undo {undoStack.length > 0 ? `(${undoStack.length})` : ''}</span>
               </button>
-              <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
-                </svg>
-                <span>Redo</span>
+              <button 
+                onClick={handleRedo}
+                disabled={redoStack.length === 0}
+                className={`w-full text-left px-4 py-2 text-sm flex items-center space-x-2 ${
+                  redoStack.length > 0 ? 'hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Redo2 className="w-4 h-4" />
+                <span>Redo {redoStack.length > 0 ? `(${redoStack.length})` : ''}</span>
               </button>
               <div className="border-t border-gray-200 my-1"></div>
               <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2">
@@ -276,6 +309,30 @@ function MenuBar({ mode, setMode }) {
           title={showGrid ? 'Hide Grid' : 'Show Grid'}
         >
           <Grid className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Undo/Redo Quick Access Buttons */}
+      <div className="flex items-center space-x-1">
+        <button
+          onClick={undo}
+          disabled={undoStack.length === 0}
+          className={`p-2 rounded menu-item ${
+            undoStack.length > 0 ? 'hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'
+          }`}
+          title={`Undo (Ctrl+Z)${undoStack.length > 0 ? ` - ${undoStack.length} steps available` : ' - Nothing to undo'}`}
+        >
+          <Undo2 className="w-5 h-5" />
+        </button>
+        <button
+          onClick={redo}
+          disabled={redoStack.length === 0}
+          className={`p-2 rounded menu-item ${
+            redoStack.length > 0 ? 'hover:bg-gray-100' : 'text-gray-400 cursor-not-allowed'
+          }`}
+          title={`Redo (Ctrl+Y)${redoStack.length > 0 ? ` - ${redoStack.length} steps available` : ' - Nothing to redo'}`}
+        >
+          <Redo2 className="w-5 h-5" />
         </button>
       </div>
 

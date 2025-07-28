@@ -7,7 +7,7 @@ import SysLoopHeader from './components/SysLoopHeader'
 import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
 import { useCLDStore } from './stores/cldStore'
-import { Wrench, Settings as SettingsIcon, Info, HelpCircle } from 'lucide-react'
+import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2 } from 'lucide-react'
 
 function App() {
   const [mode, setMode] = useState('sandbox')
@@ -34,7 +34,11 @@ function App() {
     toggleSimulationMode,
     stepSimulation,
     stepBackSimulation,
-    eventsLog
+    eventsLog,
+    undo,
+    redo,
+    undoStack,
+    redoStack
   } = useCLDStore()
 
   // Set initial browser title based on diagram name
@@ -86,13 +90,26 @@ function App() {
         event.preventDefault()
         stepBackSimulation()
       }
+      
+      // Undo/Redo shortcuts
+      if (event.ctrlKey || event.metaKey) {
+        if (event.key === 'z' && !event.shiftKey) {
+          // Ctrl+Z: Undo
+          event.preventDefault()
+          undo()
+        } else if ((event.key === 'z' && event.shiftKey) || event.key === 'y') {
+          // Ctrl+Shift+Z or Ctrl+Y: Redo
+          event.preventDefault()
+          redo()
+        }
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [loopViewMode, exitLoopViewMode, clearHighlightedLoop, simulationMode, simulationState, stepSimulation, stepBackSimulation])
+  }, [loopViewMode, exitLoopViewMode, clearHighlightedLoop, simulationMode, simulationState, stepSimulation, stepBackSimulation, undo, redo])
 
   // Handle clicking outside to exit loop view mode
   const handleAppClick = (event) => {
@@ -182,6 +199,48 @@ function App() {
             <span style={{ fontSize: '12px', color: '#6b7280' }}>Auth: <b>[auth-status]</b></span>
           </div>
           <div className="status-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Undo Button */}
+            <button
+              onClick={undo}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '4px',
+                marginLeft: '10px',
+                display: 'flex',
+                alignItems: 'center',
+                cursor: undoStack.length > 0 ? 'pointer' : 'not-allowed',
+                color: undoStack.length > 0 ? '#6b7280' : '#d1d5db',
+                transition: 'color 0.2s',
+              }}
+              title={`Undo (Ctrl+Z)${undoStack.length > 0 ? ` - ${undoStack.length} steps available` : ' - Nothing to undo'}`}
+              className="statusbar-icon-btn"
+              disabled={undoStack.length === 0}
+            >
+              <Undo2 size={18} style={{ verticalAlign: 'middle' }} />
+            </button>
+            
+            {/* Redo Button */}
+            <button
+              onClick={redo}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: '4px',
+                marginLeft: '2px',
+                display: 'flex',
+                alignItems: 'center',
+                cursor: redoStack.length > 0 ? 'pointer' : 'not-allowed',
+                color: redoStack.length > 0 ? '#6b7280' : '#d1d5db',
+                transition: 'color 0.2s',
+              }}
+              title={`Redo (Ctrl+Y)${redoStack.length > 0 ? ` - ${redoStack.length} steps available` : ' - Nothing to redo'}`}
+              className="statusbar-icon-btn"
+              disabled={redoStack.length === 0}
+            >
+              <Redo2 size={18} style={{ verticalAlign: 'middle' }} />
+            </button>
+            
             {/* Dev Mode Toggle */}
             <button
               onClick={() => setDevMode(!devMode)}

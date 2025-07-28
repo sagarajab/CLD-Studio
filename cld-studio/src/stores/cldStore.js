@@ -21,6 +21,12 @@ const useCLDStore = create((set, get) => ({
   isLoading: false, // Loading state for user feedback
   config: loadConfig(), // Load config from localStorage
   
+  // Undo/Redo state
+  undoStack: [], // Array of state snapshots for undo
+  redoStack: [], // Array of state snapshots for redo
+  maxUndoSteps: 10, // Maximum number of undo steps
+  isUndoRedoAction: false, // Flag to prevent recording during undo/redo operations
+  
   // Adjacency matrix and loop detection
   adjacencyMatrix: [], // Mathematical representation of the graph
   allLoops: [], // All detected loops in the graph
@@ -88,7 +94,7 @@ const useCLDStore = create((set, get) => ({
   
   // Node operations
   addNode: (position, label = 'New Node') => {
-    const { nodes, config, updateGraphAnalysis, simulationState, simulationMode, addEvent } = get()
+    const { nodes, config, updateGraphAnalysis, simulationState, simulationMode, addEvent, recordStateChange } = get()
     
     // Disable node addition during simulation mode
     if (simulationMode || simulationState.isRunning) {
@@ -118,11 +124,12 @@ const useCLDStore = create((set, get) => ({
     }))
     updateGraphAnalysis()
     addEvent(`Node "${label}" added`)
+    recordStateChange()
     return true
   },
   
   updateNode: (nodeId, updates) => {
-    const { simulationState, simulationMode } = get()
+    const { simulationState, simulationMode, recordStateChange } = get()
     
     // Allow position updates during simulation (for dragging), but prevent other changes
     if (simulationMode || simulationState.isRunning) {
@@ -159,6 +166,11 @@ const useCLDStore = create((set, get) => ({
       )
     }))
     get().updateGraphAnalysis()
+    
+    // Record state change for non-position updates (position updates are handled by drag functions)
+    if (!updates.position) {
+      recordStateChange()
+    }
   },
 
   updateNodeDescription: (nodeId, description) => {
@@ -176,7 +188,7 @@ const useCLDStore = create((set, get) => ({
   },
   
   deleteNode: (nodeId) => {
-    const { simulationState, simulationMode, addEvent } = get()
+    const { simulationState, simulationMode, addEvent, recordStateChange } = get()
     
     // Disable node deletion during simulation mode
     if (simulationMode || simulationState.isRunning) {
@@ -195,11 +207,12 @@ const useCLDStore = create((set, get) => ({
     }))
     get().updateGraphAnalysis()
     addEvent(`Node "${nodeLabel}" deleted`)
+    recordStateChange()
   },
   
   // Edge operations
   addEdge: (source, target, polarity = 'positive') => {
-    const { edges, config, updateGraphAnalysis, simulationState, simulationMode, addEvent, nodes } = get()
+    const { edges, config, updateGraphAnalysis, simulationState, simulationMode, addEvent, nodes, recordStateChange } = get()
     
     // Disable edge addition during simulation mode
     if (simulationMode || simulationState.isRunning) {
@@ -253,11 +266,12 @@ const useCLDStore = create((set, get) => ({
     }))
     updateGraphAnalysis()
     addEvent(`Arrow "${sourceLabel}" → "${targetLabel}" added`)
+    recordStateChange()
     return true
   },
   
   updateEdge: (edgeId, updates) => {
-    const { simulationState, simulationMode } = get()
+    const { simulationState, simulationMode, recordStateChange } = get()
     
     // Allow radius updates during simulation (for dragging), but prevent other changes
     if (simulationMode || simulationState.isRunning) {
@@ -292,6 +306,11 @@ const useCLDStore = create((set, get) => ({
       )
     }))
     get().updateGraphAnalysis()
+    
+    // Record state change for non-radius updates (radius updates are handled by drag functions)
+    if (updates.radius === undefined) {
+      recordStateChange()
+    }
   },
 
   updateEdgeDescription: (edgeId, description) => {
@@ -338,7 +357,7 @@ const useCLDStore = create((set, get) => ({
   },
   
   deleteEdge: (edgeId) => {
-    const { simulationState, simulationMode, addEvent, nodes } = get()
+    const { simulationState, simulationMode, addEvent, nodes, recordStateChange } = get()
     
     // Disable edge deletion during simulation mode
     if (simulationMode || simulationState.isRunning) {
@@ -357,6 +376,7 @@ const useCLDStore = create((set, get) => ({
     }))
     get().updateGraphAnalysis()
     addEvent(`Arrow "${sourceLabel}" → "${targetLabel}" deleted`)
+    recordStateChange()
   },
   
   // Selection
@@ -530,7 +550,9 @@ const useCLDStore = create((set, get) => ({
       adjacencyMatrix: [],
       allLoops: [],
       diagramName: 'Untitled',
-      problemStatement: ''
+      problemStatement: '',
+      undoStack: [],
+      redoStack: []
     })
   },
   
@@ -741,11 +763,14 @@ const useCLDStore = create((set, get) => ({
                   isInitialized: diagramData.simulation.isInitialized || false
                 } : get().simulationState,
                 
-                // Reset selection states
-                selectedNode: null,
-                selectedEdge: null,
-                highlightedLoop: null,
-                isLoading: false
+                              // Reset selection states
+              selectedNode: null,
+              selectedEdge: null,
+              highlightedLoop: null,
+              isLoading: false,
+              // Clear undo/redo stacks when loading new diagram
+              undoStack: [],
+              redoStack: []
               })
               
               // Update config if provided
@@ -775,7 +800,10 @@ const useCLDStore = create((set, get) => ({
                 diagramName: diagramData.diagramName || 'Untitled',
                 selectedNode: null,
                 selectedEdge: null,
-                isLoading: false
+                isLoading: false,
+                // Clear undo/redo stacks when loading new diagram
+                undoStack: [],
+                redoStack: []
               })
               
               console.log('Loaded legacy diagram:', {
@@ -1895,6 +1923,150 @@ const useCLDStore = create((set, get) => ({
   isSimulationCompleted: () => {
     const { simulationState } = get()
     return simulationState.currentStep >= simulationState.maxSteps
+  },
+  
+  // Undo/Redo functions
+  createStateSnapshot: () => {
+    const { nodes, edges, viewTransform, diagramName, mode, currentProblem, problemStatement } = get()
+    return {
+      nodes: JSON.parse(JSON.stringify(nodes)),
+      edges: JSON.parse(JSON.stringify(edges)),
+      viewTransform: { ...viewTransform },
+      diagramName,
+      mode,
+      currentProblem: currentProblem ? { ...currentProblem } : null,
+      problemStatement,
+      timestamp: Date.now()
+    }
+  },
+  
+  recordStateChange: () => {
+    const { isUndoRedoAction, undoStack, redoStack, maxUndoSteps, createStateSnapshot } = get()
+    
+    // Don't record if this is an undo/redo action
+    if (isUndoRedoAction) return
+    
+    const snapshot = createStateSnapshot()
+    
+    set((state) => ({
+      undoStack: [...state.undoStack, snapshot].slice(-maxUndoSteps),
+      redoStack: [] // Clear redo stack when new action is performed
+    }))
+  },
+  
+  undo: () => {
+    const { undoStack, redoStack, isUndoRedoAction, createStateSnapshot } = get()
+    
+    if (undoStack.length === 0) {
+      console.log('Nothing to undo')
+      return false
+    }
+    
+    // Create snapshot of current state for redo
+    const currentSnapshot = createStateSnapshot()
+    
+    // Get the last state from undo stack
+    const previousState = undoStack[undoStack.length - 1]
+    
+    // Set flag to prevent recording this action
+    set({ isUndoRedoAction: true })
+    
+    // Restore the previous state (excluding selection states)
+    set({
+      nodes: previousState.nodes,
+      edges: previousState.edges,
+      viewTransform: previousState.viewTransform,
+      diagramName: previousState.diagramName,
+      mode: previousState.mode,
+      currentProblem: previousState.currentProblem,
+      problemStatement: previousState.problemStatement,
+      undoStack: undoStack.slice(0, -1),
+      redoStack: [...redoStack, currentSnapshot]
+    })
+    
+    // Update graph analysis
+    setTimeout(() => {
+      get().updateGraphAnalysis()
+      set({ isUndoRedoAction: false })
+    }, 0)
+    
+    return true
+  },
+  
+  redo: () => {
+    const { undoStack, redoStack, isUndoRedoAction, createStateSnapshot } = get()
+    
+    if (redoStack.length === 0) {
+      console.log('Nothing to redo')
+      return false
+    }
+    
+    // Create snapshot of current state for undo
+    const currentSnapshot = createStateSnapshot()
+    
+    // Get the last state from redo stack
+    const nextState = redoStack[redoStack.length - 1]
+    
+    // Set flag to prevent recording this action
+    set({ isUndoRedoAction: true })
+    
+    // Restore the next state (excluding selection states)
+    set({
+      nodes: nextState.nodes,
+      edges: nextState.edges,
+      viewTransform: nextState.viewTransform,
+      diagramName: nextState.diagramName,
+      mode: nextState.mode,
+      currentProblem: nextState.currentProblem,
+      problemStatement: nextState.problemStatement,
+      undoStack: [...undoStack, currentSnapshot],
+      redoStack: redoStack.slice(0, -1)
+    })
+    
+    // Update graph analysis
+    setTimeout(() => {
+      get().updateGraphAnalysis()
+      set({ isUndoRedoAction: false })
+    }, 0)
+    
+    return true
+  },
+  
+  clearUndoRedoStacks: () => {
+    set({ undoStack: [], redoStack: [] })
+  },
+  
+  // Special function for drag operations - only records start and end positions
+  recordDragStart: (nodeId, startPosition) => {
+    const { isUndoRedoAction, undoStack, redoStack, maxUndoSteps, createStateSnapshot } = get()
+    
+    // Don't record if this is an undo/redo action
+    if (isUndoRedoAction) return
+    
+    const snapshot = createStateSnapshot()
+    // Store the drag start position in the snapshot
+    snapshot.dragStart = { nodeId, position: startPosition }
+    
+    set((state) => ({
+      undoStack: [...state.undoStack, snapshot].slice(-maxUndoSteps),
+      redoStack: [] // Clear redo stack when new action is performed
+    }))
+  },
+  
+  recordDragEnd: (nodeId, endPosition) => {
+    const { isUndoRedoAction, undoStack, redoStack, maxUndoSteps, createStateSnapshot } = get()
+    
+    // Don't record if this is an undo/redo action
+    if (isUndoRedoAction) return
+    
+    const snapshot = createStateSnapshot()
+    // Store the drag end position in the snapshot
+    snapshot.dragEnd = { nodeId, position: endPosition }
+    
+    set((state) => ({
+      undoStack: [...state.undoStack, snapshot].slice(-maxUndoSteps),
+      redoStack: [] // Clear redo stack when new action is performed
+    }))
   },
   
   // Test function for debugging propagation

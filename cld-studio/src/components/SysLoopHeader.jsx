@@ -60,7 +60,11 @@ function SysLoopHeader({ mode, setMode }) {
     stepBackSimulation,
     resetSimulation,
     updateSimulationSettings,
-    toggleSimulationMode
+    toggleSimulationMode,
+    undo,
+    redo,
+    undoStack,
+    redoStack
   } = useCLDStore()
   const [showNodeColorDropdown, setShowNodeColorDropdown] = useState(false)
   const [showArrowColorDropdown, setShowArrowColorDropdown] = useState(false)
@@ -167,11 +171,11 @@ function SysLoopHeader({ mode, setMode }) {
   }
 
   const handleUndo = () => {
-    // TODO: Implement undo functionality
+    undo()
   }
 
   const handleRedo = () => {
-    // TODO: Implement redo functionality
+    redo()
   }
 
 
@@ -407,16 +411,18 @@ function SysLoopHeader({ mode, setMode }) {
 
   const menuItems = [
     { 
-      label: 'Undo', 
+      label: `Undo${undoStack.length > 0 ? ` (${undoStack.length})` : ''}`, 
       action: handleUndo, 
       icon: Undo2,
-      title: 'Undo' 
+      title: `Undo (Ctrl+Z)${undoStack.length > 0 ? ` - ${undoStack.length} steps available` : ' - Nothing to undo'}`,
+      disabled: undoStack.length === 0
     },
     { 
-      label: 'Redo', 
+      label: `Redo${redoStack.length > 0 ? ` (${redoStack.length})` : ''}`, 
       action: handleRedo, 
       icon: Redo2,
-      title: 'Redo' 
+      title: `Redo (Ctrl+Y)${redoStack.length > 0 ? ` - ${redoStack.length} steps available` : ' - Nothing to redo'}`,
+      disabled: redoStack.length === 0
     },
     { 
       label: 'Clear', 
@@ -1427,7 +1433,12 @@ function SysLoopHeader({ mode, setMode }) {
                 <button
                   className="menu-icon-btn"
                   onClick={item.action}
+                  disabled={item.disabled}
                   title={item.title}
+                  style={{
+                    opacity: item.disabled ? 0.4 : 1,
+                    cursor: item.disabled ? 'not-allowed' : 'pointer'
+                  }}
                 >
                   <item.icon className="menu-icon" />
                 </button>

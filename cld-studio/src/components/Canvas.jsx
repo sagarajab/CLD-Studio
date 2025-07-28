@@ -88,7 +88,9 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     globalStyles,
     showGrid,
     simulationMode,
-    hoveredEdge
+    hoveredEdge,
+    recordDragStart,
+    recordDragEnd
   } = useCLDStore();
 
   // Helper functions for loop highlighting
@@ -134,7 +136,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   }, [loopViewMode])
 
 
-  // Global mouse event listeners for middle-click detection
+  // Global mouse event listeners for middle-click detection and drag tracking
   useEffect(() => {
     const handleMouseDown = (event) => {
       if (event.button === 1) { // Middle mouse button
@@ -147,6 +149,17 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       if (event.button === 1) { // Middle mouse button
         setIsDragging(false)
       }
+      
+      // Handle node drag end for undo/redo
+      if (isDraggingNode && draggedNodeId) {
+        const node = storeNodes.find(n => n.id === draggedNodeId)
+        if (node) {
+          recordDragEnd(draggedNodeId, { ...node.position })
+        }
+        setIsDraggingNode(false)
+        setDraggedNodeId(null)
+        setDragOffset({ x: 0, y: 0 })
+      }
     }
 
     // Add global event listeners
@@ -157,7 +170,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       document.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [])
+  }, [isDraggingNode, draggedNodeId, storeNodes, recordDragEnd])
 
   // Global keyboard event listeners for delete functionality
   useEffect(() => {
@@ -748,10 +761,13 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       setDraggedNodeId(node.id)
       setDragOffset({ x: offsetX, y: offsetY })
       
+      // Record drag start position for undo/redo
+      recordDragStart(node.id, { ...node.position })
+      
       // Don't change selection state here - let the click handler manage selection
       // This prevents interference with multiselect functionality
     }
-  }, [viewTransform])
+  }, [viewTransform, recordDragStart])
 
   // Handle control point dragging
   const handleControlPointMouseDown = (e, edgeId) => {
