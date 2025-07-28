@@ -162,16 +162,14 @@ function App() {
             </div>
           )}
           
-          {/* Events Log */}
+          {/* Events Log - Show only latest event */}
           <div className="status-item events">
-            <span className="status-label">Events:</span>
+            <span className="status-label">Latest:</span>
             <div className="events-log">
               {eventsLog.length > 0 ? (
-                eventsLog.map((event, index) => (
-                  <span key={event.id} className="event-item" title={event.timestamp}>
-                    {event.message}
-                  </span>
-                ))
+                <span className="event-item" title={eventsLog[0].timestamp}>
+                  {eventsLog[0].message}
+                </span>
               ) : (
                 <span className="status-text">No recent events</span>
               )}

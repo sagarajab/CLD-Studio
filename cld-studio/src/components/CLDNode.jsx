@@ -237,70 +237,52 @@ function CLDNode({
         })
       )}
 
-      {/* Value bar for simulation mode */}
+      {/* Node value pill for simulation mode - positioned on top of everything */}
       {simulationMode && simulationState.stateVector.length > 0 && (
-        <g className="value-bar-group">
-          {/* Background bar with center line */}
+        <g className="value-pill-group" style={{ pointerEvents: 'none' }}>
+          {/* White thick border background */}
           <rect
-            x={ellipseDimensions.centerX + ellipseDimensions.radiusX + 10}
-            y={ellipseDimensions.centerY - 50}
-            width="8"
-            height="100"
-            fill="#f3f4f6"
-            stroke="#d1d5db"
-            strokeWidth="1"
-            rx="2"
+            x={ellipseDimensions.centerX - 40}
+            y={ellipseDimensions.centerY - ellipseDimensions.radiusY - 20}
+            width="80"
+            height="12"
+            fill="white"
+            stroke="white"
+            strokeWidth="3"
+            rx="6"
+            style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
           />
           
-          {/* Center line */}
+          {/* Main pill background - neutral gray */}
+          <rect
+            x={ellipseDimensions.centerX - 38}
+            y={ellipseDimensions.centerY - ellipseDimensions.radiusY - 18}
+            width="76"
+            height="8"
+            fill="#e5e7eb"
+            rx="4"
+          />
+          
+          {/* Fill level indicator - range -2000 to 2000, 1000 = 50% fill */}
+          <rect
+            x={ellipseDimensions.centerX - 38}
+            y={ellipseDimensions.centerY - ellipseDimensions.radiusY - 18}
+            width={Math.min(Math.max((nodeValue + 2000) * 0.019, 0), 76)}
+            height="8"
+            fill="#3b82f6"
+            rx="4"
+            style={{ transition: 'all 0.3s ease' }}
+          />
+          
+          {/* Center line for reference */}
           <line
-            x1={ellipseDimensions.centerX + ellipseDimensions.radiusX + 10}
-            y1={ellipseDimensions.centerY}
-            x2={ellipseDimensions.centerX + ellipseDimensions.radiusX + 18}
-            y2={ellipseDimensions.centerY}
-            stroke="#9ca3af"
+            x1={ellipseDimensions.centerX}
+            y1={ellipseDimensions.centerY - ellipseDimensions.radiusY - 18}
+            x2={ellipseDimensions.centerX}
+            y2={ellipseDimensions.centerY - ellipseDimensions.radiusY - 10}
+            stroke="rgba(255,255,255,0.5)"
             strokeWidth="1"
           />
-          
-          {/* Value bar - proportional fill from center */}
-          {nodeValue !== 0 && (
-            <rect
-              x={ellipseDimensions.centerX + ellipseDimensions.radiusX + 10}
-              y={nodeValue > 0 ? 
-                ellipseDimensions.centerY - Math.min(Math.abs(nodeValue) * 2, 50) : 
-                ellipseDimensions.centerY
-              }
-              width="8"
-              height={Math.min(Math.abs(nodeValue) * 2, 50)}
-              fill={nodeValue > 0 ? '#28a745' : '#dc3545'}
-              rx="2"
-              style={{ transition: 'all 0.3s ease' }}
-            />
-          )}
-          
-          {/* Accumulated value text */}
-          <text
-            x={ellipseDimensions.centerX + ellipseDimensions.radiusX + 25}
-            y={ellipseDimensions.centerY - 8}
-            fontSize="12"
-            fill="#333"
-            textAnchor="start"
-            dominantBaseline="middle"
-          >
-            {nodeValue.toFixed(1)}
-          </text>
-          
-          {/* Last increment text */}
-          <text
-            x={ellipseDimensions.centerX + ellipseDimensions.radiusX + 25}
-            y={ellipseDimensions.centerY + 8}
-            fontSize="10"
-            fill="#666"
-            textAnchor="start"
-            dominantBaseline="middle"
-          >
-            Δ: {lastIncrement.toFixed(1)}
-          </text>
         </g>
       )}
 

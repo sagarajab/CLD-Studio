@@ -1052,9 +1052,10 @@ const useCLDStore = create((set, get) => ({
     const stateVector = new Array(nodes.length).fill(0)
     stateVector[nodeIndex] = clampedValue
     
-    // Initialize accumulated values with the initial perturbation
-    const accumulatedValues = new Array(nodes.length).fill(0)
-    accumulatedValues[nodeIndex] = clampedValue
+    // Initialize accumulated values with 1000 as default start value for all nodes
+    const accumulatedValues = new Array(nodes.length).fill(1000)
+    // Add the perturbation to the perturbed node
+    accumulatedValues[nodeIndex] = 1000 + clampedValue
     
     console.log('Initializing simulation with increments:', {
       perturbedNodeId,
@@ -1062,6 +1063,7 @@ const useCLDStore = create((set, get) => ({
       nodeIndex,
       clampedValue,
       stateVector,
+      accumulatedValues,
       nodesCount: nodes.length
     })
     

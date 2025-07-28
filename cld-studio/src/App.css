@@ -2275,7 +2275,7 @@ body {
   border: 1px solid #e9ecef;
   padding: 4px 8px;
   border-radius: 4px;
-  max-width: 300px;
+  max-width: 400px;
   overflow: hidden;
 }
 
@@ -2283,21 +2283,17 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 60px;
-  overflow-y: auto;
+  max-height: 20px;
+  overflow: hidden;
 }
 
 .event-item {
-  font-size: 10px;
+  font-size: 11px;
   color: #495057;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 1px 0;
-  border-bottom: 1px solid #f1f3f4;
-}
-
-.event-item:last-child {
   border-bottom: none;
 }
 
@@ -2319,9 +2315,10 @@ body {
   background: #bdc1c6;
 }
 
-/* Value bar in nodes */
-.value-bar-group {
+/* Value pill in nodes */
+.value-pill-group {
   pointer-events: none;
+  z-index: 9999;
 }
 
 /* Propagation animation */
