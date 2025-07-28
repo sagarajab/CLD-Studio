@@ -169,22 +169,66 @@ const S3FileBrowser = ({ isOpen, onClose }) => {
                 <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
               </svg>
               <p style={{ margin: '0 0 16px 0', fontSize: '16px' }}>No .cld files found in S3</p>
-              <button
-                onClick={handleRefresh}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#2563eb'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#3b82f6'}
-              >
-                Refresh
-              </button>
+              <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#6b7280' }}>
+                This is normal for a new deployment. You can create sample data or upload your own .cld files.
+              </p>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                <button
+                  onClick={handleRefresh}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#3b82f6',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#2563eb'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#3b82f6'}
+                >
+                  Refresh
+                </button>
+                                 <button
+                   onClick={() => {
+                     const { createSampleData } = useCLDStore.getState();
+                     createSampleData();
+                     onClose();
+                   }}
+                   style={{
+                     padding: '8px 16px',
+                     backgroundColor: '#10b981',
+                     color: 'white',
+                     border: 'none',
+                     borderRadius: '6px',
+                     cursor: 'pointer',
+                     fontSize: '14px'
+                   }}
+                   onMouseEnter={(e) => e.target.style.backgroundColor = '#059669'}
+                   onMouseLeave={(e) => e.target.style.backgroundColor = '#10b981'}
+                 >
+                   Create Sample Data
+                 </button>
+                 <button
+                   onClick={() => {
+                     const { testS3Listing } = useCLDStore.getState();
+                     testS3Listing();
+                   }}
+                   style={{
+                     padding: '8px 16px',
+                     backgroundColor: '#f59e0b',
+                     color: 'white',
+                     border: 'none',
+                     borderRadius: '6px',
+                     cursor: 'pointer',
+                     fontSize: '14px'
+                   }}
+                   onMouseEnter={(e) => e.target.style.backgroundColor = '#d97706'}
+                   onMouseLeave={(e) => e.target.style.backgroundColor = '#f59e0b'}
+                 >
+                   Debug S3
+                 </button>
+              </div>
             </div>
           ) : (
             <div>

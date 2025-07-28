@@ -2378,12 +2378,13 @@ const useCLDStore = create((set, get) => ({
     try {
       addEvent('Listing S3 files...', 'info');
       
-      // Get the list of files from S3 - try different approaches
+      // Get the list of files from S3
       const { list } = await import('aws-amplify/storage');
       
-      // Try listing from root first
-      console.log('Trying to list from root...');
+      // List from public folder (as configured in Amplify storage)
+      console.log('Listing from public folder...');
       const result = await list({
+        path: 'public/',
         options: {
           accessLevel: 'guest'
         }
@@ -2392,7 +2393,7 @@ const useCLDStore = create((set, get) => ({
       console.log('S3 list result:', result);
       const files = result.items || [];
       
-      // Filter files that are .cld files (they're in the root, not public folder)
+      // Filter files that are .cld files
       const cldFiles = files
         .filter(file => file && file.key && file.key.endsWith('.cld'))
         .map(file => file.key);
