@@ -8,6 +8,10 @@ fetch('/amplify_outputs.json')
     return res.json();
   })
   .then(outputs => {
+    console.log('=== Amplify Configuration ===');
+    console.log('Full outputs:', outputs);
+    console.log('Storage config:', outputs.storage);
+    
     Amplify.configure(outputs);
 
     // Optional: expose for debugging
@@ -15,7 +19,9 @@ fetch('/amplify_outputs.json')
     window.generateClient = generateClient;
     window.getUrl = getUrl;
 
-    console.log('Amplify configured successfully:', outputs);
+    console.log('Amplify configured successfully');
+    console.log('Storage bucket name:', outputs.storage?.bucket_name);
+    console.log('Storage region:', outputs.storage?.aws_region);
 
     // You can initialize your app here too if needed
   })

@@ -2381,28 +2381,75 @@ const useCLDStore = create((set, get) => ({
       // Get the list of files from S3
       const { list } = await import('aws-amplify/storage');
       
-      // List from public folder (as configured in Amplify storage)
-      console.log('Listing from public folder...');
-      const result = await list({
-        path: 'public/',
-        options: {
-          accessLevel: 'guest'
-        }
-      });
+      // Try multiple approaches to find files
+      console.log('=== S3 Debugging ===');
       
-      console.log('S3 list result:', result);
-      const files = result.items || [];
+      // Method 1: List from public folder
+      console.log('Method 1: Listing from public/ folder...');
+      let result1;
+      try {
+        result1 = await list({
+          path: 'public/',
+          options: {
+            accessLevel: 'guest'
+          }
+        });
+        console.log('Public folder result:', result1);
+        console.log('Public folder items:', result1.items?.map(item => item.key) || []);
+      } catch (error) {
+        console.log('Public folder error:', error);
+      }
+      
+      // Method 2: List from root
+      console.log('Method 2: Listing from root...');
+      let result2;
+      try {
+        result2 = await list({
+          options: {
+            accessLevel: 'guest'
+          }
+        });
+        console.log('Root result:', result2);
+        console.log('Root items:', result2.items?.map(item => item.key) || []);
+      } catch (error) {
+        console.log('Root error:', error);
+      }
+      
+      // Method 3: List with no path specified
+      console.log('Method 3: Listing with no path...');
+      let result3;
+      try {
+        result3 = await list({
+          options: {
+            accessLevel: 'guest'
+          }
+        });
+        console.log('No path result:', result3);
+        console.log('No path items:', result3.items?.map(item => item.key) || []);
+      } catch (error) {
+        console.log('No path error:', error);
+      }
+      
+      // Combine all results
+      const allFiles = [
+        ...(result1?.items || []),
+        ...(result2?.items || []),
+        ...(result3?.items || [])
+      ];
+      
+      console.log('All files found:', allFiles.map(item => item.key));
       
       // Filter files that are .cld files
-      const cldFiles = files
+      const cldFiles = allFiles
         .filter(file => file && file.key && file.key.endsWith('.cld'))
         .map(file => file.key);
       
-      addEvent(`Found ${cldFiles.length} .cld files in S3`, 'success');
       console.log('CLD files found:', cldFiles);
+      addEvent(`Found ${cldFiles.length} .cld files in S3`, 'success');
       
       return cldFiles;
     } catch (error) {
+      console.error('S3 listing error:', error);
       addEvent('Failed to list S3 files: ' + error.message, 'error');
       throw error;
     }
