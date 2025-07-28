@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import SimplifiedAdjacencyMatrix from './SimplifiedAdjacencyMatrix'
 import AdjacencyMatrix from './AdjacencyMatrix'
+import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
 
 function AnalysisTab() {
   const { 
@@ -571,9 +572,7 @@ function AnalysisTab() {
               onClick={collapseAllSections}
               title="Collapse All Sections"
             >
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronsDownUp size={14} />
             </button>
           </div>
 
@@ -583,9 +582,7 @@ function AnalysisTab() {
               onClick={expandAllSections}
               title="Expand All Sections"
             >
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <ChevronsUpDown size={14} />
             </button>
           </div>
         </div>

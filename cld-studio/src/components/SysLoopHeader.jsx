@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
-import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Play, Pause, RotateCcw as StepBack, RotateCw as StepForward, Square, Settings as SettingsIcon, BarChart3, Activity, Menu, Undo2, Redo2, Eraser, Grid3x3, BowArrow, Dices, SkipForward, SkipBack, TimerReset, ZoomIn, ZoomOut, Move, Trash } from 'lucide-react'
+import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Play, Pause, RotateCcw as StepBack, RotateCw as StepForward, Square, Settings as SettingsIcon, BarChart3, Activity, Undo2, Redo2, Eraser, Grid3x3, BowArrow, Dices, SkipForward, SkipBack, TimerReset, ZoomIn, ZoomOut, Move, Trash, DraftingCompass, Laptop, Database } from 'lucide-react'
 
 import SettingsModal from './SettingsModal'
 import StateVectorModal from './StateVectorModal'
@@ -9,7 +9,7 @@ import { loadConfig } from '../config/appConfig'
 import appIcon from '../assets/app_icon.png'
 import tbtIcon from '../assets/tbt_icon.png'
 
-function SysLoopHeader({ mode, setMode }) {
+function SysLoopHeader() {
   const { 
     saveDiagram, 
     loadDiagram, 
@@ -20,13 +20,12 @@ function SysLoopHeader({ mode, setMode }) {
     exportAsPDF,
     exportDetailedData,
     nodes, 
-    edges,
     globalStyles,
     selectedNode,
     selectedEdge,
     setNodeFont,
     setNodeFontSize,
-    setArrowColor,
+
     setArrowWidth,
     setArrowTransparency,
     setArrowHeadSize,
@@ -46,7 +45,6 @@ function SysLoopHeader({ mode, setMode }) {
     showGrid,
     toggleGrid,
     viewTransform,
-    setViewTransform,
     updateViewTransform,
     resetView,
     panningMode,
@@ -70,6 +68,7 @@ function SysLoopHeader({ mode, setMode }) {
   const [showArrowColorDropdown, setShowArrowColorDropdown] = useState(false)
   const [showDesignSettingsDropdown, setShowDesignSettingsDropdown] = useState(false)
   const [showExportDropdown, setShowExportDropdown] = useState(false)
+  const [showOpenDropdown, setShowOpenDropdown] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [tempName, setTempName] = useState(diagramName)
 
@@ -79,8 +78,7 @@ function SysLoopHeader({ mode, setMode }) {
   const [perturbationValue, setPerturbationValue] = useState(1)
   const [showPlotsModal, setShowPlotsModal] = useState(false)
   const [showStateVectorModal, setShowStateVectorModal] = useState(false)
-  const [showHamburgerDropdown, setShowHamburgerDropdown] = useState(false)
-  const [showHamburgerExportDropdown, setShowHamburgerExportDropdown] = useState(false)
+
   
   // Load config for colors
   const config = loadConfig()
@@ -90,18 +88,7 @@ function SysLoopHeader({ mode, setMode }) {
   
   const headerRef = useRef(null)
 
-  // Helper functions to get current colors
-  const getSelectedNodeColor = () => {
-    if (!selectedNode) return config.colors.defaults.nodeColor // Default from config
-    const node = nodes.find(n => n.id === selectedNode)
-    return node?.data?.color || config.colors.defaults.nodeColor
-  }
 
-  const getSelectedEdgeColor = () => {
-    if (!selectedEdge) return config.colors.defaults.arrowColor // Default from config
-    const edge = edges.find(e => e.id === selectedEdge)
-    return edge?.data?.color || config.colors.defaults.arrowColor
-  }
 
   // Helper functions to get the currently selected colors (like PowerPoint)
   const getCurrentNodeColor = () => {
@@ -126,26 +113,15 @@ function SysLoopHeader({ mode, setMode }) {
     }
   }
 
-  const handleExport = () => {
-    exportMatrix()
-  }
 
-  const handleExportDropdownToggle = (e) => {
-    e.stopPropagation()
-    // Close other dropdowns if they're open
-    if (showNodeColorDropdown) {
-      setShowNodeColorDropdown(false)
-    }
-    if (showArrowColorDropdown) {
-      setShowArrowColorDropdown(false)
-    }
-    if (showDesignSettingsDropdown) {
-      setShowDesignSettingsDropdown(false)
-    }
-    setShowExportDropdown(!showExportDropdown)
-  }
 
   const handleExportAsPNG = () => {
+    exportAsPNG()
+    setShowExportDropdown(false)
+  }
+
+  const handleExportAsJPEG = () => {
+    // For now, using PNG export - you can implement JPEG-specific export later
     exportAsPNG()
     setShowExportDropdown(false)
   }
@@ -188,9 +164,7 @@ function SysLoopHeader({ mode, setMode }) {
     setNodeFontSize(size)
   }
 
-  const handleArrowColorChange = (color) => {
-    setArrowColor(color)
-  }
+
 
   const handleArrowWidthChange = (width) => {
     setArrowWidth(parseFloat(width))
@@ -345,12 +319,16 @@ function SysLoopHeader({ mode, setMode }) {
     setShowSimSettingsDropdown(!showSimSettingsDropdown)
   }
 
-  const toggleHamburgerDropdown = () => {
-    setShowHamburgerDropdown(!showHamburgerDropdown)
+
+
+  const toggleExportDropdown = (e) => {
+    e.stopPropagation()
+    setShowExportDropdown(!showExportDropdown)
   }
 
-  const toggleHamburgerExportDropdown = () => {
-    setShowHamburgerExportDropdown(!showHamburgerExportDropdown)
+  const toggleOpenDropdown = (e) => {
+    e.stopPropagation()
+    setShowOpenDropdown(!showOpenDropdown)
   }
 
   // Close dropdowns when clicking outside
@@ -361,18 +339,18 @@ function SysLoopHeader({ mode, setMode }) {
       const isInsideNodeColorDropdown = event.target.closest('.node-color-dropdown')
       const isInsideArrowColorDropdown = event.target.closest('.arrow-color-dropdown')
       const isInsideExportDropdown = event.target.closest('.export-dropdown')
+      const isInsideOpenDropdown = event.target.closest('.open-dropdown')
       const isInsideSimSettingsDropdown = event.target.closest('.sim-settings-dropdown')
-      const isInsideHamburgerDropdown = event.target.closest('.hamburger-dropdown')
-      const isInsideHamburgerExportDropdown = event.target.closest('.hamburger-export-dropdown')
+
       
       // Check if click is on the dropdown toggle button
       const isOnDesignToggle = event.target.closest('.design-settings-container')
       const isOnNodeColorToggle = event.target.closest('.node-color-container')
       const isOnArrowColorToggle = event.target.closest('.arrow-color-container')
       const isOnExportToggle = event.target.closest('.export-container')
+      const isOnOpenToggle = event.target.closest('.open-container')
       const isOnSimSettingsToggle = event.target.closest('.sim-settings-container')
-      const isOnHamburgerToggle = event.target.closest('.hamburger-container')
-      const isOnHamburgerExportToggle = event.target.closest('.hamburger-export-container')
+
       
       // Only close if clicking outside both the dropdown and its toggle button
       if (showDesignSettingsDropdown && !isInsideDesignDropdown && !isOnDesignToggle) {
@@ -387,22 +365,20 @@ function SysLoopHeader({ mode, setMode }) {
       if (showExportDropdown && !isInsideExportDropdown && !isOnExportToggle) {
         setShowExportDropdown(false)
       }
+      if (showOpenDropdown && !isInsideOpenDropdown && !isOnOpenToggle) {
+        setShowOpenDropdown(false)
+      }
       if (showSimSettingsDropdown && !isInsideSimSettingsDropdown && !isOnSimSettingsToggle) {
         setShowSimSettingsDropdown(false)
       }
-      if (showHamburgerDropdown && !isInsideHamburgerDropdown && !isOnHamburgerToggle) {
-        setShowHamburgerDropdown(false)
-      }
-      if (showHamburgerExportDropdown && !isInsideHamburgerExportDropdown && !isOnHamburgerExportToggle) {
-        setShowHamburgerExportDropdown(false)
-      }
+
     }
 
     document.addEventListener('click', handleClickOutside)
     return () => {
       document.removeEventListener('click', handleClickOutside)
     }
-  }, [showDesignSettingsDropdown, showNodeColorDropdown, showArrowColorDropdown, showExportDropdown, showSimSettingsDropdown, showHamburgerDropdown, showHamburgerExportDropdown])
+  }, [showDesignSettingsDropdown, showNodeColorDropdown, showArrowColorDropdown, showExportDropdown, showOpenDropdown, showSimSettingsDropdown])
 
   // Update tempName when diagramName changes (e.g., when loading a file)
   useEffect(() => {
@@ -410,6 +386,28 @@ function SysLoopHeader({ mode, setMode }) {
   }, [diagramName])
 
   const menuItems = [
+    { 
+      label: 'Open', 
+      type: 'open', 
+      action: toggleOpenDropdown,
+      dropdownAction: toggleOpenDropdown,
+      icon: FolderOpen,
+      title: 'Open' 
+    },
+    { 
+      label: 'Save', 
+      action: handleSave, 
+      icon: Save,
+      title: 'Save' 
+    },
+    { 
+      label: 'Export', 
+      type: 'export', 
+      action: toggleExportDropdown,
+      dropdownAction: toggleExportDropdown,
+      icon: Download,
+      title: 'Export' 
+    },
     { 
       label: `Undo${undoStack.length > 0 ? ` (${undoStack.length})` : ''}`, 
       action: handleUndo, 
@@ -423,12 +421,6 @@ function SysLoopHeader({ mode, setMode }) {
       icon: Redo2,
       title: `Redo (Ctrl+Y)${redoStack.length > 0 ? ` - ${redoStack.length} steps available` : ' - Nothing to redo'}`,
       disabled: redoStack.length === 0
-    },
-    { 
-      label: 'Clear', 
-      action: handleClear, 
-      icon: Eraser,
-      title: 'Clear Canvas' 
     },
     { 
       label: 'Node Color', 
@@ -450,45 +442,30 @@ function SysLoopHeader({ mode, setMode }) {
       label: 'Design Settings', 
       type: 'designSettings', 
       dropdownAction: handleDesignSettingsDropdownToggle,
-      icon: Brush,
+      icon: DraftingCompass,
       title: 'Global Design Settings' 
     },
     { 
-      label: 'Reset Styles', 
-      action: handleResetStyles, 
+      label: 'Reset View', 
+      action: handleResetView, 
       icon: RefreshCw,
-      title: 'Reset All Drawing Settings to Default' 
+      title: 'Reset View (Fit to Canvas)' 
     },
     { 
-      label: showGrid ? 'Hide Grid' : 'Show Grid', 
+      label: 'Show Grid', 
       action: toggleGrid, 
       icon: Grid3x3,
       title: showGrid ? 'Hide Grid' : 'Show Grid' 
     },
-
-  ]
-
-  // Hamburger menu items (file operations)
-  const hamburgerMenuItems = [
     { 
-      label: 'Open', 
-      action: handleLoad, 
-      icon: FolderOpen,
-      title: 'Open' 
-    },
-    { 
-      label: 'Save', 
-      action: handleSave, 
-      icon: Save,
-      title: 'Save' 
-    },
-    { 
-      label: 'Export', 
-      type: 'export', 
-      icon: Download,
-      title: 'Export' 
+      label: 'Clear Canvas', 
+      action: handleClearCanvas, 
+      icon: Trash,
+      title: 'Clear Canvas' 
     }
   ]
+
+
 
   return (
     <header className="sysloop-header" ref={headerRef}>
@@ -569,301 +546,7 @@ function SysLoopHeader({ mode, setMode }) {
       {/* Menu Bar - Centered */}
       <div className="header-center">
         <div className="menu-bar">
-          {/* Hamburger Menu - Now part of the main menu bar */}
-          <div className="menu-item hamburger-container" style={{ position: 'relative' }}>
-            <button
-              className="menu-icon-btn"
-              onClick={toggleHamburgerDropdown}
-              title="File Menu"
-            >
-              <Menu className="menu-icon" />
-            </button>
-          {showHamburgerDropdown && (
-            <div 
-              className="hamburger-dropdown" 
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: '0',
-                backgroundColor: 'white',
-                border: '1px solid #ccc',
-                borderRadius: '8px',
-                padding: '8px',
-                zIndex: 1000,
-                minWidth: '160px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-              }}
-            >
-              {hamburgerMenuItems.map((item, index) => (
-                <div key={index} style={{ position: 'relative' }}>
-                  {item.type === 'export' ? (
-                    <div className="hamburger-export-container" style={{ position: 'relative' }}>
-                      <button
-                        onClick={toggleHamburgerExportDropdown}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: '#374151',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          justifyContent: 'space-between'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f3f4f6'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <item.icon size={14} />
-                          {item.label}
-                        </div>
-                        <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
-                          <path d="M0 2l4 4 4-4z"/>
-                        </svg>
-                      </button>
-                      {showHamburgerExportDropdown && (
-                        <div 
-                          className="hamburger-export-dropdown" 
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
-                            position: 'absolute',
-                            top: '0',
-                            left: '100%',
-                            backgroundColor: 'white',
-                            border: '1px solid #ccc',
-                            borderRadius: '8px',
-                            padding: '8px',
-                            zIndex: 1001,
-                            minWidth: '160px',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                          }}
-                        >
-                          <button
-                            onClick={() => {
-                              handleExportAsPNG()
-                              setShowHamburgerDropdown(false)
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              border: 'none',
-                              background: 'transparent',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              color: '#374151',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#f3f4f6'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = 'transparent'
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                              <circle cx="8.5" cy="8.5" r="1.5"/>
-                              <polyline points="21,15 16,10 5,21"/>
-                            </svg>
-                            Export as PNG
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleExportAsSVG()
-                              setShowHamburgerDropdown(false)
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              border: 'none',
-                              background: 'transparent',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              color: '#374151',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#f3f4f6'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = 'transparent'
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                              <polyline points="14,2 14,8 20,8"/>
-                              <line x1="16" y1="13" x2="8" y2="13"/>
-                              <line x1="16" y1="17" x2="8" y2="17"/>
-                              <polyline points="10,9 9,9 8,9"/>
-                            </svg>
-                            Export as SVG
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleExportAsPDF()
-                              setShowHamburgerDropdown(false)
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              border: 'none',
-                              background: 'transparent',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              color: '#374151',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#f3f4f6'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = 'transparent'
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                              <polyline points="14,2 14,8 20,8"/>
-                              <line x1="16" y1="13" x2="8" y2="13"/>
-                              <line x1="16" y1="17" x2="8" y2="17"/>
-                              <polyline points="10,9 9,9 8,9"/>
-                            </svg>
-                            Export as PDF
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleExportDetailedData()
-                              setShowHamburgerDropdown(false)
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              border: 'none',
-                              background: 'transparent',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              color: '#374151',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#f3f4f6'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = 'transparent'
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                              <polyline points="14,2 14,8 20,8"/>
-                              <line x1="16" y1="13" x2="8" y2="13"/>
-                              <line x1="16" y1="17" x2="8" y2="17"/>
-                              <polyline points="10,9 9,9 8,9"/>
-                            </svg>
-                            Export Detailed Data
-                          </button>
-                          <button
-                            onClick={() => {
-                              handleExportMatrix()
-                              setShowHamburgerDropdown(false)
-                            }}
-                            style={{
-                              width: '100%',
-                              padding: '8px 12px',
-                              border: 'none',
-                              background: 'transparent',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              color: '#374151',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '8px'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.target.style.backgroundColor = '#f3f4f6'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.target.style.backgroundColor = 'transparent'
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M3 3h18v18H3z"/>
-                              <path d="M9 9h6v6H9z"/>
-                              <path d="M15 3v18"/>
-                              <path d="M3 15h18"/>
-                            </svg>
-                            Export Matrix
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        if (item.action) {
-                          item.action()
-                          setShowHamburgerDropdown(false)
-                        }
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '8px 12px',
-                        border: 'none',
-                        background: 'transparent',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        color: '#374151',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = '#f3f4f6'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = 'transparent'
-                      }}
-                    >
-                      <item.icon size={14} />
-                      {item.label}
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        {/* <-- This closes the hamburger menu container */}
-
-        {menuItems.map((item, index) => (
+          {menuItems.map((item, index) => (
             <div key={index} className="menu-item">
               {item.type === 'color' ? (
                 <div className="color-picker-container">
@@ -1295,6 +978,36 @@ function SysLoopHeader({ mode, setMode }) {
                         Export as PNG
                       </button>
                       <button
+                        onClick={handleExportAsJPEG}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: 'none',
+                          background: 'transparent',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          color: '#374151',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#f3f4f6'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent'
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21,15 16,10 5,21"/>
+                        </svg>
+                        Export as JPEG
+                      </button>
+                      <button
                         onClick={handleExportAsSVG}
                         style={{
                           width: '100%',
@@ -1429,6 +1142,90 @@ function SysLoopHeader({ mode, setMode }) {
                     </div>
                   )}
                 </div>
+              ) : item.type === 'open' ? (
+                <div className="open-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <button
+                    className="menu-icon-btn"
+                    onClick={item.dropdownAction}
+                    title={item.title}
+                  >
+                    <item.icon className="menu-icon" />
+                  </button>
+                  {showOpenDropdown && (
+                    <div 
+                      className="open-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: '0',
+                        backgroundColor: 'white',
+                        border: '1px solid #ccc',
+                        borderRadius: '8px',
+                        padding: '8px',
+                        zIndex: 1000,
+                        minWidth: '160px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}
+                    >
+                      <button
+                        onClick={handleLoad}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: 'none',
+                          background: 'transparent',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          color: '#374151',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#f3f4f6'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent'
+                        }}
+                      >
+                        <Laptop size={14} />
+                        From PC
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Handle examples - you can implement this later
+                          setShowOpenDropdown(false)
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: 'none',
+                          background: 'transparent',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          color: '#374151',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#f3f4f6'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent'
+                        }}
+                      >
+                        <Database size={14} />
+                        Examples
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button
                   className="menu-icon-btn"
@@ -1444,134 +1241,12 @@ function SysLoopHeader({ mode, setMode }) {
                 </button>
               )}
             </div>
-          ))}
+                    ))}
         </div>
-      
       </div>
       
-      {/* Zoom, Pan, and Clear Canvas Controls */}
-      <div className="header-center" style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px',
-        borderLeft: '1px solid #374151',
-        paddingLeft: '16px',
-        marginLeft: '16px'
-      }}>
-        
-        {/* Zoom, Pan, and Clear Controls Pill */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          background: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '20px',
-          padding: '4px 8px',
-          border: '1px solid rgba(255, 255, 255, 0.1)'
-        }}>
-          
-          {/* Zoom In */}
-          <button
-            onClick={handleZoomIn}
-            className="menu-icon-btn"
-            title="Zoom In"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '50%',
-              padding: '4px 6px',
-              color: '#9ca3af',
-              marginRight: '0'
-            }}
-          >
-            <ZoomIn className="menu-icon" />
-          </button>
-          
-          {/* Zoom Out */}
-          <button
-            onClick={handleZoomOut}
-            className="menu-icon-btn"
-            title="Zoom Out"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '50%',
-              padding: '4px 6px',
-              color: '#9ca3af',
-              marginRight: '0'
-            }}
-          >
-            <ZoomOut className="menu-icon" />
-          </button>
-          
-          {/* Pan Mode Toggle */}
-          <button
-            onClick={togglePanningMode}
-            className="menu-icon-btn"
-            title={panningMode ? 'Exit Pan Mode' : 'Enter Pan Mode (Drag to pan)'}
-            style={{
-              background: panningMode ? '#3b82f6' : 'transparent',
-              border: 'none',
-              borderRadius: '50%',
-              padding: '4px 6px',
-              color: panningMode ? 'white' : '#9ca3af',
-              marginRight: '0'
-            }}
-          >
-            <Move className="menu-icon" />
-          </button>
-          
-          {/* Reset View */}
-          <button
-            onClick={handleResetView}
-            className="menu-icon-btn"
-            title="Reset View (Fit to Canvas)"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '50%',
-              padding: '4px 6px',
-              color: '#9ca3af',
-              marginRight: '0'
-            }}
-          >
-            <RefreshCw className="menu-icon" />
-          </button>
-          
-          {/* Clear Canvas */}
-          <button
-            onClick={handleClearCanvas}
-            className="menu-icon-btn"
-            title="Clear Canvas"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '50%',
-              padding: '4px 6px',
-              color: '#ef4444',
-              marginRight: '0'
-            }}
-          >
-            <Trash className="menu-icon" />
-          </button>
-          
-          {/* Zoom Level Indicator */}
-          <div style={{
-            fontSize: '11px',
-            color: '#9ca3af',
-            padding: '2px 6px',
-            background: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: '10px',
-            minWidth: '40px',
-            textAlign: 'center',
-            fontFamily: 'monospace'
-          }}>
-            {Math.round(viewTransform.scale * 100)}%
-          </div>
-          
-        </div>
-        
-      </div>
+
+    
       
       {/* Simulation Controls */}
       <div className="header-center" style={{ 
@@ -1596,10 +1271,10 @@ function SysLoopHeader({ mode, setMode }) {
           {/* Simulation Mode Toggle */}
           <button
             onClick={toggleSimulationMode}
-            className="menu-icon-btn"
+            className={`menu-icon-btn ${simulationMode ? 'simulation-active' : ''}`}
             title={simulationMode ? 'Disable Simulation Mode' : 'Enable Simulation Mode'}
             style={{
-              background: simulationMode ? '#10b981' : 'transparent',
+              background: simulationMode ? '#dc2626' : 'transparent',
               border: 'none',
               borderRadius: '50%',
               padding: '4px 6px',

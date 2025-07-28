@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { useCLDStore } from '../stores/cldStore'
+import './AdjacencyMatrix.css'
 
 function AdjacencyMatrix({ onClose }) {
   const { nodes, edges } = useCLDStore()
@@ -59,10 +59,7 @@ function AdjacencyMatrix({ onClose }) {
     return Math.min(calculatedSize, 50) // Cap at 50px maximum
   }, [nodes.length])
 
-  // Calculate actual matrix size
-  const matrixSize = useMemo(() => {
-    return nodes.length * cellSize
-  }, [nodes.length, cellSize])
+
 
   // Drag functionality
   const handleMouseDown = (e) => {
@@ -195,11 +192,8 @@ function AdjacencyMatrix({ onClose }) {
     return (
       <div className="adjacency-matrix-modal">
         <div 
-          className="adjacency-matrix-container"
+          className={`adjacency-matrix-container ${isDragging ? 'dragging' : ''}`}
           ref={modalRef}
-          style={{
-            cursor: isDragging ? 'grabbing' : 'default'
-          }}
         >
           <div className="adjacency-matrix-header" ref={headerRef} onMouseDown={handleMouseDown}>
             <h3>Adjacency Matrix</h3>
@@ -216,11 +210,8 @@ function AdjacencyMatrix({ onClose }) {
   return (
     <div className="adjacency-matrix-modal">
       <div 
-        className="adjacency-matrix-container"
+        className={`adjacency-matrix-container ${isDragging ? 'dragging' : ''}`}
         ref={modalRef}
-        style={{
-          cursor: isDragging ? 'grabbing' : 'default'
-        }}
       >
         <div className="adjacency-matrix-header" ref={headerRef} onMouseDown={handleMouseDown}>
           <h3>Adjacency Matrix ({nodes.length}×{nodes.length})</h3>
@@ -228,7 +219,7 @@ function AdjacencyMatrix({ onClose }) {
         </div>
         <div className="adjacency-matrix-content">
           <div className="matrix-wrapper">
-            <table className="adjacency-matrix-table" style={{ position: 'relative' }}>
+            <table className="adjacency-matrix-table">
               <tbody>
                 {adjacencyMatrix.matrix.map((row, rowIndex) => (
                   <tr key={rowIndex}>
@@ -266,15 +257,15 @@ function AdjacencyMatrix({ onClose }) {
 
           <div className="matrix-legend">
             <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#28a745' }}></div>
+              <div className="legend-color positive"></div>
               <span>Positive (+)</span>
             </div>
             <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#dc3545' }}></div>
+              <div className="legend-color negative"></div>
               <span>Negative (-)</span>
             </div>
             <div className="legend-item">
-              <div className="legend-color" style={{ backgroundColor: '#f8f9fa' }}></div>
+              <div className="legend-color none"></div>
               <span>No Connection</span>
             </div>
           </div>

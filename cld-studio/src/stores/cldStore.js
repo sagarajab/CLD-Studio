@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { nanoid } from 'nanoid'
 import { loadConfig, saveConfig } from '../config/appConfig'
 
 const useCLDStore = create((set, get) => ({
@@ -1352,16 +1351,10 @@ const useCLDStore = create((set, get) => ({
   },
   
   submitAssessment: () => {
-    const { nodes, edges, currentProblem } = get()
     // TODO: Implement assessment scoring logic
   },
   
-  // Global styling operations
-  updateGlobalStyles: (updates) => {
-    set((state) => ({
-      globalStyles: { ...state.globalStyles, ...updates }
-    }))
-  },
+
   
 
   
@@ -1873,7 +1866,7 @@ const useCLDStore = create((set, get) => ({
   },
   
   stepSimulation: () => {
-    const { simulationState, nodes, edges } = get()
+    const { simulationState } = get()
     
     // Check if simulation is properly initialized
     if (!simulationState.isInitialized) {
@@ -1961,7 +1954,7 @@ const useCLDStore = create((set, get) => ({
   },
   
   calculateNextState: (currentStateVector) => {
-    const { nodes, edges, simulationState } = get()
+    const { nodes, edges } = get()
     
     if (nodes.length === 0 || currentStateVector.length === 0) {
       console.warn('No nodes or state vector available for calculation')

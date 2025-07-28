@@ -8,8 +8,6 @@ function CLDEdge({
   sourceY,
   targetX,
   targetY,
-  sourcePosition,
-  targetPosition,
   data,
   selected
 }) {

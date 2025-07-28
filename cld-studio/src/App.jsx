@@ -8,6 +8,7 @@ import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
 import { useCLDStore } from './stores/cldStore'
 import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2 } from 'lucide-react'
+import './components/StatusBar.css'
 
 function App() {
   const [mode, setMode] = useState('sandbox')
@@ -19,26 +20,22 @@ function App() {
   const { 
     nodes, 
     edges, 
-    selectedNode, 
-    selectedEdge, 
-    highlightedLoop, 
     loopViewMode,
     exitLoopViewMode,
     clearHighlightedLoop,
-    viewTransform,
     allLoops,
     updateGraphAnalysis,
     diagramName,
     simulationMode,
     simulationState,
-    toggleSimulationMode,
     stepSimulation,
     stepBackSimulation,
     eventsLog,
     undo,
     redo,
     undoStack,
-    redoStack
+    redoStack,
+    viewTransform
   } = useCLDStore()
 
   // Set initial browser title based on diagram name
@@ -174,14 +171,7 @@ function App() {
           
           {/* Events Log - Show only latest event */}
           <div className="status-item events">
-            <div className="events-log" style={{ 
-              width: '400px', 
-              minWidth: '400px',
-              maxWidth: '400px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}>
+            <div className="events-log">
               {eventsLog.length > 0 ? (
                 <span className="event-item" title={eventsLog[0].timestamp}>
                   {eventsLog[0].message}
@@ -193,129 +183,64 @@ function App() {
           </div>
         </div>
         <div className="status-right">
-          <div className="status-user-session-auth" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginRight: '16px' }}>
-            <span style={{ fontSize: '12px', color: '#6b7280' }}>User: <b>[username]</b></span>
-            <span style={{ fontSize: '12px', color: '#6b7280' }}>Session: <b>[session-id]</b></span>
-            <span style={{ fontSize: '12px', color: '#6b7280' }}>Auth: <b>[auth-status]</b></span>
+          <div className="status-user-session-auth">
+            <span>User: <b>[username]</b></span>
+            <span>Session: <b>[session-id]</b></span>
+            <span>Auth: <b>[auth-status]</b></span>
           </div>
-          <div className="status-controls" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Undo Button */}
-            <button
-              onClick={undo}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '4px',
-                marginLeft: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                cursor: undoStack.length > 0 ? 'pointer' : 'not-allowed',
-                color: undoStack.length > 0 ? '#6b7280' : '#d1d5db',
-                transition: 'color 0.2s',
-              }}
-              title={`Undo (Ctrl+Z)${undoStack.length > 0 ? ` - ${undoStack.length} steps available` : ' - Nothing to undo'}`}
-              className="statusbar-icon-btn"
-              disabled={undoStack.length === 0}
-            >
-              <Undo2 size={18} style={{ verticalAlign: 'middle' }} />
-            </button>
-            
-            {/* Redo Button */}
-            <button
-              onClick={redo}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '4px',
-                marginLeft: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                cursor: redoStack.length > 0 ? 'pointer' : 'not-allowed',
-                color: redoStack.length > 0 ? '#6b7280' : '#d1d5db',
-                transition: 'color 0.2s',
-              }}
-              title={`Redo (Ctrl+Y)${redoStack.length > 0 ? ` - ${redoStack.length} steps available` : ' - Nothing to redo'}`}
-              className="statusbar-icon-btn"
-              disabled={redoStack.length === 0}
-            >
-              <Redo2 size={18} style={{ verticalAlign: 'middle' }} />
-            </button>
+          <div className="status-controls">
+            {/* Zoom Level Indicator */}
+            <div className="status-item zoom-level" style={{
+              fontSize: '12px',
+              color: '#374151',
+              padding: '3px 10px',
+              background: '#f3f4f6',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              fontWeight: '500',
+              border: '1px solid #d1d5db',
+              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+              width: '90px',
+              justifyContent: 'space-between'
+            }}>
+              <span style={{ color: '#6b7280', fontSize: '11px', fontWeight: '400' }}>Zoom:</span>
+              <span style={{ color: '#1f2937', fontWeight: '600', minWidth: '30px', textAlign: 'right' }}>{Math.round(viewTransform.scale * 100)}%</span>
+            </div>
             
             {/* Dev Mode Toggle */}
             <button
               onClick={() => setDevMode(!devMode)}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '4px',
-                marginLeft: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                cursor: 'pointer',
-                color: devMode ? 'red' : '#6b7280',
-                transition: 'color 0.2s',
-              }}
+              className={`statusbar-icon-btn dev-mode-btn ${devMode ? 'active' : ''}`}
               title="Toggle Dev Mode"
-              className="statusbar-icon-btn"
             >
-              <Wrench size={18} style={{ verticalAlign: 'middle' }} />
+              <Wrench size={18} />
             </button>
             {/* Settings Button */}
             <button
               onClick={() => setShowSettingsModal(true)}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '4px',
-                marginLeft: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                cursor: 'pointer',
-                color: '#6b7280',
-                transition: 'color 0.2s',
-              }}
+              className="statusbar-icon-btn settings-btn"
               title="Application Settings"
-              className="statusbar-icon-btn"
             >
-              <SettingsIcon size={18} style={{ verticalAlign: 'middle' }} />
+              <SettingsIcon size={18} />
             </button>
             {/* About Button */}
             <button
               onClick={() => alert('About: CLD Studio v1.0')}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '4px',
-                marginLeft: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                cursor: 'pointer',
-                color: '#6b7280',
-                transition: 'color 0.2s',
-              }}
+              className="statusbar-icon-btn about-btn"
               title="About"
-              className="statusbar-icon-btn"
             >
-              <Info size={18} style={{ verticalAlign: 'middle' }} />
+              <Info size={18} />
             </button>
             {/* Help Button */}
             <button
               onClick={() => alert('Help: For assistance, visit the documentation.')}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: '4px',
-                marginLeft: '2px',
-                display: 'flex',
-                alignItems: 'center',
-                cursor: 'pointer',
-                color: '#6b7280',
-                transition: 'color 0.2s',
-              }}
+              className="statusbar-icon-btn help-btn"
               title="Help"
-              className="statusbar-icon-btn"
             >
-              <HelpCircle size={18} style={{ verticalAlign: 'middle' }} />
+              <HelpCircle size={18} />
             </button>
           </div>
         </div>

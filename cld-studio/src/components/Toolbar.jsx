@@ -3,6 +3,7 @@ import { TimerReset } from 'lucide-react'
 import { useCLDStore } from '../stores/cldStore'
 import StateVectorModal from './StateVectorModal'
 import PlotsModal from './PlotsModal'
+import './Toolbar.css'
 
 function Toolbar() {
   const [showExportDropdown, setShowExportDropdown] = useState(false)
@@ -22,8 +23,7 @@ function Toolbar() {
     exportAsSVG,
     exportAsPDF,
     exportDetailedData,
-    nodes, 
-    edges,
+    nodes,
     mode,
     submitAssessment,
     simulationState,
@@ -254,8 +254,7 @@ function Toolbar() {
               value={selectedNode} 
               onChange={(e) => setSelectedNode(e.target.value)}
               disabled={simulationState.isRunning}
-              className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              style={{ minWidth: '120px' }}
+              className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 toolbar-node-select"
             >
               <option value="">Select node...</option>
               {nodes.map(node => (
@@ -273,8 +272,7 @@ function Toolbar() {
               value={perturbationValue}
               onChange={(e) => handlePerturbationChange(parseInt(e.target.value))}
               disabled={simulationState.isRunning}
-              className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              style={{ width: '60px' }}
+              className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 toolbar-perturbation-input"
             />
             
             {/* Initialize Button */}

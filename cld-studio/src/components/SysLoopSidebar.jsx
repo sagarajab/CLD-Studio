@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import AnalysisTab from './AnalysisTab'
-import { Infinity } from 'lucide-react'
+import { Infinity as InfinityIcon } from 'lucide-react'
 
-function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hoveredLoop, setHoveredLoop }) {
-  const [showMatrix, setShowMatrix] = useState(false)
+function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLoop }) {
   const [activeTab, setActiveTab] = useState('problem') // 'problem', 'loops', 'analysis'
   const [sidebarWidth, setSidebarWidth] = useState(300)
   const [isResizing, setIsResizing] = useState(false)
@@ -30,13 +29,18 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
     enterLoopViewMode,
     exitLoopViewMode,
     nodes,
-    adjacencyMatrix,
-    simulationMode,
-    toggleSimulationMode,
     updateLoopDescription,
     problemStatement,
     updateProblemStatement
   } = useCLDStore()
+
+  // Clear highlighted loop when leaving the loops tab
+  useEffect(() => {
+    if (activeTab !== 'loops' && highlightedLoop !== null) {
+      clearHighlightedLoop()
+      exitLoopViewMode()
+    }
+  }, [activeTab, highlightedLoop, clearHighlightedLoop, exitLoopViewMode])
 
   // Constants for sidebar dimensions
   const MIN_WIDTH = 320 // Minimum width to fit tab labels comfortably
@@ -468,7 +472,7 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
           onClick={() => setActiveTab('loops')}
           title="System Loops"
         >
-          <Infinity style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0 }} />
+          <InfinityIcon style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0 }} />
           Loops
         </button>
                   <button

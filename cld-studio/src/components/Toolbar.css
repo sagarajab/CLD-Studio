@@ -1,0 +1,22 @@
+/* Toolbar Component Styles */
+
+/* Node Selection Dropdown */
+.toolbar-node-select {
+  min-width: 120px;
+}
+
+/* Perturbation Value Input */
+.toolbar-perturbation-input {
+  width: 60px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .toolbar-node-select {
+    min-width: 100px;
+  }
+  
+  .toolbar-perturbation-input {
+    width: 50px;
+  }
+} 

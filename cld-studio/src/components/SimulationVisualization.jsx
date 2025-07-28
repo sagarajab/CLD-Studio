@@ -5,8 +5,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 function SimulationVisualization() {
   const { nodes, simulationMode, simulationState } = useCLDStore()
   
-  if (!simulationMode) return null
-  
   // Create simple test data to ensure chart works
   const testData = useMemo(() => {
     if (nodes.length === 0) return []
@@ -19,6 +17,13 @@ function SimulationVisualization() {
       { step: 4, var1: 30, var2: 40 }
     ]
   }, [nodes.length])
+  
+  // Memoize colors to prevent regeneration
+  const colors = useMemo(() => [
+    '#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000',
+    '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff',
+    '#800080', '#008000', '#000080', '#808000', '#800080'
+  ], [])
   
   // Memoize chart data to prevent unnecessary re-renders
   const chartData = useMemo(() => {
@@ -50,12 +55,7 @@ function SimulationVisualization() {
     return data
   }, [simulationState.valueHistory, nodes, testData])
   
-  // Memoize colors to prevent regeneration
-  const colors = useMemo(() => [
-    '#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#ff0000',
-    '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff',
-    '#800080', '#008000', '#000080', '#808000', '#800080'
-  ], [])
+  if (!simulationMode) return null
   
   // Debug info
   console.log('SimulationVisualization render:', {

@@ -31,7 +31,6 @@ function SidePanel({ mode }) {
         const cyclePolarities = polarities.slice(cycleStart)
         
         // Calculate loop type (reinforcing or balancing)
-        const positiveCount = cyclePolarities.filter(p => p === 'positive').length
         const negativeCount = cyclePolarities.filter(p => p === 'negative').length
         
         let loopType = 'Unknown'

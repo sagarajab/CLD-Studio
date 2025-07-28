@@ -89,7 +89,6 @@ export function calculateEllipseIntersection(lineStartX, lineStartY, lineEndX, l
   }
   
   // Return the intersection point that's in the direction of the line
-  const lineLength = Math.sqrt(dx * dx + dy * dy)
   const dist1 = Math.sqrt((intersection1.x - lineStartX) ** 2 + (intersection1.y - lineStartY) ** 2)
   const dist2 = Math.sqrt((intersection2.x - lineStartX) ** 2 + (intersection2.y - lineStartY) ** 2)
   

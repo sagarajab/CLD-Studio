@@ -1,20 +1,12 @@
-import React, { useCallback, useRef, useState, useMemo, useEffect } from 'react'
+import React, { useCallback, useRef, useState, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import CLDNode from './CLDNode'
 import './Canvas.css'
 import { getEllipseDimensions } from '../utils/text'
-import {
-  calculateCircularArc,
-  calculateEllipseIntersection,
-  calculateLineSegmentEllipseIntersection,
-  calculateReferenceCircle,
-  findCircleEllipseIntersections,
-  findConvexHullIntersection,
-  calculateCircleEllipseIntersection,
-  calculateArcEllipseIntersection
-} from '../utils/geometry'
+import { findConvexHullIntersection } from '../utils/geometry'
+import shortIcon from '../assets/short_icon.png'
 
-function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, devMode = false, setDevMode }) {
+function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, devMode = false }) {
   const canvasRef = useRef(null)
   const lastClickTimeRef = useRef(0)
   const lastClickPositionRef = useRef({ x: 0, y: 0 })
@@ -80,7 +72,6 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     highlightedLoop,
     clearHighlightedLoop,
     loopViewMode,
-    enterLoopViewMode,
     exitLoopViewMode,
     viewTransform,
     setViewTransform,
@@ -342,7 +333,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   const CONTROL_BISECTOR_TOLERANCE = 20; // px, default tolerance
 
   // Function to update control points when nodes are moved
-  const updateControlPointsForNodeMove = useCallback((nodeId, oldPosition, newPosition) => {
+  const updateControlPointsForNodeMove = useCallback((nodeId) => {
     // Find all edges connected to this node
     const connectedEdges = storeEdges.filter(edge => 
       edge.source === nodeId || edge.target === nodeId
@@ -583,7 +574,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         })
         
         // Update control points for connected edges to maintain constraints
-        updateControlPointsForNodeMove(draggedNodeId, oldPosition, newPosition)
+        updateControlPointsForNodeMove(draggedNodeId)
         
         // If there are multiselected nodes, move them as a group
         if (selectedNodes.length > 0 && selectedNodes.includes(draggedNodeId)) {
@@ -606,7 +597,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
                 })
                 
                 // Update control points for connected edges to maintain constraints
-                updateControlPointsForNodeMove(nodeId, otherOldPosition, otherNewPosition)
+                updateControlPointsForNodeMove(nodeId)
               }
             }
           })
@@ -781,12 +772,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     }
   }, [viewTransform])
 
-  // Handle control point dragging
-  const handleControlPointMouseDown = (e, edgeId) => {
-    e.stopPropagation()
-    setIsDraggingControlPoint(true)
-    setDraggedEdgeId(edgeId)
-  }
+
 
   const handleDummyControlPointMouseDown = (e, edgeId, currentControlPoint) => {
     e.stopPropagation()
@@ -867,25 +853,11 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       const toleranceBand2Start = { x: bisectorStart.x - perpUnitY * CONTROL_BISECTOR_TOLERANCE, y: bisectorStart.y + perpUnitX * CONTROL_BISECTOR_TOLERANCE }
       const toleranceBand2End = { x: bisectorEnd.x - perpUnitY * CONTROL_BISECTOR_TOLERANCE, y: bisectorEnd.y + perpUnitX * CONTROL_BISECTOR_TOLERANCE }
 
-      // Find where control lines intersect ellipse edges (same as normal mode)
-      const sourceIntersection = findConvexHullIntersection(
-        controlPoint, sourceCenterX, sourceCenterY, sourceRadiusX, sourceRadiusY
-      )
+
       
-      const targetIntersection = findConvexHullIntersection(
-        controlPoint, targetCenterX, targetCenterY, targetRadiusX, targetRadiusY
-      )
+
       
-      // Use intersection points as visual start/end, or fallback to centers (same as normal mode)
-      const visualStartPoint = sourceIntersection || { x: sourceCenterX, y: sourceCenterY }
-      const visualEndPoint = targetIntersection || { x: targetCenterX, y: targetCenterY }
-      
-      // Calculate dummy control point on the actual Bezier curve at t=0.5 (middle) - same as normal mode
-      const t = 0.5
-      const dummyControlPoint = {
-        x: (1-t)*(1-t) * visualStartPoint.x + 2*(1-t)*t * controlPoint.x + t*t * visualEndPoint.x,
-        y: (1-t)*(1-t) * visualStartPoint.y + 2*(1-t)*t * controlPoint.y + t*t * visualEndPoint.y
-      }
+
       
       // Calculate convex hull (triangle formed by start, control, and end points)
       const convexHullPoints = [
@@ -1087,7 +1059,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       const arcPath = `M ${visualStartPoint.x} ${visualStartPoint.y} Q ${controlPoint.x} ${controlPoint.y} ${visualEndPoint.x} ${visualEndPoint.y}`
       
       const polarity = edge.data?.polarity || 'positive'
-      const strokeColor = polarity === 'positive' ? '#059669' : '#dc2626'
+
       const isInLoop = isEdgeInHighlightedLoop(edge)
       const isInHoveredLoop = isEdgeInHoveredLoop(edge)
       const shouldHighlight = isInLoop || isInHoveredLoop
@@ -1404,6 +1376,26 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         SIMULATION MODE
       </div>
     )}
+
+    {/* Watermark */}
+    <div style={{
+      position: 'absolute',
+      bottom: '10px',
+      right: '10px',
+      pointerEvents: 'none',
+      zIndex: 999,
+      opacity: 0.3
+    }}>
+      <img 
+        src={shortIcon} 
+        alt="Watermark" 
+        style={{
+          width: '52px',
+          height: '52px',
+          filter: 'brightness(0.7)'
+        }}
+      />
+    </div>
   </div>
   )
 }

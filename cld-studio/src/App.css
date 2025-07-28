@@ -96,7 +96,7 @@ body {
 .menu-icon-btn {
   background: transparent;
   border: none;
-  color: white;
+  color: #cccccc;
   padding: 6px;
   border-radius: 3px;
   cursor: pointer;
@@ -109,14 +109,76 @@ body {
 }
 
 .menu-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #444444 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: white !important;
 }
 
 .menu-icon {
   width: 16px;
   height: 16px;
-  color: white;
+  color: #cccccc !important;
   stroke-width: 2;
+  transition: color 0.2s ease;
+}
+
+.menu-icon-btn:hover .menu-icon,
+.menu-icon-btn:hover svg,
+.menu-icon-btn:hover .menu-icon svg,
+.menu-icon-btn:hover svg * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Override any active state colors to be consistent */
+.menu-icon-btn.active,
+.menu-icon-btn[style*="background"] {
+  background: transparent !important;
+  color: #cccccc !important;
+}
+
+.menu-icon-btn.active .menu-icon,
+.menu-icon-btn[style*="background"] .menu-icon {
+  color: #cccccc !important;
+}
+
+/* Exception for simulation mode toggle - allow red background */
+.menu-icon-btn.simulation-active {
+  background: #dc2626 !important;
+  color: white !important;
+}
+
+.menu-icon-btn.simulation-active .menu-icon {
+  color: white !important;
+}
+
+.menu-icon-btn.active:hover,
+.menu-icon-btn[style*="background"]:hover {
+  background: #444444 !important;
+  color: white !important;
+}
+
+.menu-icon-btn.active:hover .menu-icon,
+.menu-icon-btn[style*="background"]:hover .menu-icon,
+.menu-icon-btn.active:hover svg,
+.menu-icon-btn[style*="background"]:hover svg,
+.menu-icon-btn.active:hover .menu-icon svg,
+.menu-icon-btn[style*="background"]:hover .menu-icon svg,
+.menu-icon-btn.active:hover svg *,
+.menu-icon-btn[style*="background"]:hover svg * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* Force all icons to be white on hover, regardless of any other styles */
+.menu-icon-btn:hover *,
+.menu-icon-btn:hover svg,
+.menu-icon-btn:hover .menu-icon,
+.menu-icon-btn:hover .menu-icon svg,
+.menu-icon-btn:hover .menu-icon svg * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 /* Color Picker Button */
@@ -2736,11 +2798,12 @@ body {
 .control-groups {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: 5px;
+  padding: 2px 2px;
   background: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
-  margin-bottom: 16px;
+  margin-bottom: 2px;
+  justify-content: center;
 }
 
 .control-group {

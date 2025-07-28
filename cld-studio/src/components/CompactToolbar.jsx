@@ -20,9 +20,7 @@ function CompactToolbar({ mode }) {
     }
   }
 
-  const handleExport = () => {
-    exportMatrix()
-  }
+
 
   const handleExportAsPNG = () => {
     exportAsPNG()

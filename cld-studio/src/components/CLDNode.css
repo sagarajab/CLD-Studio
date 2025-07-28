@@ -1,0 +1,62 @@
+/* CLDNode Component Styles */
+
+/* Node Ellipse */
+.node-ellipse {
+  filter: none;
+}
+
+.node-ellipse.hovered-loop {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Node Text */
+.node-text {
+  user-select: none;
+}
+
+/* Node Textarea */
+.node-textarea {
+  width: 100%;
+  height: auto;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-weight: 600;
+  text-align: center;
+  resize: none;
+  padding: 0;
+  margin: 0;
+  display: block;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  pointer-events: auto;
+  overflow: hidden;
+  box-sizing: border-box;
+  transform: translateY(-50%);
+  position: relative;
+  top: 50%;
+}
+
+/* Foreign Object */
+.node-foreign-object {
+  overflow: visible;
+}
+
+/* Value Pill Group */
+.value-pill-group {
+  pointer-events: none;
+}
+
+/* Value Pill */
+.value-pill {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  transition: all 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .node-textarea {
+    font-size: 12px;
+  }
+} 

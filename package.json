@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "main": "postcss.config.js",
   "scripts": {
+    "dev": "cd cld-studio && npm run dev",
+    "build": "cd cld-studio && npm run build",
+    "lint": "cd cld-studio && npm run lint",
+    "preview": "cd cld-studio && npm run preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

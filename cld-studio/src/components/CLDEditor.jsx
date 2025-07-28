@@ -2,7 +2,6 @@ import React, { useCallback, useRef, useEffect } from 'react'
 import ReactFlow, {
   Background,
   Controls,
-  addEdge,
   useNodesState,
   useEdgesState,
   MiniMap
@@ -10,6 +9,7 @@ import ReactFlow, {
 import { useCLDStore } from '../stores/cldStore'
 import CLDNode from './CLDNode'
 import CLDEdge from './CLDEdge'
+import './CLDEditor.css'
 
 const nodeTypes = {
   cldNode: CLDNode
@@ -27,7 +27,7 @@ function CLDEditor({ mode }) {
     addNode,
     addEdge: addStoreEdge,
     updateNode,
-    updateEdge,
+
     deleteNode,
     deleteEdge,
     setSelectedNode,
@@ -55,20 +55,7 @@ function CLDEditor({ mode }) {
         nextId++
       }
       
-      const newEdge = {
-        ...params,
-        id: nextId,
-        type: 'cldEdge',
-        data: { polarity: 'positive' },
-        style: {
-          stroke: '#059669',
-          strokeWidth: 2
-        },
-        markerEnd: {
-          type: 'arrowclosed',
-          color: '#059669'
-        }
-      }
+
       addStoreEdge(params.source, params.target, 'positive')
     },
     [addStoreEdge, storeEdges]
@@ -117,7 +104,7 @@ function CLDEditor({ mode }) {
 
   // Single click on canvas to deselect
   const onPaneClick = useCallback(
-    (event) => {
+    () => {
       setSelectedNode(null)
       setSelectedEdge(null)
     },
@@ -139,7 +126,7 @@ function CLDEditor({ mode }) {
   )
 
   return (
-    <div className="w-full h-full cld-diagram-container" ref={reactFlowWrapper} style={{ minHeight: '400px' }}>
+    <div className="w-full h-full cld-diagram-container" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -157,7 +144,7 @@ function CLDEditor({ mode }) {
         edgeTypes={edgeTypes}
         fitView
         attributionPosition="bottom-left"
-        style={{ background: 'transparent' }}
+        className="react-flow-background"
       >
         <Background />
         <Controls />

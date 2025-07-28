@@ -1,6 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import { getEllipseDimensions } from '../utils/text'
+import './CLDNode.css'
 
 function CLDNode({ 
   id, 
@@ -138,7 +139,6 @@ function CLDNode({
     nodes.findIndex(node => node.id === id) : -1
   
   const nodeValue = nodeIndex !== -1 ? simulationState.accumulatedValues[nodeIndex] || 0 : 0
-  const lastIncrement = nodeIndex !== -1 ? simulationState.stateVector[nodeIndex] || 0 : 0
 
   return (
     <g>
@@ -191,9 +191,7 @@ function CLDNode({
               : (isHovered || hoveredNode === id) ? "3"
               : "0"
           }
-          style={{
-            filter: isInHoveredLoop && !isInHighlightedLoop ? 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' : 'none'
-          }}
+          className={`node-ellipse ${isInHoveredLoop && !isInHighlightedLoop ? 'hovered-loop' : ''}`}
           cursor={isCreatingConnection ? "crosshair" : "pointer"}
           onClick={handleClick}
           onMouseDown={handleMouseDown}
@@ -212,7 +210,7 @@ function CLDNode({
           y={ellipseDimensions.textPadding}
           width={ellipseDimensions.width - ellipseDimensions.textPadding * 2}
           height={ellipseDimensions.height - ellipseDimensions.textPadding * 2}
-          style={{ overflow: 'visible' }}
+          className="node-foreign-object"
         >
           <textarea
             ref={inputRef}
@@ -221,32 +219,13 @@ function CLDNode({
             onBlur={handleLabelBlur}
             onKeyDown={handleLabelKeyDown}
             onContextMenu={handleContextMenu}
+            className="node-textarea"
             style={{
-              width: '100%',
-              height: 'auto',
               minHeight: `${ellipseDimensions.lineHeight}px`,
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
               fontSize: `${globalStyles.nodeFontSize}px`,
-              fontWeight: '600',
-              textAlign: 'center',
               color: data.color || '#000000',
-              resize: 'none',
               fontFamily: globalStyles.nodeFont,
-              lineHeight: `${globalStyles.nodeFontSize + 4}px`,
-              padding: '0',
-              margin: '0',
-              display: 'block',
-              wordWrap: 'break-word',
-              overflowWrap: 'break-word',
-              whiteSpace: 'pre-wrap',
-              pointerEvents: 'auto',
-              overflow: 'hidden',
-              boxSizing: 'border-box',
-              transform: 'translateY(-50%)',
-              position: 'relative',
-              top: '50%'
+              lineHeight: `${globalStyles.nodeFontSize + 4}px`
             }}
             placeholder="Enter label..."
           />
@@ -271,7 +250,7 @@ function CLDNode({
               fill={data.color || '#000000'}
               fontFamily={globalStyles.nodeFont}
               cursor={isCreatingConnection ? "crosshair" : "pointer"}
-              style={{ userSelect: 'none' }}
+              className="node-text"
               onClick={handleClick}
               onMouseDown={handleMouseDown}
               onDoubleClick={handleDoubleClick}
@@ -288,7 +267,7 @@ function CLDNode({
 
       {/* Node value pill for simulation mode - positioned on top of everything */}
       {simulationMode && simulationState.stateVector.length > 0 && (
-        <g className="value-pill-group" style={{ pointerEvents: 'none' }}>
+        <g className="value-pill-group">
           {/* White thick border background */}
           <rect
             x={ellipseDimensions.centerX - 40}
@@ -299,7 +278,7 @@ function CLDNode({
             stroke="white"
             strokeWidth="3"
             rx="6"
-            style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+            className="value-pill"
           />
           
           {/* Main pill background - neutral gray */}
@@ -320,7 +299,7 @@ function CLDNode({
             height="8"
             fill="#f39c12"
             rx="4"
-            style={{ transition: 'all 0.3s ease' }}
+            className="value-pill"
           />
           
           {/* Center line for reference */}

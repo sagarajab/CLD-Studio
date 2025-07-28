@@ -1,0 +1,35 @@
+/* AdjacencyMatrix Component Styles */
+
+/* Matrix Container */
+.adjacency-matrix-container {
+  cursor: default;
+}
+
+.adjacency-matrix-container.dragging {
+  cursor: grabbing;
+}
+
+/* Matrix Table */
+.adjacency-matrix-table {
+  position: relative;
+}
+
+/* Legend Colors */
+.legend-color.positive {
+  background-color: #28a745;
+}
+
+.legend-color.negative {
+  background-color: #dc3545;
+}
+
+.legend-color.none {
+  background-color: #f8f9fa;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .adjacency-matrix-container {
+    max-width: 90vw;
+  }
+} 
