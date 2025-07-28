@@ -85,7 +85,7 @@ function CompactSidebar({ mode }) {
                 key={problem.id}
                 className={`p-2 border rounded cursor-pointer transition-colors ${
                   selectedProblem?.id === problem.id
-                    ? 'border-blue-500 bg-blue-50'
+                    ? 'border-orange-500 bg-orange-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => handleProblemSelect(problem)}
@@ -102,9 +102,9 @@ function CompactSidebar({ mode }) {
       {currentProblem && mode === 'assessment' && (
         <div className="sidebar-section">
           <div className="sidebar-title">Current Problem</div>
-          <div className="bg-blue-50 p-2 rounded border border-blue-200">
-            <div className="font-medium text-sm text-blue-900">{currentProblem.title}</div>
-            <div className="text-xs text-blue-700 mt-1">{currentProblem.description}</div>
+          <div className="bg-orange-50 p-2 rounded border border-orange-200">
+            <div className="font-medium text-sm text-orange-900">{currentProblem.title}</div>
+            <div className="text-xs text-orange-700 mt-1">{currentProblem.description}</div>
           </div>
         </div>
       )}

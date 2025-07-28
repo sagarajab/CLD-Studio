@@ -650,7 +650,7 @@ body {
 
 .sidebar-resize-handle:hover,
 .sidebar-resize-handle.dragging {
-  background: rgba(52, 152, 219, 0.3);
+  background: rgba(243, 156, 18, 0.3);
 }
 
 .sidebar-resize-handle::after {
@@ -661,7 +661,7 @@ body {
   transform: translate(-50%, -50%);
   width: 2px;
   height: 40px;
-  background: #3498db;
+  background: #f39c12;
   border-radius: 1px;
   opacity: 0;
   transition: opacity 0.2s ease;
@@ -679,7 +679,7 @@ body {
   left: 8px;
   width: 32px;
   height: 32px;
-  background: #3498db;
+  background: #f39c12;
   border: none;
   border-radius: 4px;
   color: white;
@@ -693,7 +693,7 @@ body {
 }
 
 .sidebar-collapse-btn:hover {
-  background: #2980b9;
+  background: #e67e22;
   transform: scale(1.05);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -705,11 +705,11 @@ body {
 .sysloop-sidebar.collapsed .sidebar-collapse-btn {
   left: 8px;
   top: 8px;
-  background: #2980b9;
+  background: #e67e22;
 }
 
 .sysloop-sidebar.collapsed .sidebar-collapse-btn:hover {
-  background: #1f5f8b;
+  background: #d35400;
 }
 
 /* Prevent text selection during resize */
@@ -790,8 +790,8 @@ body {
 
 .sidebar-tab.active {
   background: white;
-  color: #3498db;
-  border-bottom-color: #3498db;
+  color: #f39c12;
+  border-bottom-color: #f39c12;
 }
 
 .sidebar-content {
@@ -821,8 +821,8 @@ body {
 
 .problem-textarea:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  border-color: #f39c12;
+  box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.2);
 }
 
 /* Enhanced Loop Table Styles */
@@ -864,13 +864,13 @@ body {
 }
 
 .loops-table tbody tr.highlighted-loop {
-  background-color: #dbeafe !important;
-  border-left: 3px solid #3b82f6;
+  background-color: #fef3cd !important;
+  border-left: 3px solid #f39c12;
   font-weight: 600;
 }
 
 .loops-table tbody tr.highlighted-loop:hover {
-  background-color: #bfdbfe !important;
+  background-color: #fdeaa7 !important;
 }
 
 /* Loop Type Badges */
@@ -946,8 +946,8 @@ body {
 }
 
 .status-item.loops {
-  background: #d6eaf8;
-  color: #3498db;
+  background: #fdeaa7;
+  color: #f39c12;
 }
 
 .status-count {
@@ -1010,7 +1010,7 @@ body {
   -webkit-appearance: none;
   width: 12px;
   height: 12px;
-  background: #3498db;
+  background: #f39c12;
   border-radius: 50%;
   cursor: pointer;
 }
@@ -1117,26 +1117,30 @@ body {
 .view-modal-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: #3498db;
-  color: white;
+  gap: 4px;
+  background: transparent;
+  color: #6b7280;
   border: none;
   border-radius: 4px;
-  padding: 6px 12px;
-  font-size: 12px;
+  padding: 4px 8px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .view-modal-btn:hover {
-  background: #2980b9;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: #f3f4f6;
+  color: #374151;
 }
 
 .view-modal-btn:active {
-  transform: translateY(0);
+  background: #e5e7eb;
+}
+
+.view-modal-btn svg {
+  stroke: currentColor;
+  stroke-width: 1.5;
 }
 
 /* Analysis Modal Styles */
@@ -1147,11 +1151,16 @@ body {
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   z-index: 2000;
   backdrop-filter: blur(2px);
+}
+
+.analysis-modal-overlay.resizing {
+  pointer-events: none;
+}
+
+.analysis-modal-overlay.resizing .analysis-modal {
+  pointer-events: auto;
 }
 
 .analysis-modal {
@@ -1160,24 +1169,39 @@ body {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   max-width: 90vw;
   max-height: 90vh;
-  width: 80vw;
+  min-width: 500px;
+  min-height: 300px;
+  width: 700px;
+  height: 450px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  resize: none;
+  transition: box-shadow 0.2s ease;
+}
+
+.analysis-modal.resizing {
+  box-shadow: 0 10px 30px rgba(243, 156, 18, 0.4);
 }
 
 .analysis-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 12px 16px;
   background: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
+  flex-shrink: 0;
+  user-select: none;
 }
 
 .analysis-modal-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #495057;
 }
@@ -1193,6 +1217,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 10;
+  position: relative;
 }
 
 .analysis-modal-close:hover {
@@ -1200,30 +1226,129 @@ body {
   color: #495057;
 }
 
+.analysis-modal-close:active {
+  background: #dee2e6;
+  transform: scale(0.95);
+}
+
 .analysis-modal-content {
-  padding: 24px;
+  padding: 12px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  user-select: none;
+}
+
+/* Modal resize handles for all edges */
+.analysis-modal-resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 10;
+}
+
+.analysis-modal-resize-handle.top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: n-resize;
+}
+
+.analysis-modal-resize-handle.bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: s-resize;
+}
+
+.analysis-modal-resize-handle.left {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: w-resize;
+}
+
+.analysis-modal-resize-handle.right {
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: e-resize;
+}
+
+.analysis-modal-resize-handle:hover {
+  background: rgba(243, 156, 18, 0.3);
+}
+
+.analysis-modal-resize-handle:active {
+  background: rgba(243, 156, 18, 0.5);
+}
+
+/* Modal drag handle */
+.analysis-modal-drag-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 60px; /* Leave space for close button */
+  height: 40px;
+  cursor: move;
+  z-index: 5;
 }
 
 .modal-table {
   width: 100%;
-  font-size: 14px;
+  font-size: 12px;
+  table-layout: auto;
+  border-collapse: collapse;
+  max-width: 100%;
+  margin: 0;
+  flex: 1;
+}
+
+/* Ensure table columns expand to fill available space */
+.modal-table th,
+.modal-table td {
+  min-width: 0;
+}
+
+.modal-table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
 }
 
 .modal-table th {
-  font-size: 14px;
-  padding: 12px 16px;
+  font-size: 12px;
+  padding: 6px 8px;
+  white-space: nowrap;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+  user-select: none;
 }
 
 .modal-table td {
-  padding: 12px 16px;
-  font-size: 14px;
+  padding: 4px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+  user-select: none;
 }
 
 .modal-table .description-cell {
-  max-width: 300px;
-  font-size: 13px;
+  max-width: 200px;
+  font-size: 11px;
+  white-space: normal;
+  word-wrap: break-word;
+  padding: 4px 6px;
 }
 
 /* Editable Cell Styles */
@@ -1232,11 +1357,28 @@ body {
   transition: background-color 0.2s ease;
   border-radius: 4px;
   padding: 4px;
+  border: 1px solid transparent;
 }
 
 .description-cell.clickable:hover {
   background-color: #f0f9ff;
+  border-color: #3b82f6;
+}
+
+.description-cell.editing {
+  cursor: text;
+  background-color: #ffffff;
   border: 1px solid #3b82f6;
+  border-radius: 4px;
+  padding: 4px;
+  outline: none;
+  min-height: 20px;
+  user-select: text;
+}
+
+.description-cell.editing:focus {
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
 .editable-cell {
@@ -1311,29 +1453,35 @@ body {
   .analysis-modal {
     width: 95vw;
     max-width: 95vw;
+    min-width: 300px;
+    min-height: 300px;
+    height: 80vh;
     margin: 10px;
+    resize: both;
   }
   
-  .analysis-modal-header {
-    padding: 16px 20px;
+    .analysis-modal-header {
+    padding: 8px 12px;
   }
-  
+
   .analysis-modal-header h3 {
-    font-size: 16px;
+    font-size: 14px;
   }
   
   .analysis-modal-content {
     padding: 16px 20px;
   }
   
-  .modal-table {
-    font-size: 12px;
+    .modal-table {
+    font-size: 10px;
+    table-layout: auto;
   }
-  
+
   .modal-table th,
   .modal-table td {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 3px 6px;
+    font-size: 10px;
+    white-space: nowrap;
   }
   
   .modal-table .description-cell {
@@ -1342,13 +1490,14 @@ body {
   }
   
   .view-modal-btn {
-    padding: 4px 8px;
-    font-size: 11px;
+    padding: 3px 6px;
+    font-size: 10px;
+    border: none;
   }
   
   .view-modal-btn svg {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
   }
   
   .edit-textarea {
@@ -1417,17 +1566,26 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .analysis-table td {
   padding: 4px 8px;
   border-bottom: 1px solid #e9ecef;
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .analysis-table tbody tr:hover {
-  background: #f8f9fa;
+  background: #f0f9ff;
+  cursor: pointer;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.15s ease;
+}
+
+/* Enhanced hover effect for analysis table rows */
+.analysis-table tbody tr {
+  transition: all 0.15s ease;
 }
 
 .id-cell {
@@ -1435,14 +1593,45 @@ body {
   font-weight: 600;
   color: #6c757d;
   min-width: 50px;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .label-cell, .node-cell {
   font-weight: 500;
   color: #212529;
   min-width: 100px;
-  font-size: 10px;
+  font-size: 11px;
+}
+
+/* Connection analysis table column alignments */
+.analysis-table .node-cell:nth-child(2) {
+  text-align: right;
+}
+
+.analysis-table .polarity-cell {
+  text-align: center;
+}
+
+.analysis-table .node-cell:nth-child(4) {
+  text-align: left;
+}
+
+/* Connection analysis table header alignments */
+.analysis-table th:nth-child(2) {
+  text-align: right;
+}
+
+.analysis-table th:nth-child(3) {
+  text-align: center;
+}
+
+.analysis-table th:nth-child(4) {
+  text-align: left;
+}
+
+/* Node analysis table column alignments */
+.analysis-table .label-cell {
+  text-align: right;
 }
 
 .count-cell {
@@ -1450,7 +1639,7 @@ body {
   font-weight: 600;
   color: #495057;
   min-width: 60px;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .polarity-cell {
@@ -1472,7 +1661,7 @@ body {
   color: #6c757d;
   max-width: 150px;
   word-wrap: break-word;
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.2;
 }
 
@@ -1481,12 +1670,18 @@ body {
   color: #495057;
   min-width: 120px;
   font-size: 10px;
+  text-align: right;
+}
+
+.metric-cell:empty {
+  background: transparent;
+  border: none;
 }
 
 .value-cell {
   font-weight: 700;
   color: #212529;
-  text-align: center;
+  text-align: left;
   min-width: 60px;
   font-size: 10px;
 }
@@ -1751,13 +1946,13 @@ body {
 }
 
 .loop-view-btn.active {
-  background-color: #3b82f6 !important;
+  background-color: #f39c12 !important;
   color: white !important;
-  border-color: #2563eb !important;
+  border-color: #e67e22 !important;
 }
 
 .loop-view-btn.active:hover {
-  background-color: #2563eb !important;
+  background-color: #e67e22 !important;
 }
 
 .clear-highlight-btn:hover {
@@ -1792,7 +1987,7 @@ body {
 }
 
 .status-indicator.loop-view {
-  background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(45deg, #f39c12, #e67e22);
   color: white;
 }
 
@@ -1855,9 +2050,29 @@ body {
   text-align: left;
 }
 
-.loops-table-compact th:nth-child(1) { width: 20%; } /* ID */
-.loops-table-compact th:nth-child(2) { width: 40%; } /* Length */
-.loops-table-compact th:nth-child(3) { width: 40%; } /* Type */
+.loops-table-compact th:nth-child(1) { width: 33.33%; } /* ID */
+.loops-table-compact th:nth-child(2) { width: 33.33%; } /* Length */
+.loops-table-compact th:nth-child(3) { width: 33.33%; } /* Type */
+
+/* Center align all columns */
+.loops-table-compact th,
+.loops-table-compact td {
+  text-align: center;
+}
+
+/* Override uppercase transform for sentence case headers */
+.loops-table-compact th {
+  text-transform: none;
+}
+
+/* Loops modal table - Nodes column wrapping */
+.modal-table th:nth-child(4),
+.modal-table td:nth-child(4) {
+  max-width: 200px;
+  word-wrap: break-word;
+  white-space: normal;
+  text-align: left;
+}
 
 .loops-table-compact td {
   padding: 8px 12px;
@@ -1878,8 +2093,8 @@ body {
 }
 
 .loops-table-compact tbody tr.highlighted {
-  background-color: #dbeafe !important;
-  border-left: 3px solid #3b82f6;
+  background-color: #fef3cd !important;
+  border-left: 3px solid #f39c12;
   font-weight: 600;
 }
 

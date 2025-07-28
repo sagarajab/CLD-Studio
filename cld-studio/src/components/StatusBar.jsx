@@ -29,7 +29,7 @@ function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge }) {
           <span className="font-medium">Mode:</span>
           <span className={`px-2 py-1 rounded text-xs font-medium ${
             mode === 'sandbox' 
-              ? 'bg-blue-500 text-white' 
+              ? 'bg-orange-500 text-white' 
               : 'bg-green-500 text-white'
           }`}>
             {mode === 'sandbox' ? 'Sandbox' : 'Assessment'}

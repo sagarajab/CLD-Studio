@@ -32,6 +32,10 @@ function SysLoopHeader({ mode, setMode }) {
     resetGlobalStyles,
     updateSelectedNodeColor,
     updateSelectedEdgeColor,
+    setSelectedNodeColor,
+    setSelectedArrowColor,
+    selectedNodeColor,
+    selectedArrowColor,
     diagramName,
     setDiagramName,
     showGrid,
@@ -65,10 +69,6 @@ function SysLoopHeader({ mode, setMode }) {
   
   // Load config for colors
   const config = loadConfig()
-  
-  // State for currently selected colors (like PowerPoint)
-  const [selectedNodeColor, setSelectedNodeColor] = useState(config.colors.defaultSelected.nodeColor)
-  const [selectedArrowColor, setSelectedArrowColor] = useState(config.colors.defaultSelected.arrowColor)
   
   // Predefined colors for the dropdown (from config)
   const predefinedColors = config.colors.palette
@@ -408,12 +408,7 @@ function SysLoopHeader({ mode, setMode }) {
       icon: Table2,
       title: showAdjacencyMatrix ? 'Close Adjacency Matrix' : 'Show Adjacency Matrix' 
     },
-    { 
-      label: 'Settings', 
-      action: () => setShowSettingsModal(true), 
-      icon: Settings,
-      title: 'Application Settings' 
-    }
+
   ]
 
   // Hamburger menu items (file operations)

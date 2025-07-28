@@ -13,7 +13,7 @@ function CLDEdge({
   data,
   selected
 }) {
-  const { updateEdge, selectedEdge, globalStyles, simulationMode, simulationState } = useCLDStore()
+  const { updateEdge, selectedEdge, globalStyles, simulationMode, simulationState, hoveredEdge } = useCLDStore()
   const { getNode } = useReactFlow()
   const polarity = data?.polarity || 'positive'
   const isSelected = selectedEdge === id
@@ -52,6 +52,7 @@ function CLDEdge({
 
   const [radius, setRadius] = useState(getRadius())
   const [isDraggingRadius, setIsDraggingRadius] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
 
   const handleEdgeClick = () => {
     // Toggle polarity on click (disabled during simulation mode)
@@ -236,6 +237,10 @@ function CLDEdge({
     if (selected || isSelected) {
       baseStyle.strokeWidth = globalStyles.arrowWidth + 1
       baseStyle.filter = 'drop-shadow(0 0 4px rgba(0, 0, 0, 0.3))'
+    } else if (isHovered || hoveredEdge === id) {
+      baseStyle.strokeWidth = globalStyles.arrowWidth + 2
+      baseStyle.filter = 'drop-shadow(0 0 6px rgba(0, 0, 0, 0.4))'
+      baseStyle.stroke = '#f39c12' // Mustard color for hover
     }
 
     return baseStyle
@@ -251,6 +256,8 @@ function CLDEdge({
         path={edgePath}
         style={getEdgeStyle()}
         onClick={handleEdgeClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       />
       
       {/* Propagation animation during simulation */}
@@ -273,7 +280,7 @@ function CLDEdge({
         cx={radiusControlPos.x}
         cy={radiusControlPos.y}
         r={5}
-        fill={selected || isSelected ? '#3b82f6' : '#6b7280'}
+        fill={selected || isSelected ? '#f39c12' : '#6b7280'}
         stroke="white"
         strokeWidth={2}
         cursor="ns-resize"

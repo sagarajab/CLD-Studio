@@ -9,8 +9,8 @@ export const defaultConfig = {
   
   // Global styling settings
   globalStyles: {
-    nodeFont: 'Arial',
-    nodeFontSize: 12,
+    nodeFont: 'Inter',
+    nodeFontSize: 14,
     arrowColor: '#6b7280',
     arrowWidth: 1.5,
     arrowTransparency: 1.0,
@@ -71,6 +71,7 @@ export const defaultConfig = {
     showStatusBar: true,
     showToolbar: true,
     showSidebar: true,
+    showGrid: false,
   },
   
   // File settings

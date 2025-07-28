@@ -8,7 +8,7 @@
  * @returns {string[]} Array of wrapped lines.
  */
 export function wrapText(text, maxWidth, fontSize = 16, onConstraintViolation = null) {
-  const charWidth = fontSize * 0.7
+  const charWidth = fontSize * 0.6 // More accurate character width estimation
   const lines = text.split('\n')
   const wrappedLines = []
   
@@ -63,29 +63,32 @@ export function wrapText(text, maxWidth, fontSize = 16, onConstraintViolation = 
  * Calculates ellipse dimensions for a label.
  * @param {string} label - The label text.
  * @param {object} [options] - Options for calculation.
- * @param {number} [options.baseWidth=60]
- * @param {number} [options.baseHeight=40]
- * @param {number} [options.padding=32]
- * @param {number} [options.maxTextWidth=120]
- * @param {number} [options.fontSize=16]
+ * @param {number} [options.baseWidth=40] - Minimum width of the ellipse.
+ * @param {number} [options.baseHeight=40] - Minimum height of the ellipse.
+ * @param {number} [options.padding=16] - Padding around the text.
+ * @param {number} [options.maxTextWidth=120] - Maximum width for text wrapping.
+ * @param {number} [options.maxEllipseWidth=200] - Maximum width of the ellipse.
+ * @param {number} [options.fontSize=16] - Font size for text calculations.
  * @returns {object} Ellipse dimensions and wrapped lines.
  */
 export function getEllipseDimensions(label, options = {}) {
   const {
-    baseWidth = 60,
+    baseWidth = 40,
     baseHeight = 40,
-    padding = 32,
-    maxTextWidth = 200,
+    padding = 25,
+    maxTextWidth = 170,
+    maxEllipseWidth = 200,
     fontSize = 16,
     onConstraintViolation = null,
   } = options
   const lineHeight = fontSize + 4
   const wrappedLines = wrapText(label, maxTextWidth, fontSize, onConstraintViolation)
-  const calculateLineWidth = (line) => line.length * fontSize * 0.7
+  const calculateLineWidth = (line) => line.length * fontSize * 0.6
   const lineWidths = wrappedLines.map(calculateLineWidth)
   const maxLineWidth = Math.max(...lineWidths, 0)
   const textWidth = Math.min(maxLineWidth, maxTextWidth)
-  const width = Math.max(baseWidth, textWidth + padding)
+  const calculatedWidth = Math.max(baseWidth, textWidth + padding)
+  const width = Math.min(calculatedWidth, maxEllipseWidth)
   const height = Math.max(baseHeight, wrappedLines.length * lineHeight + padding)
   return {
     width,

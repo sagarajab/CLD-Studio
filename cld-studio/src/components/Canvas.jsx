@@ -23,7 +23,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   // Connection creation state
   const [isCreatingConnection, setIsCreatingConnection] = useState(false)
   const [connectionSource, setConnectionSource] = useState(null)
-  const [isRightMouseDown, setIsRightMouseDown] = useState(false)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+
 
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
@@ -70,7 +71,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     updateViewTransform,
     globalStyles,
     showGrid,
-    simulationMode
+    simulationMode,
+    hoveredEdge
   } = useCLDStore();
 
   // Helper functions for loop highlighting
@@ -91,7 +93,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   // Get opacity for elements based on highlighted loop and dimming toggle
   const getElementOpacity = (isInLoop) => {
     if (highlightedLoop === null || !dimmingEnabled) return 1
-    return isInLoop ? 1 : 0.1  // More obvious dimming
+    return isInLoop ? 1 : 0.4  // Less dimming for better visibility
   }
 
   // Check if element is in hovered loop (for hover highlighting)
@@ -103,51 +105,30 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     return hoveredLoop !== null && loops[hoveredLoop] && loops[hoveredLoop].edgeIds && loops[hoveredLoop].edgeIds.includes(edge.id)
   }
 
+  // Check if a connection already exists between two nodes in the same direction
+  const connectionExists = (sourceId, targetId) => {
+    return storeEdges.some(edge => 
+      edge.source === sourceId && edge.target === targetId
+    )
+  }
+
   // Debug loop view mode changes
   useEffect(() => {
     // Loop view mode state tracking (no console logging needed)
   }, [loopViewMode])
 
 
-  // Global mouse event listeners for right-click and middle-click detection
+  // Global mouse event listeners for middle-click detection
   useEffect(() => {
     const handleMouseDown = (event) => {
-      if (event.button === 2) { // Right mouse button
-        setIsRightMouseDown(true)
-        
-        // Check if right-click is on a node
-        const target = event.target
-        if (target && target.closest && target.closest('[data-node-id]')) {
-          const nodeId = parseInt(target.closest('[data-node-id]').getAttribute('data-node-id'))
-          if (nodeId) {
-            if (!isCreatingConnection) {
-              // Auto-assign this node as the FROM node
-              setIsCreatingConnection(true)
-              setConnectionSource(nodeId)
-              // Highlight the source node
-              updateNode(nodeId, { borderColor: '#f97316' }) // Orange border
-            } else if (isCreatingConnection && connectionSource === nodeId) {
-              // Right-click on the same node again - cancel connection
-              setIsCreatingConnection(false)
-              setConnectionSource(null)
-              updateNode(nodeId, { borderColor: undefined })
-            }
-          }
-        }
-      } else if (event.button === 1) { // Middle mouse button
+      if (event.button === 1) { // Middle mouse button
         setIsDragging(true)
         setDragStart({ x: event.clientX, y: event.clientY })
       }
     }
 
     const handleMouseUp = (event) => {
-      if (event.button === 2) { // Right mouse button
-        setIsRightMouseDown(false)
-        
-        // Don't cancel connection creation on right mouse up
-        // Let the user complete the connection by clicking on another node
-        // Only cancel if they right-click again or click on empty space
-      } else if (event.button === 1) { // Middle mouse button
+      if (event.button === 1) { // Middle mouse button
         setIsDragging(false)
       }
     }
@@ -160,7 +141,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       document.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('mouseup', handleMouseUp)
     }
-  }, [isCreatingConnection, connectionSource, updateNode])
+  }, [])
 
   // Global keyboard event listeners for delete functionality
   useEffect(() => {
@@ -195,6 +176,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         if (isCreatingConnection) {
           setIsCreatingConnection(false)
           setConnectionSource(null)
+          setMousePosition({ x: 0, y: 0 })
           if (connectionSource) {
             updateNode(connectionSource, { borderColor: undefined })
           }
@@ -258,17 +240,28 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             updateNode(connectionSource, { borderColor: undefined })
           }
           setConnectionSource(null)
+          setMousePosition({ x: 0, y: 0 })
         }
         
         lastClickTimeRef.current = currentTime
         lastClickPositionRef.current = currentPosition
+      }
+    } else if (event.button === 2) { // Right mouse button on canvas
+      // Cancel connection creation if right-clicking on empty space
+      if (isCreatingConnection) {
+        setIsCreatingConnection(false)
+        if (connectionSource) {
+          updateNode(connectionSource, { borderColor: undefined })
+        }
+        setConnectionSource(null)
+        setMousePosition({ x: 0, y: 0 })
       }
     }
   }, [mode, addNode, setSelectedNode, setSelectedEdge, viewTransform, isCreatingConnection, connectionSource, updateNode, highlightedLoop, clearHighlightedLoop])
 
   // Update cursor based on interaction state
   useEffect(() => {
-    if (isCreatingConnection || isRightMouseDown) {
+    if (isCreatingConnection) {
       document.body.style.cursor = 'crosshair'
     } else if (isDragging) {
       document.body.style.cursor = 'grabbing'
@@ -279,7 +272,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     return () => {
       document.body.style.cursor = 'default'
     }
-  }, [isCreatingConnection, isRightMouseDown, isDragging])
+  }, [isCreatingConnection, isDragging])
 
 
 
@@ -483,7 +476,11 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
 
       updateEdge(draggedArrowId, { controlPoint: newControlPoint })
     } else if (isCreatingConnection && connectionSource) {
-      // Handle connection preview (optional)
+      // Track mouse position for connection preview guide line
+      const rect = canvasRef.current.getBoundingClientRect()
+      const x = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
+      const y = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
+      setMousePosition({ x, y })
     }
     
     // Handle node dragging
@@ -550,44 +547,81 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       }, [viewTransform, setViewTransform])
 
   // Handle node interactions
-  // Check if a connection already exists between two nodes in the same direction
-  const connectionExists = (sourceId, targetId) => {
-    return storeEdges.some(edge => 
-      edge.source === sourceId && edge.target === targetId
-    )
-  }
-
   const handleNodeClick = (nodeId, event) => {
-    if (isRightMouseDown && !isCreatingConnection && !simulationMode) {
-      setIsCreatingConnection(true)
-      setConnectionSource(nodeId)
-      
-      // Highlight the source node
-      updateNode(nodeId, { borderColor: '#f97316' }) // Orange border
-    } else if (isCreatingConnection && connectionSource && connectionSource !== nodeId) {
-      // Check if connection already exists
-      if (connectionExists(connectionSource, nodeId)) {
+    // Check if this is a right-click event
+    if (event.button === 2) {
+      // Right-click for connection creation
+      if (!isCreatingConnection && !simulationMode) {
+        // Start connection creation
+        const rect = canvasRef.current.getBoundingClientRect()
+        const x = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
+        const y = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
+        
+        setIsCreatingConnection(true)
+        setConnectionSource(nodeId)
+        setMousePosition({ x, y })
+        // Highlight the source node
+        updateNode(nodeId, { borderColor: '#f97316' }) // Orange border
+      } else if (isCreatingConnection && connectionSource && connectionSource !== nodeId) {
+        // Complete connection creation
+        // Check if connection already exists
+        if (connectionExists(connectionSource, nodeId)) {
+          // Reset connection state
+          setIsCreatingConnection(false)
+          setConnectionSource(null)
+          setMousePosition({ x: 0, y: 0 })
+          // Remove highlight from source node
+          updateNode(connectionSource, { borderColor: undefined })
+          return
+        }
+        
+        // Create the edge
+        addEdge(connectionSource, nodeId, 'positive')
+        
         // Reset connection state
         setIsCreatingConnection(false)
         setConnectionSource(null)
+        setMousePosition({ x: 0, y: 0 })
+        
         // Remove highlight from source node
         updateNode(connectionSource, { borderColor: undefined })
-        return
+      } else if (isCreatingConnection && connectionSource === nodeId) {
+        // Cancel connection creation by right-clicking on same node
+        setIsCreatingConnection(false)
+        setConnectionSource(null)
+        setMousePosition({ x: 0, y: 0 })
+        updateNode(nodeId, { borderColor: undefined })
       }
-      
-      // Create the edge
-      addEdge(connectionSource, nodeId, 'positive')
-      
-      // Reset connection state
-      setIsCreatingConnection(false)
-      setConnectionSource(null)
-      
-      // Remove highlight from source node
-      updateNode(connectionSource, { borderColor: undefined })
-    } else if (isCreatingConnection && connectionSource === nodeId) {
-      setIsCreatingConnection(false)
-      setConnectionSource(null)
-      updateNode(nodeId, { borderColor: undefined })
+    } else {
+      // Left-click on node
+      if (isCreatingConnection && connectionSource && connectionSource !== nodeId) {
+        // Complete connection creation with left-click
+        // Check if connection already exists
+        if (connectionExists(connectionSource, nodeId)) {
+          // Reset connection state
+          setIsCreatingConnection(false)
+          setConnectionSource(null)
+          setMousePosition({ x: 0, y: 0 })
+          // Remove highlight from source node
+          updateNode(connectionSource, { borderColor: undefined })
+          return
+        }
+        
+        // Create the edge
+        addEdge(connectionSource, nodeId, 'positive')
+        
+        // Reset connection state
+        setIsCreatingConnection(false)
+        setConnectionSource(null)
+        setMousePosition({ x: 0, y: 0 })
+        
+        // Remove highlight from source node
+        updateNode(connectionSource, { borderColor: undefined })
+      } else if (!isCreatingConnection && !simulationMode) {
+        // Normal left-click - just select it
+        setSelectedNode(nodeId)
+        setSelectedEdge(null)
+      }
     }
   }
 
@@ -601,7 +635,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     
     event.stopPropagation()
     
-    if (event.button === 0 && !isRightMouseDown && !simulationMode) { // Left click only, not during connection creation or simulation mode
+    if (event.button === 0 && !simulationMode) { // Left click only, not during simulation mode
       const rect = canvasRef.current.getBoundingClientRect()
       const mouseX = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
       const mouseY = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
@@ -617,7 +651,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       // Select the node
       setSelectedNode(node.id)
     }
-  }, [isRightMouseDown, viewTransform, setSelectedNode, simulationMode])
+  }, [viewTransform, setSelectedNode, simulationMode])
 
   // Handle control point dragging
   const handleControlPointMouseDown = (e, edgeId) => {
@@ -834,7 +868,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             devMode={devMode}
             isFromNode={isCreatingConnection && connectionSource === node.id}
             isCreatingConnection={isCreatingConnection}
-            isRightMouseDown={isRightMouseDown}
+
           />
         </g>
       )
@@ -1024,6 +1058,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             strokeWidth={
               selectedEdge === edge.id ? globalStyles.arrowWidth + 2 : 
               shouldHighlight ? globalStyles.arrowWidth + 1 : 
+              hoveredEdge === edge.id ? globalStyles.arrowWidth + 2 :
               globalStyles.arrowWidth
             }
             fill="none"
@@ -1119,6 +1154,33 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     })
   }
 
+  // Render connection guide line
+  const renderConnectionGuideLine = () => {
+    if (!isCreatingConnection || !connectionSource) return null
+
+    const sourceNode = storeNodes.find(n => n.id === connectionSource)
+    if (!sourceNode) return null
+
+    const sourceEllipse = getEllipseDimensions(sourceNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
+    const sourceCenterX = sourceNode.position.x + sourceEllipse.centerX
+    const sourceCenterY = sourceNode.position.y + sourceEllipse.centerY
+
+    // Calculate a simple straight line from source node center to mouse position
+    const guideLinePath = `M ${sourceCenterX} ${sourceCenterY} L ${mousePosition.x} ${mousePosition.y}`
+
+    return (
+      <path
+        d={guideLinePath}
+        stroke="#f97316" // Orange color to match the FROM node border
+        strokeWidth="2"
+        strokeDasharray="5,5" // Dashed line
+        fill="none"
+        opacity="0.7"
+        style={{ pointerEvents: 'none' }}
+      />
+    )
+  }
+
   return (
     <div className="canvas-container" ref={canvasRef}>
       <svg
@@ -1131,9 +1193,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         onContextMenu={(e) => e.preventDefault()}
         onClick={handleCanvasClick}
         style={{ 
-          cursor: isRightMouseDown ? 'crosshair' : 
-                 (isDragging ? 'grabbing' : 
-                 (isDraggingArrow ? 'pointer' : 'default')),
+          cursor: isDragging ? 'grabbing' : 
+                 (isDraggingArrow ? 'pointer' : 'default'),
           userSelect: 'none'
         }}
       >
@@ -1171,6 +1232,9 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           
           {/* Edges */}
           {renderEdges()}
+          
+          {/* Connection guide line */}
+          {renderConnectionGuideLine()}
         </g>
       </svg>
     </div>

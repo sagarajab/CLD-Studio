@@ -9,6 +9,8 @@ const useCLDStore = create((set, get) => ({
   selectedNode: null,
   selectedEdge: null,
   highlightedLoop: null, // Currently highlighted loop
+  hoveredNode: null, // Currently hovered node
+  hoveredEdge: null, // Currently hovered edge
   loopViewMode: false, // Whether we're in loop view mode (dimming other elements)
   mode: 'sandbox', // 'sandbox' or 'assessment'
   currentProblem: null,
@@ -25,7 +27,7 @@ const useCLDStore = create((set, get) => ({
   globalStyles: loadConfig().globalStyles,
   
   // Grid visibility state
-  showGrid: true, // Default to showing grid
+  showGrid: loadConfig().ui.showGrid, // Load from config
   
   // Simulation state
   simulationMode: false,
@@ -45,6 +47,10 @@ const useCLDStore = create((set, get) => ({
   
   // Events log for status bar
   eventsLog: [],
+  
+  // Selected colors state (like PowerPoint)
+  selectedNodeColor: loadConfig().colors.defaultSelected.nodeColor,
+  selectedArrowColor: loadConfig().colors.defaultSelected.arrowColor,
   
   // View transform operations
   setViewTransform: (transform) => {
@@ -89,7 +95,7 @@ const useCLDStore = create((set, get) => ({
       data: { 
         label,
         type: 'variable', // 'variable', 'constant', 'parameter'
-        color: config.colors.defaults.nodeColor // Default from config
+        color: get().selectedNodeColor // Use selected color
       }
     }
     
@@ -196,7 +202,7 @@ const useCLDStore = create((set, get) => ({
       type: 'default',
       data: { 
         polarity, // 'positive' or 'negative'
-        color: config.colors.defaults.arrowColor // Default from config
+        color: get().selectedArrowColor // Use selected color
       },
       sourceX: 0,
       sourceY: 0,
@@ -263,6 +269,27 @@ const useCLDStore = create((set, get) => ({
     }))
     get().updateGraphAnalysis()
   },
+
+  updateLoopDescription: (loopIndex, description) => {
+    const { simulationState } = get()
+    
+    // Disable loop description updates during simulation
+    if (simulationState.isRunning) {
+      console.warn('Cannot update loop descriptions while simulation is running')
+      return false
+    }
+    
+    set((state) => ({
+      allLoops: state.allLoops.map((loop, index) => 
+        index === loopIndex 
+          ? { 
+              ...loop, 
+              description
+            }
+          : loop
+      )
+    }))
+  },
   
   deleteEdge: (edgeId) => {
     const { simulationState, simulationMode, addEvent, nodes } = get()
@@ -302,6 +329,24 @@ const useCLDStore = create((set, get) => ({
   
   clearHighlightedLoop: () => {
     set({ highlightedLoop: null })
+  },
+
+  // Node hovering
+  setHoveredNode: (nodeId) => {
+    set({ hoveredNode: nodeId })
+  },
+
+  clearHoveredNode: () => {
+    set({ hoveredNode: null })
+  },
+
+  // Edge hovering
+  setHoveredEdge: (edgeId) => {
+    set({ hoveredEdge: edgeId })
+  },
+
+  clearHoveredEdge: () => {
+    set({ hoveredEdge: null })
   },
 
   // Loop view mode
@@ -760,6 +805,15 @@ const useCLDStore = create((set, get) => ({
         data: { ...edge.data, color }
       }))
     }))
+  },
+
+  // Selected color operations (like PowerPoint)
+  setSelectedNodeColor: (color) => {
+    set({ selectedNodeColor: color })
+  },
+
+  setSelectedArrowColor: (color) => {
+    set({ selectedArrowColor: color })
   },
 
   // Generate adjacency matrix from current graph

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react'
+import React, { useState, useRef, useMemo, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import { getEllipseDimensions } from '../utils/text'
 
@@ -15,14 +15,14 @@ function CLDNode({
   devMode = false, 
   isFromNode = false, 
   isCreatingConnection = false, 
-  isRightMouseDown = false 
+
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [label, setLabel] = useState(data.label || 'New Node')
   const [isHovered, setIsHovered] = useState(false)
   const inputRef = useRef(null)
   const textRef = useRef(null)
-  const { updateNode, globalStyles, simulationMode, simulationState, nodes, addEvent } = useCLDStore()
+  const { updateNode, globalStyles, simulationMode, simulationState, nodes, addEvent, hoveredNode } = useCLDStore()
 
   // Calculate ellipse dimensions based on text content with wrapping
   const ellipseDimensions = useMemo(() => {
@@ -45,6 +45,14 @@ function CLDNode({
     // Check if adding this change would exceed 4 lines
     if (lines.length <= 4) {
       setLabel(newValue)
+      
+      // Auto-resize textarea to fit content
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto'
+        const scrollHeight = inputRef.current.scrollHeight
+        const maxHeight = ellipseDimensions.height - ellipseDimensions.textPadding * 2
+        inputRef.current.style.height = Math.min(scrollHeight, maxHeight) + 'px'
+      }
     } else {
       addEvent('⚠️ Line limit exceeded (max 4 lines)')
     }
@@ -95,6 +103,17 @@ function CLDNode({
     }
   }
 
+  const handleContextMenu = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Handle right-click for connection creation
+    if (e.button === 2) {
+      if (onClick) {
+        onClick(e)
+      }
+    }
+  }
+
   const handleMouseEnter = () => {
     setIsHovered(true)
   }
@@ -102,6 +121,17 @@ function CLDNode({
   const handleMouseLeave = () => {
     setIsHovered(false)
   }
+
+  // Auto-resize textarea when editing starts
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      // Set initial height to match content
+      inputRef.current.style.height = 'auto'
+      const scrollHeight = inputRef.current.scrollHeight
+      const maxHeight = ellipseDimensions.height - ellipseDimensions.textPadding * 2
+      inputRef.current.style.height = Math.min(scrollHeight, maxHeight) + 'px'
+    }
+  }, [isEditing, ellipseDimensions.height, ellipseDimensions.textPadding])
 
   // Get node values from simulation state
   const nodeIndex = simulationState.accumulatedValues.length > 0 ? 
@@ -123,7 +153,7 @@ function CLDNode({
           stroke="red"
           strokeWidth="1"
           strokeDasharray="2,2"
-          onContextMenu={(e) => e.preventDefault()}
+          onContextMenu={handleContextMenu}
           pointerEvents="all"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -149,8 +179,8 @@ function CLDNode({
             isInHighlightedLoop || isInHoveredLoop
               ? 'none'
               : isFromNode ? "#f97316" // Orange for FROM node
-              : selected ? "#3b82f6" // Blue for selected
-              : isHovered ? "rgba(59, 130, 246, 0.3)" // Transparent light blue for hover
+              : selected ? "#3b82f6" // Modern blue for selected
+              : (isHovered || hoveredNode === id) ? "rgba(59, 130, 246, 0.6)" // Lighter shade of blue for hover
               : "none"
           }
           strokeWidth={
@@ -158,17 +188,17 @@ function CLDNode({
               ? "0"
               : isFromNode ? "3"
               : selected ? "3"
-              : isHovered ? "3"
+              : (isHovered || hoveredNode === id) ? "3"
               : "0"
           }
           style={{
             filter: isInHoveredLoop && !isInHighlightedLoop ? 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' : 'none'
           }}
-          cursor={(isCreatingConnection || isRightMouseDown) ? "crosshair" : "pointer"}
+          cursor={isCreatingConnection ? "crosshair" : "pointer"}
           onClick={handleClick}
           onMouseDown={handleMouseDown}
           onDoubleClick={handleDoubleClick}
-          onContextMenu={(e) => e.preventDefault()}
+          onContextMenu={handleContextMenu}
           pointerEvents="all"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -181,7 +211,7 @@ function CLDNode({
           x={ellipseDimensions.textPadding}
           y={ellipseDimensions.textPadding}
           width={ellipseDimensions.width - ellipseDimensions.textPadding * 2}
-          height={Math.max(ellipseDimensions.height - ellipseDimensions.textPadding * 2, 100)}
+          height={ellipseDimensions.height - ellipseDimensions.textPadding * 2}
           style={{ overflow: 'visible' }}
         >
           <textarea
@@ -190,9 +220,11 @@ function CLDNode({
             onChange={handleLabelChange}
             onBlur={handleLabelBlur}
             onKeyDown={handleLabelKeyDown}
+            onContextMenu={handleContextMenu}
             style={{
               width: '100%',
-              height: '100%',
+              height: 'auto',
+              minHeight: `${ellipseDimensions.lineHeight}px`,
               border: 'none',
               outline: 'none',
               background: 'transparent',
@@ -203,15 +235,18 @@ function CLDNode({
               resize: 'none',
               fontFamily: globalStyles.nodeFont,
               lineHeight: `${globalStyles.nodeFontSize + 4}px`,
-              padding: '4px',
+              padding: '0',
               margin: '0',
-              verticalAlign: 'top',
               display: 'block',
               wordWrap: 'break-word',
               overflowWrap: 'break-word',
               whiteSpace: 'pre-wrap',
               pointerEvents: 'auto',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxSizing: 'border-box',
+              transform: 'translateY(-50%)',
+              position: 'relative',
+              top: '50%'
             }}
             placeholder="Enter label..."
           />
@@ -235,11 +270,12 @@ function CLDNode({
               fontWeight="600"
               fill={data.color || '#000000'}
               fontFamily={globalStyles.nodeFont}
-              cursor={(isCreatingConnection || isRightMouseDown) ? "crosshair" : "pointer"}
+              cursor={isCreatingConnection ? "crosshair" : "pointer"}
               style={{ userSelect: 'none' }}
               onClick={handleClick}
               onMouseDown={handleMouseDown}
               onDoubleClick={handleDoubleClick}
+              onContextMenu={handleContextMenu}
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
               pointerEvents="all"
@@ -282,7 +318,7 @@ function CLDNode({
             y={ellipseDimensions.centerY - ellipseDimensions.radiusY - 18}
             width={Math.min(Math.max((nodeValue + 2000) * 0.019, 0), 76)}
             height="8"
-            fill="#3b82f6"
+            fill="#f39c12"
             rx="4"
             style={{ transition: 'all 0.3s ease' }}
           />

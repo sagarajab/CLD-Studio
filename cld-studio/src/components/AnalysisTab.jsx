@@ -2,12 +2,31 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 
 function AnalysisTab() {
-  const { nodes, edges, updateNodeDescription, updateEdgeDescription } = useCLDStore()
+  const { 
+    nodes, 
+    edges, 
+    allLoops, 
+    updateNodeDescription, 
+    updateEdgeDescription,
+    setHoveredNode,
+    clearHoveredNode,
+    setHoveredEdge,
+    clearHoveredEdge,
+    setHighlightedLoop,
+    clearHighlightedLoop
+  } = useCLDStore()
   const [activeModal, setActiveModal] = useState(null) // 'nodes', 'connections', 'stats', or null
   const [editingCell, setEditingCell] = useState(null) // { type: 'node'|'edge', id: number, field: 'description' }
   const [editValue, setEditValue] = useState('')
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 })
+  const [modalSize, setModalSize] = useState({ width: '700px', height: '450px' })
+  const [isDragging, setIsDragging] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
+  const [resizeDirection, setResizeDirection] = useState(null)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
-  // Handle ESC key to close modal
+  // Handle ESC key to close modal and global mouse events
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -22,11 +41,28 @@ function AnalysisTab() {
       }
     }
 
+    const handleGlobalMouseMove = (e) => {
+      if (isDragging || isResizing) {
+        handleMouseMove(e)
+      }
+    }
+
+    const handleGlobalMouseUp = () => {
+      if (isDragging || isResizing) {
+        handleMouseUp()
+      }
+    }
+
     document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('mousemove', handleGlobalMouseMove)
+    document.addEventListener('mouseup', handleGlobalMouseUp)
+    
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('mousemove', handleGlobalMouseMove)
+      document.removeEventListener('mouseup', handleGlobalMouseUp)
     }
-  }, [activeModal, editingCell])
+  }, [activeModal, editingCell, isDragging, isResizing, dragStart, resizeStart, resizeDirection, modalPosition])
 
   // Calculate in/out counts for nodes
   const nodeAnalysis = useMemo(() => {
@@ -68,17 +104,72 @@ function AnalysisTab() {
     const positiveConnections = edges.filter(edge => edge.data?.polarity === 'positive').length
     const negativeConnections = edges.filter(edge => edge.data?.polarity === 'negative').length
     
+    // Find node with maximum out connections
+    const maxOutNode = nodeAnalysis.length > 0 ? 
+      nodeAnalysis.reduce((max, node) => node.outCount > max.outCount ? node : max) : null
+    
+    // Find node with maximum in connections
+    const maxInNode = nodeAnalysis.length > 0 ? 
+      nodeAnalysis.reduce((max, node) => node.inCount > max.inCount ? node : max) : null
+    
+    // Get nodes part of the top 4 maximum loops
+    const topLoops = allLoops
+      .sort((a, b) => b.length - a.length) // Sort by length descending
+      .slice(0, 4) // Take top 4
+    
+                      const nodesInTopLoops = topLoops.flatMap(loop => loop.nodes)
+                  const uniqueNodesInTopLoops = [...new Set(nodesInTopLoops)]
+                  const topLoopNodesInfo = uniqueNodesInTopLoops.map(nodeId => {
+                    const node = nodes.find(n => n.id === nodeId)
+                    const loopCount = topLoops.filter(loop => loop.nodes.includes(nodeId)).length
+                    return {
+                      label: node?.data?.label || `Node ${nodeId}`,
+                      loopCount: loopCount
+                    }
+                  })
+    
     return {
       totalNodes,
       totalConnections,
       avgConnectionsPerNode,
       positiveConnections,
-      negativeConnections
+      negativeConnections,
+      maxOutNode: maxOutNode ? { label: maxOutNode.label, count: maxOutNode.outCount } : null,
+      maxInNode: maxInNode ? { label: maxInNode.label, count: maxInNode.inCount } : null,
+      topLoopNodes: topLoopNodesInfo,
+      topLoopsCount: topLoops.length
     }
-  }, [nodes, edges])
+  }, [nodes, edges, nodeAnalysis, allLoops])
 
   const openModal = (modalType) => {
     setActiveModal(modalType)
+    // Reset position when opening modal
+    setModalPosition({ x: 0, y: 0 })
+    
+    // Calculate initial size based on content
+    let initialWidth = '600px'
+    let initialHeight = '400px'
+    
+    // Set minimum sizes that should fit most content
+    switch (modalType) {
+      case 'nodes':
+        initialWidth = '800px'
+        initialHeight = '500px'
+        break
+      case 'connections':
+        initialWidth = '900px'
+        initialHeight = '500px'
+        break
+      case 'stats':
+        initialWidth = '600px'
+        initialHeight = '400px'
+        break
+      default:
+        initialWidth = '700px'
+        initialHeight = '450px'
+    }
+    
+    setModalSize({ width: initialWidth, height: initialHeight })
   }
 
   const closeModal = () => {
@@ -113,7 +204,7 @@ function AnalysisTab() {
   }
 
   const handleEditKeyDown = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       saveEdit()
     } else if (e.key === 'Escape') {
@@ -122,38 +213,85 @@ function AnalysisTab() {
     }
   }
 
+  // Modal drag and resize handlers
+  const handleDragStart = (e) => {
+    if (e.target.classList.contains('analysis-modal-drag-handle') || e.target.closest('.analysis-modal-header')) {
+      setIsDragging(true)
+      setDragStart({ x: e.clientX - modalPosition.x, y: e.clientY - modalPosition.y })
+    }
+  }
+
+  const handleResizeStart = (e, direction) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsResizing(true)
+    setResizeDirection(direction)
+    const modal = e.target.closest('.analysis-modal')
+    const rect = modal.getBoundingClientRect()
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: rect.width,
+      height: rect.height
+    })
+  }
+
+  const handleMouseMove = (e) => {
+    if (isDragging) {
+      const newX = e.clientX - dragStart.x
+      const newY = e.clientY - dragStart.y
+      setModalPosition({ x: newX, y: newY })
+    } else if (isResizing) {
+      e.preventDefault()
+      e.stopPropagation()
+      const deltaX = e.clientX - resizeStart.x
+      const deltaY = e.clientY - resizeStart.y
+      
+      let newWidth = resizeStart.width
+      let newHeight = resizeStart.height
+      
+      if (resizeDirection.includes('right')) {
+        newWidth = Math.max(600, resizeStart.width + deltaX)
+      }
+      if (resizeDirection.includes('left')) {
+        newWidth = Math.max(600, resizeStart.width - deltaX)
+      }
+      if (resizeDirection.includes('bottom')) {
+        newHeight = Math.max(400, resizeStart.height + deltaY)
+      }
+      if (resizeDirection.includes('top')) {
+        newHeight = Math.max(400, resizeStart.height - deltaY)
+      }
+      
+      setModalSize({ width: `${newWidth}px`, height: `${newHeight}px` })
+    }
+  }
+
+  const handleMouseUp = () => {
+    if (isDragging) {
+      setIsDragging(false)
+    }
+    if (isResizing) {
+      setIsResizing(false)
+      setResizeDirection(null)
+    }
+  }
+
   const renderEditableCell = (type, id, value) => {
     const isEditing = editingCell && editingCell.type === type && editingCell.id === id
 
     if (isEditing) {
       return (
-        <div className="editable-cell">
-          <textarea
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onKeyDown={handleEditKeyDown}
-            onBlur={saveEdit}
-            autoFocus
-            className="edit-textarea"
-            rows={2}
-          />
-          <div className="edit-actions">
-            <button 
-              className="edit-save-btn" 
-              onClick={saveEdit}
-              title="Save (Enter)"
-            >
-              ✓
-            </button>
-            <button 
-              className="edit-cancel-btn" 
-              onClick={cancelEdit}
-              title="Cancel (Esc)"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+        <div 
+          className="description-cell editing"
+          contentEditable
+          suppressContentEditableWarning={true}
+          onInput={(e) => setEditValue(e.currentTarget.textContent)}
+          onKeyDown={handleEditKeyDown}
+          onBlur={saveEdit}
+          autoFocus
+          dangerouslySetInnerHTML={{ __html: editValue }}
+        />
       )
     }
 
@@ -181,100 +319,129 @@ function AnalysisTab() {
       switch (activeModal) {
         case 'nodes':
           return (
-            <table className="analysis-table modal-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Label</th>
-                  <th>In Count</th>
-                  <th>Out Count</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                {nodeAnalysis.map(node => (
-                  <tr key={node.id}>
-                    <td className="id-cell">{node.id}</td>
-                    <td className="label-cell">{node.label}</td>
-                    <td className="count-cell">{node.inCount}</td>
-                    <td className="count-cell">{node.outCount}</td>
-                    <td className="description-cell">
-                      {renderEditableCell('node', node.id, node.description)}
-                    </td>
+            <div className="modal-table-container">
+              <table className="analysis-table modal-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Label</th>
+                    <th>In Count</th>
+                    <th>Out Count</th>
+                    <th>Description</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {nodeAnalysis.map(node => (
+                    <tr key={node.id}>
+                      <td className="id-cell">{node.id}</td>
+                      <td className="label-cell">{node.label}</td>
+                      <td className="count-cell">{node.inCount}</td>
+                      <td className="count-cell">{node.outCount}</td>
+                      <td className="description-cell">
+                        {renderEditableCell('node', node.id, node.description)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )
 
         case 'connections':
           return (
-            <table className="analysis-table modal-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>From Node</th>
-                  <th>Polarity</th>
-                  <th>To Node</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                {connectionsAnalysis.map(connection => (
-                  <tr key={connection.id}>
-                    <td className="id-cell">{connection.id}</td>
-                    <td className="node-cell">{connection.fromNode}</td>
-                    <td className={`polarity-cell ${connection.polarity}`}>
-                      {connection.polarity === 'positive' ? '+' : '-'}
-                    </td>
-                    <td className="node-cell">{connection.toNode}</td>
-                    <td className="description-cell">
-                      {renderEditableCell('edge', connection.id, connection.description)}
-                    </td>
+            <div className="modal-table-container">
+              <table className="analysis-table modal-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>From Node</th>
+                    <th>Polarity</th>
+                    <th>To Node</th>
+                    <th>Description</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {connectionsAnalysis.map(connection => (
+                    <tr key={connection.id}>
+                      <td className="id-cell">{connection.id}</td>
+                      <td className="node-cell">{connection.fromNode}</td>
+                      <td className={`polarity-cell ${connection.polarity}`}>
+                        {connection.polarity === 'positive' ? '+' : '-'}
+                      </td>
+                      <td className="node-cell">{connection.toNode}</td>
+                      <td className="description-cell">
+                        {renderEditableCell('edge', connection.id, connection.description)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )
 
         case 'stats':
           return (
-            <table className="analysis-table modal-table">
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  <th>Value</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="metric-cell">Total Nodes</td>
-                  <td className="value-cell">{systemStats.totalNodes}</td>
-                  <td className="description-cell">Number of variables in the system</td>
-                </tr>
-                <tr>
-                  <td className="metric-cell">Total Connections</td>
-                  <td className="value-cell">{systemStats.totalConnections}</td>
-                  <td className="description-cell">Number of causal relationships</td>
-                </tr>
-                <tr>
-                  <td className="metric-cell">Avg Connections/Node</td>
-                  <td className="value-cell">{systemStats.avgConnectionsPerNode}</td>
-                  <td className="description-cell">Average connections per variable</td>
-                </tr>
-                <tr>
-                  <td className="metric-cell">Positive Connections</td>
-                  <td className="value-cell positive">{systemStats.positiveConnections}</td>
-                  <td className="description-cell">Same-direction relationships</td>
-                </tr>
-                <tr>
-                  <td className="metric-cell">Negative Connections</td>
-                  <td className="value-cell negative">{systemStats.negativeConnections}</td>
-                  <td className="description-cell">Opposite-direction relationships</td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="modal-table-container">
+              <table className="analysis-table modal-table">
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="metric-cell">Total Nodes</td>
+                    <td className="value-cell">{systemStats.totalNodes}</td>
+                  </tr>
+                  <tr>
+                    <td className="metric-cell">Total Connections</td>
+                    <td className="value-cell">{systemStats.totalConnections}</td>
+                  </tr>
+                  <tr>
+                    <td className="metric-cell">Avg Connections/Node</td>
+                    <td className="value-cell">{systemStats.avgConnectionsPerNode}</td>
+                  </tr>
+                  <tr>
+                    <td className="metric-cell">Positive Connections</td>
+                    <td className="value-cell positive">{systemStats.positiveConnections}</td>
+                  </tr>
+                  <tr>
+                    <td className="metric-cell">Negative Connections</td>
+                    <td className="value-cell negative">{systemStats.negativeConnections}</td>
+                  </tr>
+                  <tr>
+                    <td className="metric-cell">Max Out Connections</td>
+                    <td className="value-cell">{systemStats.maxOutNode ? `${systemStats.maxOutNode.label} (${systemStats.maxOutNode.count})` : 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td className="metric-cell">Max In Connections</td>
+                    <td className="value-cell">{systemStats.maxInNode ? `${systemStats.maxInNode.label} (${systemStats.maxInNode.count})` : 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td className="metric-cell">Top Loops</td>
+                    <td className="value-cell">{systemStats.topLoopsCount}</td>
+                  </tr>
+                                  {systemStats.topLoopNodes.map((nodeInfo, index) => (
+                  <tr 
+                    key={index}
+                    onMouseEnter={() => {
+                      const topLoopNode = nodes.find(n => n.data?.label === nodeInfo.label)
+                      if (topLoopNode) setHoveredNode(topLoopNode.id)
+                    }}
+                    onMouseLeave={() => clearHoveredNode()}
+                  >
+                    <td className="metric-cell">
+                      {index === 0 ? 'Nodes in Top Loops' : ''}
+                    </td>
+                    <td className="value-cell">
+                      {nodeInfo.label} ({nodeInfo.loopCount} loops)
+                    </td>
+                  </tr>
+                ))}
+                </tbody>
+              </table>
+            </div>
           )
 
         default:
@@ -283,8 +450,45 @@ function AnalysisTab() {
     }
 
     return (
-      <div className="analysis-modal-overlay" onClick={closeModal}>
-        <div className="analysis-modal" onClick={(e) => e.stopPropagation()}>
+      <div className={`analysis-modal-overlay ${isResizing ? 'resizing' : ''}`} onClick={(e) => {
+        // Only close if clicking directly on the overlay, not on modal or during resize
+        if (e.target === e.currentTarget && !isResizing && !isDragging) {
+          closeModal()
+        }
+      }}>
+        <div 
+          className={`analysis-modal ${isResizing ? 'resizing' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: modalSize.width,
+            height: modalSize.height,
+            transform: `translate(calc(-50% + ${modalPosition.x}px), calc(-50% + ${modalPosition.y}px))`
+          }}
+        >
+          {/* Resize handles */}
+          <div 
+            className="analysis-modal-resize-handle top"
+            onMouseDown={(e) => handleResizeStart(e, 'top')}
+          ></div>
+          <div 
+            className="analysis-modal-resize-handle bottom"
+            onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+          ></div>
+          <div 
+            className="analysis-modal-resize-handle left"
+            onMouseDown={(e) => handleResizeStart(e, 'left')}
+          ></div>
+          <div 
+            className="analysis-modal-resize-handle right"
+            onMouseDown={(e) => handleResizeStart(e, 'right')}
+          ></div>
+          
+          {/* Drag handle */}
+          <div 
+            className="analysis-modal-drag-handle"
+            onMouseDown={handleDragStart}
+          ></div>
+          
           <div className="analysis-modal-header">
             <h3>{modalTitles[activeModal]}</h3>
             <button className="analysis-modal-close" onClick={closeModal}>
@@ -314,8 +518,7 @@ function AnalysisTab() {
               title="View in full screen"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
               View
             </button>
@@ -328,17 +531,19 @@ function AnalysisTab() {
                   <th>Label</th>
                   <th>In Count</th>
                   <th>Out Count</th>
-                  <th>Description</th>
                 </tr>
               </thead>
               <tbody>
                 {nodeAnalysis.map(node => (
-                  <tr key={node.id}>
+                  <tr 
+                    key={node.id}
+                    onMouseEnter={() => setHoveredNode(node.id)}
+                    onMouseLeave={() => clearHoveredNode()}
+                  >
                     <td className="id-cell">{node.id}</td>
                     <td className="label-cell">{node.label}</td>
                     <td className="count-cell">{node.inCount}</td>
                     <td className="count-cell">{node.outCount}</td>
-                    <td className="description-cell">{node.description}</td>
                   </tr>
                 ))}
               </tbody>
@@ -356,8 +561,7 @@ function AnalysisTab() {
               title="View in full screen"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
               View
             </button>
@@ -370,19 +574,21 @@ function AnalysisTab() {
                   <th>From Node</th>
                   <th>Polarity</th>
                   <th>To Node</th>
-                  <th>Description</th>
                 </tr>
               </thead>
               <tbody>
                 {connectionsAnalysis.map(connection => (
-                  <tr key={connection.id}>
+                  <tr 
+                    key={connection.id}
+                    onMouseEnter={() => setHoveredEdge(connection.id)}
+                    onMouseLeave={() => clearHoveredEdge()}
+                  >
                     <td className="id-cell">{connection.id}</td>
                     <td className="node-cell">{connection.fromNode}</td>
                     <td className={`polarity-cell ${connection.polarity}`}>
                       {connection.polarity === 'positive' ? '+' : '-'}
                     </td>
                     <td className="node-cell">{connection.toNode}</td>
-                    <td className="description-cell">{connection.description}</td>
                   </tr>
                 ))}
               </tbody>
@@ -400,8 +606,7 @@ function AnalysisTab() {
               title="View in full screen"
             >
               <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
               View
             </button>
@@ -412,35 +617,75 @@ function AnalysisTab() {
                 <tr>
                   <th>Metric</th>
                   <th>Value</th>
-                  <th>Description</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td className="metric-cell">Total Nodes</td>
                   <td className="value-cell">{systemStats.totalNodes}</td>
-                  <td className="description-cell">Number of variables in the system</td>
                 </tr>
                 <tr>
                   <td className="metric-cell">Total Connections</td>
                   <td className="value-cell">{systemStats.totalConnections}</td>
-                  <td className="description-cell">Number of causal relationships</td>
                 </tr>
                 <tr>
                   <td className="metric-cell">Avg Connections/Node</td>
                   <td className="value-cell">{systemStats.avgConnectionsPerNode}</td>
-                  <td className="description-cell">Average connections per variable</td>
                 </tr>
                 <tr>
                   <td className="metric-cell">Positive Connections</td>
                   <td className="value-cell positive">{systemStats.positiveConnections}</td>
-                  <td className="description-cell">Same-direction relationships</td>
                 </tr>
                 <tr>
                   <td className="metric-cell">Negative Connections</td>
                   <td className="value-cell negative">{systemStats.negativeConnections}</td>
-                  <td className="description-cell">Opposite-direction relationships</td>
                 </tr>
+                <tr
+                  onMouseEnter={() => {
+                    if (systemStats.maxOutNode) {
+                      const maxOutNode = nodes.find(n => n.data?.label === systemStats.maxOutNode.label)
+                      if (maxOutNode) setHoveredNode(maxOutNode.id)
+                    }
+                  }}
+                  onMouseLeave={() => clearHoveredNode()}
+                >
+                  <td className="metric-cell">Max Out Connections</td>
+                  <td className="value-cell">{systemStats.maxOutNode ? `${systemStats.maxOutNode.label} (${systemStats.maxOutNode.count})` : 'N/A'}</td>
+                </tr>
+                <tr
+                  onMouseEnter={() => {
+                    if (systemStats.maxInNode) {
+                      const maxInNode = nodes.find(n => n.data?.label === systemStats.maxInNode.label)
+                      if (maxInNode) setHoveredNode(maxInNode.id)
+                    }
+                  }}
+                  onMouseLeave={() => clearHoveredNode()}
+                >
+                  <td className="metric-cell">Max In Connections</td>
+                  <td className="value-cell">{systemStats.maxInNode ? `${systemStats.maxInNode.label} (${systemStats.maxInNode.count})` : 'N/A'}</td>
+                </tr>
+                <tr
+                  onMouseEnter={() => {
+                    if (systemStats.topLoopsCount > 0 && allLoops.length > 0) {
+                      // Highlight the first (longest) loop
+                      setHighlightedLoop(0)
+                    }
+                  }}
+                  onMouseLeave={() => clearHighlightedLoop()}
+                >
+                  <td className="metric-cell">Top Loops</td>
+                  <td className="value-cell">{systemStats.topLoopsCount}</td>
+                </tr>
+                {systemStats.topLoopNodes.map((nodeInfo, index) => (
+                  <tr key={index}>
+                    <td className="metric-cell">
+                      {index === 0 ? 'Nodes in Top Loops' : ''}
+                    </td>
+                    <td className="value-cell">
+                      {nodeInfo.label} ({nodeInfo.loopCount} loops)
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

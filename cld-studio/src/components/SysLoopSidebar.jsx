@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import AnalysisTab from './AnalysisTab'
+import { Infinity } from 'lucide-react'
 
 function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hoveredLoop, setHoveredLoop }) {
   const [problemStatement, setProblemStatement] = useState('Describe the problem here...')
@@ -9,6 +10,18 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
   const [sidebarWidth, setSidebarWidth] = useState(300)
   const [isResizing, setIsResizing] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  
+  // Modal state for loops detail view
+  const [showLoopsModal, setShowLoopsModal] = useState(false)
+  const [editingCell, setEditingCell] = useState(null) // { type: 'loop', id: number, field: 'description' }
+  const [editValue, setEditValue] = useState('')
+  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 })
+  const [modalSize, setModalSize] = useState({ width: '800px', height: '500px' })
+  const [isModalDragging, setIsModalDragging] = useState(false)
+  const [isModalResizing, setIsModalResizing] = useState(false)
+  const [resizeDirection, setResizeDirection] = useState(null)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
   const sidebarRef = useRef(null)
   const { 
@@ -20,7 +33,8 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
     nodes,
     adjacencyMatrix,
     simulationMode,
-    toggleSimulationMode
+    toggleSimulationMode,
+    updateLoopDescription
   } = useCLDStore()
 
   // Constants for sidebar dimensions
@@ -90,6 +104,163 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
     setIsCollapsed(!isCollapsed)
   }
 
+  // Modal functions for loops detail view
+  const openLoopsModal = () => {
+    setShowLoopsModal(true)
+    setModalPosition({ x: 0, y: 0 })
+    setModalSize({ width: '800px', height: '500px' })
+  }
+
+  const closeLoopsModal = () => {
+    setShowLoopsModal(false)
+    setEditingCell(null)
+    setEditValue('')
+  }
+
+  const startEditing = (type, id, currentValue) => {
+    setEditingCell({ type, id })
+    setEditValue(currentValue)
+  }
+
+  const saveEdit = () => {
+    if (editingCell && editValue !== undefined) {
+      if (editingCell.type === 'loop') {
+        updateLoopDescription(editingCell.id, editValue)
+      }
+    }
+    setEditingCell(null)
+    setEditValue('')
+  }
+
+  const cancelEdit = () => {
+    setEditingCell(null)
+    setEditValue('')
+  }
+
+  const handleEditKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      saveEdit()
+    } else if (e.key === 'Escape') {
+      cancelEdit()
+    }
+  }
+
+  const handleModalDragStart = (e) => {
+    if (e.target.classList.contains('analysis-modal-drag-handle') || e.target.closest('.analysis-modal-header')) {
+      setIsModalDragging(true)
+      setDragStart({ x: e.clientX - modalPosition.x, y: e.clientY - modalPosition.y })
+    }
+  }
+
+  const handleModalResizeStart = (e, direction) => {
+    e.stopPropagation()
+    setIsModalResizing(true)
+    setResizeDirection(direction)
+    setResizeStart({ 
+      x: e.clientX, 
+      y: e.clientY, 
+      width: parseInt(modalSize.width), 
+      height: parseInt(modalSize.height) 
+    })
+  }
+
+  const handleModalMouseMove = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (isModalDragging) {
+      const newX = e.clientX - dragStart.x
+      const newY = e.clientY - dragStart.y
+      setModalPosition({ x: newX, y: newY })
+    }
+    
+    if (isModalResizing) {
+      const deltaX = e.clientX - resizeStart.x
+      const deltaY = e.clientY - resizeStart.y
+      
+      let newWidth = resizeStart.width
+      let newHeight = resizeStart.height
+      
+      if (resizeDirection.includes('right')) {
+        newWidth = Math.max(500, resizeStart.width + deltaX)
+      }
+      if (resizeDirection.includes('left')) {
+        newWidth = Math.max(500, resizeStart.width - deltaX)
+        setModalPosition(prev => ({ ...prev, x: resizeStart.x + deltaX }))
+      }
+      if (resizeDirection.includes('bottom')) {
+        newHeight = Math.max(300, resizeStart.height + deltaY)
+      }
+      if (resizeDirection.includes('top')) {
+        newHeight = Math.max(300, resizeStart.height - deltaY)
+        setModalPosition(prev => ({ ...prev, y: resizeStart.y + deltaY }))
+      }
+      
+      setModalSize({ width: `${newWidth}px`, height: `${newHeight}px` })
+    }
+  }
+
+  const handleModalMouseUp = () => {
+    setIsModalDragging(false)
+    setIsModalResizing(false)
+    setResizeDirection(null)
+  }
+
+  // Global mouse event listeners for modal
+  useEffect(() => {
+    const handleGlobalMouseMove = (e) => {
+      if (isModalDragging || isModalResizing) {
+        handleModalMouseMove(e)
+      }
+    }
+
+    const handleGlobalMouseUp = () => {
+      if (isModalDragging || isModalResizing) {
+        handleModalMouseUp()
+      }
+    }
+
+    if (showLoopsModal) {
+      document.addEventListener('mousemove', handleGlobalMouseMove)
+      document.addEventListener('mouseup', handleGlobalMouseUp)
+    }
+    
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove)
+      document.removeEventListener('mouseup', handleGlobalMouseUp)
+    }
+  }, [showLoopsModal, isModalDragging, isModalResizing, dragStart, resizeStart, resizeDirection, modalPosition])
+
+  const renderEditableCell = (type, id, value) => {
+    const isEditing = editingCell && editingCell.type === type && editingCell.id === id
+
+    if (isEditing) {
+      return (
+        <div
+          className="description-cell editing"
+          contentEditable
+          suppressContentEditableWarning={true}
+          onInput={(e) => setEditValue(e.currentTarget.textContent)}
+          onKeyDown={handleEditKeyDown}
+          onBlur={saveEdit}
+          autoFocus
+          dangerouslySetInnerHTML={{ __html: editValue }}
+        />
+      )
+    }
+
+    return (
+      <div
+        className="description-cell clickable"
+        onClick={() => startEditing(type, id, value)}
+        title="Click to edit description"
+      >
+        {value}
+      </div>
+    )
+  }
+
   const renderTabContent = () => {
     if (isCollapsed) return null
 
@@ -114,45 +285,33 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
             <div style={{ 
               padding: '8px 12px', 
               borderBottom: '1px solid #e5e7eb',
-              backgroundColor: '#f9fafb'
+              backgroundColor: 'transparent'
             }}>
               <div style={{ 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: '8px',
+                justifyContent: 'space-between',
                 marginBottom: '8px'
               }}>
-                <button
-                  onClick={() => {
-                    setHighlightedLoop(null)
-                    exitLoopViewMode()
-                  }}
-                  style={{
-                    width: '24px',
-                    height: '24px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '4px',
-                    background: highlightedLoop === null ? '#3b82f6' : '#ffffff',
-                    color: highlightedLoop === null ? '#ffffff' : '#374151',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '12px'
-                  }}
-                  title="Clear loop selection"
-                >
-                  ✕
-                </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '10px', color: '#6b7280' }}>Dim</span>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px'
+                }}>
+                  <span style={{ 
+                    fontSize: '12px', 
+                    color: '#6b7280',
+                    fontWeight: '500'
+                  }}>
+                    Auto Dim Others
+                  </span>
                   <button
                     onClick={() => setDimmingEnabled(!dimmingEnabled)}
                     style={{
-                      width: '32px',
-                      height: '16px',
+                      width: '44px',
+                      height: '24px',
                       border: 'none',
-                      borderRadius: '8px',
+                      borderRadius: '12px',
                       background: dimmingEnabled ? '#10b981' : '#d1d5db',
                       cursor: 'pointer',
                       position: 'relative',
@@ -161,19 +320,28 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
                     title={dimmingEnabled ? 'Disable dimming' : 'Enable dimming'}
                   >
                     <div style={{
-                      width: '12px',
-                      height: '12px',
+                      width: '18px',
+                      height: '18px',
                       borderRadius: '50%',
                       background: '#ffffff',
                       position: 'absolute',
-                      top: '2px',
-                      left: dimmingEnabled ? '18px' : '2px',
+                      top: '3px',
+                      left: dimmingEnabled ? '23px' : '3px',
                       transition: 'left 0.2s ease',
-                      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
                     }} />
                   </button>
                 </div>
-
+                <button
+                  className="view-modal-btn"
+                  onClick={openLoopsModal}
+                  title="View loop details"
+                >
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  View
+                </button>
               </div>
             </div>
 
@@ -299,9 +467,7 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
           onClick={() => setActiveTab('loops')}
           title="System Loops"
         >
-          <svg style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+          <Infinity style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0 }} />
           Loops
         </button>
                   <button
@@ -324,7 +490,90 @@ function SysLoopSidebar({ mode, loops, dimmingEnabled, setDimmingEnabled, hovere
           {renderTabContent()}
         </div>
       )}
-      
+
+      {/* Loops Detail Modal */}
+      {showLoopsModal && (
+        <div 
+          className="analysis-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isModalResizing && !isModalDragging) {
+              closeLoopsModal()
+            }
+          }}
+        >
+          <div 
+            className={`analysis-modal ${isModalResizing ? 'resizing' : ''}`}
+            style={{
+              width: modalSize.width,
+              height: modalSize.height,
+              transform: `translate(calc(-50% + ${modalPosition.x}px), calc(-50% + ${modalPosition.y}px))`
+            }}
+          >
+            {/* Modal Header */}
+            <div className="analysis-modal-header">
+              <div className="analysis-modal-drag-handle" onMouseDown={handleModalDragStart} />
+              <h3>Loop Details</h3>
+              <button 
+                className="analysis-modal-close"
+                onClick={closeLoopsModal}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="analysis-modal-content">
+              <div className="modal-table-container">
+                <table className="modal-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Length</th>
+                      <th>Type</th>
+                      <th>Nodes</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loops.map((loop, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{loop.length}</td>
+                        <td>
+                          <span className={`loop-type-compact ${loop.type.toLowerCase()}`}>
+                            {loop.type === 'Balancing' ? 'B' : 'R'}
+                          </span>
+                        </td>
+                        <td>
+                          {loop.nodes.map((nodeId, nodeIndex) => {
+                            const node = nodes.find(n => n.id === nodeId)
+                            return (
+                              <span key={nodeId}>
+                                {node?.data?.label || `Node ${nodeId}`}
+                                {nodeIndex < loop.nodes.length - 1 ? ' → ' : ''}
+                              </span>
+                            )
+                          })}
+                        </td>
+                        <td>
+                          {renderEditableCell('loop', index, loop.description || 'No description')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Resize Handles */}
+            <div className="analysis-modal-resize-handle top" onMouseDown={(e) => handleModalResizeStart(e, 'top')} />
+            <div className="analysis-modal-resize-handle bottom" onMouseDown={(e) => handleModalResizeStart(e, 'bottom')} />
+            <div className="analysis-modal-resize-handle left" onMouseDown={(e) => handleModalResizeStart(e, 'left')} />
+            <div className="analysis-modal-resize-handle right" onMouseDown={(e) => handleModalResizeStart(e, 'right')} />
+          </div>
+        </div>
+      )}
 
     </div>
   )
