@@ -6,6 +6,7 @@ import Canvas from './components/Canvas'
 import SysLoopHeader from './components/SysLoopHeader'
 import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
+import ExamplesBrowser from './components/ExamplesBrowser'
 import { useCLDStore } from './stores/cldStore'
 import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2 } from 'lucide-react'
 import './components/StatusBar.css'
@@ -16,6 +17,7 @@ function App() {
   const [hoveredLoop, setHoveredLoop] = useState(null) // Add hovered loop state
   const [devMode, setDevMode] = useState(false) // Add dev mode state
   const [showSettingsModal, setShowSettingsModal] = useState(false) // Add settings modal state
+  const [showExamplesBrowser, setShowExamplesBrowser] = useState(false) // Add examples browser modal state
   
   const { 
     nodes, 
@@ -43,6 +45,19 @@ function App() {
     const title = diagramName && diagramName.trim() !== '' ? `${diagramName} - CLD Studio` : 'CLD Studio'
     document.title = title
   }, [diagramName])
+
+  // Listen for examples browser open event
+  useEffect(() => {
+    const handleOpenExamplesBrowser = () => {
+      setShowExamplesBrowser(true)
+    }
+
+    window.addEventListener('openExamplesBrowser', handleOpenExamplesBrowser)
+    
+    return () => {
+      window.removeEventListener('openExamplesBrowser', handleOpenExamplesBrowser)
+    }
+  }, [])
 
   // Update graph analysis when nodes or edges change significantly
   useEffect(() => {
@@ -250,6 +265,12 @@ function App() {
       {showSettingsModal && (
         <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
       )}
+
+      {/* Examples Browser Modal */}
+      <ExamplesBrowser 
+        isOpen={showExamplesBrowser} 
+        onClose={() => setShowExamplesBrowser(false)} 
+      />
     </div>
   )
 }

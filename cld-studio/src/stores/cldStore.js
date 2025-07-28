@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import { loadConfig, saveConfig } from '../config/appConfig'
+import { examplesService } from '../services/examplesService'
+import { createSampleData } from '../utils/createSampleData'
 
 const useCLDStore = create((set, get) => ({
   // State
@@ -65,6 +67,11 @@ const useCLDStore = create((set, get) => ({
   // Selected colors state (like PowerPoint)
   selectedNodeColor: loadConfig().colors.defaultSelected.nodeColor,
   selectedArrowColor: loadConfig().colors.defaultSelected.arrowColor,
+  
+  // Examples state
+  examples: [],
+  isLoadingExamples: false,
+  examplesError: null,
   
   // View transform operations
   setViewTransform: (transform) => {
@@ -2267,6 +2274,121 @@ const useCLDStore = create((set, get) => ({
     }
     
     console.log('=== END TEST ===')
+  },
+
+  // Examples functions
+  loadExamplesList: async () => {
+    const { addEvent } = get();
+    set({ isLoadingExamples: true, examplesError: null });
+    
+    try {
+      addEvent('Loading examples...', 'info');
+      const examples = await examplesService.getAllExamples();
+      set({ examples, isLoadingExamples: false });
+      addEvent(`Loaded ${examples.length} examples`, 'success');
+    } catch (error) {
+      set({ examplesError: error.message, isLoadingExamples: false });
+      addEvent('Failed to load examples: ' + error.message, 'error');
+    }
+  },
+
+  loadExamplesByCategory: async (category) => {
+    const { addEvent } = get();
+    set({ isLoadingExamples: true, examplesError: null });
+    
+    try {
+      addEvent(`Loading ${category} examples...`, 'info');
+      const examples = await examplesService.getExamplesByCategory(category);
+      set({ examples, isLoadingExamples: false });
+      addEvent(`Loaded ${examples.length} ${category} examples`, 'success');
+    } catch (error) {
+      set({ examplesError: error.message, isLoadingExamples: false });
+      addEvent('Failed to load examples: ' + error.message, 'error');
+    }
+  },
+
+  searchExamples: async (searchTerm) => {
+    const { addEvent } = get();
+    set({ isLoadingExamples: true, examplesError: null });
+    
+    try {
+      addEvent(`Searching for "${searchTerm}"...`, 'info');
+      const examples = await examplesService.searchExamples(searchTerm);
+      set({ examples, isLoadingExamples: false });
+      addEvent(`Found ${examples.length} examples for "${searchTerm}"`, 'success');
+    } catch (error) {
+      set({ examplesError: error.message, isLoadingExamples: false });
+      addEvent('Failed to search examples: ' + error.message, 'error');
+    }
+  },
+
+  loadExample: async (example) => {
+    const { addEvent, clearDiagram } = get();
+    
+    try {
+      addEvent(`Loading example: ${example.name}...`, 'info');
+      
+      // Clear current diagram first
+      clearDiagram();
+      
+      // Load the example file from S3
+      const diagramData = await examplesService.loadExampleFile(example);
+      
+      // Increment download count
+      await examplesService.incrementDownloadCount(example.id);
+      
+      // Load the diagram data (using your existing load logic)
+      set({
+        nodes: diagramData.nodes || [],
+        edges: diagramData.edges || [],
+        diagramName: diagramData.diagramName || example.name,
+        mode: diagramData.problemStatement?.mode || 'sandbox',
+        currentProblem: diagramData.problemStatement?.currentProblem || null,
+        problemStatement: diagramData.problemStatement?.customStatement || '',
+        viewTransform: diagramData.viewTransform || { x: 0, y: 0, scale: 1 },
+        showGrid: diagramData.showGrid !== undefined ? diagramData.showGrid : false,
+        globalStyles: diagramData.globalStyles ? 
+          { ...get().globalStyles, ...diagramData.globalStyles } : 
+          get().globalStyles,
+        adjacencyMatrix: diagramData.analysis?.adjacencyMatrix || [],
+        allLoops: diagramData.analysis?.allLoops || [],
+        simulationState: diagramData.simulation ? {
+          ...get().simulationState,
+          ...diagramData.simulation,
+          isInitialized: diagramData.simulation.isInitialized || false
+        } : get().simulationState,
+        selectedNode: null,
+        selectedEdge: null,
+        highlightedLoop: null,
+        undoStack: [],
+        redoStack: []
+      });
+      
+      addEvent(`Example loaded: ${example.name}`, 'success');
+    } catch (error) {
+      addEvent('Failed to load example: ' + error.message, 'error');
+      throw error;
+    }
+  },
+
+  // Create sample data for testing
+  createSampleData: async () => {
+    const { addEvent } = get();
+    
+    try {
+      addEvent('Creating sample data...', 'info');
+      const success = await createSampleData();
+      
+      if (success) {
+        addEvent('Sample data created successfully!', 'success');
+        // Reload examples list
+        get().loadExamplesList();
+      } else {
+        addEvent('Failed to create sample data', 'error');
+      }
+    } catch (error) {
+      addEvent('Error creating sample data: ' + error.message, 'error');
+    }
   }
 }))
 

@@ -154,6 +154,12 @@ function SysLoopHeader() {
     redo()
   }
 
+  const handleLoadExamples = () => {
+    // This will be handled by the parent component
+    window.dispatchEvent(new CustomEvent('openExamplesBrowser'))
+    setShowOpenDropdown(false)
+  }
+
 
 
   const handleNodeFontChange = (font) => {
@@ -1174,10 +1180,7 @@ function SysLoopHeader() {
                         From PC
                       </button>
                       <button
-                        onClick={() => {
-                          // Handle examples - you can implement this later
-                          setShowOpenDropdown(false)
-                        }}
+                        onClick={handleLoadExamples}
                         style={{
                           width: '100%',
                           padding: '8px 12px',
@@ -1616,6 +1619,7 @@ function SysLoopHeader() {
           onClose={() => setShowPlotsModal(false)} 
         />
       )}
+
     </header>
   )
 }
