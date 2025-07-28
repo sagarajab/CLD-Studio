@@ -8,7 +8,7 @@ The CLD Studio now includes a comprehensive undo/redo system that allows users t
 ### Undo/Redo Operations
 - **Undo (Ctrl+Z)**: Reverts the last major action performed on the diagram
 - **Redo (Ctrl+Y or Ctrl+Shift+Z)**: Restores a major action that was previously undone
-- **10-step limit**: The system maintains up to 10 undo steps to balance functionality with memory usage
+- **50-step limit**: The system maintains up to 50 undo steps to provide extensive editing history
 
 ### ✅ **Tracked Actions (Major Operations)**
 The following actions are tracked for undo/redo:
@@ -104,7 +104,7 @@ createStateSnapshot: () => {
 
 ### Performance Considerations
 - Deep cloning of state objects using `JSON.parse(JSON.stringify())`
-- Maximum of 10 undo steps to limit memory usage
+- Maximum of 50 undo steps to provide extensive editing history
 - Redo stack is cleared when new actions are performed
 - Asynchronous graph analysis updates to prevent UI blocking
 
@@ -142,7 +142,7 @@ createStateSnapshot: () => {
 
 ## Limitations
 - Undo/redo stacks are cleared when loading a new diagram
-- Maximum of 10 undo steps (configurable via `maxUndoSteps`)
+- Maximum of 50 undo steps (configurable via `maxUndoSteps`)
 - Simulation mode operations are not tracked for undo/redo
 - Very large diagrams may impact performance due to state snapshot size
 - Selection states are not preserved (by design)

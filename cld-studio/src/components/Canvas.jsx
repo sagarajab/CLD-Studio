@@ -37,6 +37,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   const [isDraggingNode, setIsDraggingNode] = useState(false)
   const [draggedNodeId, setDraggedNodeId] = useState(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+  const [hasRecordedDragStart, setHasRecordedDragStart] = useState(false)
   
 
   
@@ -555,6 +556,15 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     
     // Handle node dragging
     if (isDraggingNode && draggedNodeId) {
+      // Record drag start on first mouse move (actual dragging)
+      if (!hasRecordedDragStart) {
+        const draggedNode = storeNodes.find(n => n.id === draggedNodeId)
+        if (draggedNode) {
+          recordDragStart(draggedNodeId, { ...draggedNode.position })
+          setHasRecordedDragStart(true)
+        }
+      }
+      
       const rect = canvasRef.current.getBoundingClientRect()
       const mouseX = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
       const mouseY = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
@@ -603,7 +613,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         }
       }
     }
-     }, [isPanning, panStart, isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, viewTransform, storeNodes, updateNode, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId, selectedNodes])
+     }, [isPanning, panStart, isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, hasRecordedDragStart, viewTransform, storeNodes, updateNode, recordDragStart, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId, selectedNodes])
 
   const handleCanvasMouseUp = useCallback(() => {
     setIsDragging(false)
@@ -614,6 +624,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       setIsDraggingNode(false)
       setDraggedNodeId(null)
       setDragOffset({ x: 0, y: 0 })
+      setHasRecordedDragStart(false)
     } else if (isDraggingControlPoint) {
       setIsDraggingControlPoint(false)
       setDraggedEdgeId(null)
@@ -760,14 +771,15 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       setIsDraggingNode(true)
       setDraggedNodeId(node.id)
       setDragOffset({ x: offsetX, y: offsetY })
+      setHasRecordedDragStart(false) // Reset flag for new drag operation
       
-      // Record drag start position for undo/redo
-      recordDragStart(node.id, { ...node.position })
+      // Don't record drag start here - only record when actual dragging occurs
+      // This prevents recording selection clicks as drag operations
       
       // Don't change selection state here - let the click handler manage selection
       // This prevents interference with multiselect functionality
     }
-  }, [viewTransform, recordDragStart])
+  }, [viewTransform])
 
   // Handle control point dragging
   const handleControlPointMouseDown = (e, edgeId) => {

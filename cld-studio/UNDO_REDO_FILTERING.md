@@ -193,7 +193,7 @@ These actions do NOT call `recordStateChange()` and are excluded:
 4. **Selective undo** - Undo specific types of actions only
 
 ### Performance Monitoring:
-1. **Memory usage** - Monitor undo stack size
+1. **Memory usage** - Monitor undo stack size (now up to 50 steps)
 2. **Snapshot size** - Track state snapshot sizes
 3. **User behavior** - Analyze which actions are most common
 4. **Performance metrics** - Measure impact on large diagrams
