@@ -1,7 +1,11 @@
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/data';
 import { getUrl } from 'aws-amplify/storage';
-import outputs from '../amplify_outputs.json';
+fetch('/amplify_outputs.json')
+  .then(res => res.json())
+  .then(outputs => {
+    Amplify.configure(outputs);
+  });
 
 console.log('Amplify imported:', !!Amplify);
 console.log('generateClient imported:', !!generateClient);
