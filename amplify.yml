@@ -1,0 +1,17 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd cld-studio
+        - npm install
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: cld-studio/dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - cld-studio/node_modules/**/* 
