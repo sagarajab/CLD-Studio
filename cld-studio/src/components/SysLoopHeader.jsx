@@ -5,6 +5,7 @@ import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Splin
 import SettingsModal from './SettingsModal'
 import StateVectorModal from './StateVectorModal'
 import PlotsModal from './PlotsModal'
+import S3FileBrowser from './S3FileBrowser'
 import { loadConfig } from '../config/appConfig'
 import appIcon from '../assets/app_icon.png'
 import tbtIcon from '../assets/tbt_icon.png'
@@ -19,6 +20,8 @@ function SysLoopHeader() {
     exportAsSVG,
     exportAsPDF,
     exportDetailedData,
+    loadFileFromS3,
+    listS3Files,
     nodes, 
     globalStyles,
     selectedNode,
@@ -78,6 +81,7 @@ function SysLoopHeader() {
   const [perturbationValue, setPerturbationValue] = useState(1)
   const [showPlotsModal, setShowPlotsModal] = useState(false)
   const [showStateVectorModal, setShowStateVectorModal] = useState(false)
+  const [showS3FileBrowser, setShowS3FileBrowser] = useState(false)
 
   
   // Load config for colors
@@ -105,6 +109,10 @@ function SysLoopHeader() {
 
   const handleLoad = () => {
     loadDiagram()
+  }
+
+  const handleLoadFromS3 = () => {
+    setShowS3FileBrowser(true)
   }
 
   const handleClear = () => {
@@ -1180,6 +1188,34 @@ function SysLoopHeader() {
                         From PC
                       </button>
                       <button
+                        onClick={handleLoadFromS3}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: 'none',
+                          background: 'transparent',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          color: '#374151',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#f3f4f6'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent'
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Browse S3 Files
+                      </button>
+                      <button
                         onClick={handleLoadExamples}
                         style={{
                           width: '100%',
@@ -1617,6 +1653,14 @@ function SysLoopHeader() {
         <PlotsModal 
           isOpen={showPlotsModal} 
           onClose={() => setShowPlotsModal(false)} 
+        />
+      )}
+
+      {/* S3 File Browser Modal */}
+      {showS3FileBrowser && (
+        <S3FileBrowser 
+          isOpen={showS3FileBrowser} 
+          onClose={() => setShowS3FileBrowser(false)} 
         />
       )}
 

@@ -2371,6 +2371,194 @@ const useCLDStore = create((set, get) => ({
     }
   },
 
+  // New function to list all files in S3
+  listS3Files: async () => {
+    const { addEvent } = get();
+    
+    try {
+      addEvent('Listing S3 files...', 'info');
+      
+      // Get the list of files from S3 - try different approaches
+      const { list } = await import('aws-amplify/storage');
+      
+      // Try listing from root first
+      console.log('Trying to list from root...');
+      const result = await list({
+        options: {
+          accessLevel: 'guest'
+        }
+      });
+      
+      console.log('S3 list result:', result);
+      const files = result.items || [];
+      
+      // Filter files that are .cld files (they're in the root, not public folder)
+      const cldFiles = files
+        .filter(file => file && file.key && file.key.endsWith('.cld'))
+        .map(file => file.key);
+      
+      addEvent(`Found ${cldFiles.length} .cld files in S3`, 'success');
+      console.log('CLD files found:', cldFiles);
+      
+      return cldFiles;
+    } catch (error) {
+      addEvent('Failed to list S3 files: ' + error.message, 'error');
+      throw error;
+    }
+  },
+
+  // Test function to debug S3 listing
+  testS3Listing: async () => {
+    const { addEvent } = get();
+    
+    try {
+      addEvent('Testing S3 listing...', 'info');
+      
+      // Try different approaches to list files
+      const { list } = await import('aws-amplify/storage');
+      
+      // Method 1: List from root
+      console.log('Method 1: Listing from root...');
+      const result1 = await list({
+        options: {
+          accessLevel: 'guest'
+        }
+      });
+      console.log('Root result:', result1);
+      
+      // Method 2: List from public folder
+      console.log('Method 2: Listing from public folder...');
+      const result2 = await list({
+        path: 'public/',
+        options: {
+          accessLevel: 'guest'
+        }
+      });
+      console.log('Public folder result:', result2);
+      
+      // Method 3: List with no path
+      console.log('Method 3: Listing with no path...');
+      const result3 = await list({
+        options: {
+          accessLevel: 'guest'
+        }
+      });
+      console.log('No path result:', result3);
+      
+      addEvent('S3 listing test completed - check console', 'success');
+      return { result1, result2, result3 };
+    } catch (error) {
+      addEvent('S3 listing test failed: ' + error.message, 'error');
+      throw error;
+    }
+  },
+
+  // Quick test function to try loading known files
+  testKnownFiles: async () => {
+    const { addEvent } = get();
+    
+    try {
+      addEvent('Testing known files...', 'info');
+      
+      const knownFiles = [
+        'public/eg1.cld',
+        'public/eg2.cld',
+        'eg1.cld',
+        'eg2.cld'
+      ];
+      
+      const { getUrl } = await import('aws-amplify/storage');
+      
+      for (const fileName of knownFiles) {
+        try {
+          console.log(`Testing file: ${fileName}`);
+          const fileUrl = await getUrl({
+            key: fileName,
+            options: {
+              accessLevel: 'guest'
+            }
+          });
+          
+          const response = await fetch(fileUrl.url);
+          console.log(`${fileName}: ${response.ok ? '✅ ACCESSIBLE' : '❌ NOT FOUND'} (${response.status})`);
+          
+          if (response.ok) {
+            addEvent(`Found accessible file: ${fileName}`, 'success');
+          }
+        } catch (error) {
+          console.log(`${fileName}: ❌ ERROR - ${error.message}`);
+        }
+      }
+      
+      addEvent('Known files test completed - check console', 'success');
+    } catch (error) {
+      addEvent('Known files test failed: ' + error.message, 'error');
+      throw error;
+    }
+  },
+
+  // New function to load file directly from S3
+  loadFileFromS3: async (fileName) => {
+    const { addEvent, clearDiagram } = get();
+    
+    try {
+      addEvent(`Loading file from S3: ${fileName}...`, 'info');
+      
+      // Clear current diagram first
+      clearDiagram();
+      
+      // Get the file URL from S3
+      const { getUrl } = await import('aws-amplify/storage');
+      const fileUrl = await getUrl({
+        key: fileName,
+        options: {
+          accessLevel: 'guest'
+        }
+      });
+      
+      // Fetch the file content
+      const response = await fetch(fileUrl.url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
+      
+      const fileContent = await response.text();
+      const diagramData = JSON.parse(fileContent);
+      
+      // Load the diagram data
+      set({
+        nodes: diagramData.nodes || [],
+        edges: diagramData.edges || [],
+        diagramName: diagramData.diagramName || fileName.replace('.cld', ''),
+        mode: diagramData.problemStatement?.mode || 'sandbox',
+        currentProblem: diagramData.problemStatement?.currentProblem || null,
+        problemStatement: diagramData.problemStatement?.customStatement || '',
+        viewTransform: diagramData.viewTransform || { x: 0, y: 0, scale: 1 },
+        showGrid: diagramData.showGrid !== undefined ? diagramData.showGrid : false,
+        globalStyles: diagramData.globalStyles ? 
+          { ...get().globalStyles, ...diagramData.globalStyles } : 
+          get().globalStyles,
+        adjacencyMatrix: diagramData.analysis?.adjacencyMatrix || [],
+        allLoops: diagramData.analysis?.allLoops || [],
+        simulationState: diagramData.simulation ? {
+          ...get().simulationState,
+          ...diagramData.simulation,
+          isInitialized: diagramData.simulation.isInitialized || false
+        } : get().simulationState,
+        selectedNode: null,
+        selectedEdge: null,
+        highlightedLoop: null,
+        undoStack: [],
+        redoStack: []
+      });
+      
+      addEvent(`File loaded from S3: ${fileName}`, 'success');
+    } catch (error) {
+      addEvent('Failed to load file from S3: ' + error.message, 'error');
+      throw error;
+    }
+  },
+
   // Create sample data for testing
   createSampleData: async () => {
     const { addEvent } = get();
