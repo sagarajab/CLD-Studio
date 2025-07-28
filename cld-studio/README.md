@@ -134,3 +134,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [React Flow](https://reactflow.dev/) for the diagram engine
 - [TailwindCSS](https://tailwindcss.com/) for styling
 - [Zustand](https://github.com/pmndrs/zustand) for state management
+
+---
+
+*Last updated: December 2024*
