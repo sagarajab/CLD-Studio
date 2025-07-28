@@ -1143,13 +1143,13 @@ body {
 
 .diagram-name-pill, .diagram-name-pill-editable {
   border-radius: 9999px;
-  padding: 4px 16px;
+  padding: 4px 10px;
   border: none;
   font-weight: 500;
-  font-size: 1rem;
+  font-size: 0.95rem;
   background: #f3f4f6;
   color: #374151;
-  width: 200px;
+  width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1157,12 +1157,51 @@ body {
   transition: border 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
   text-align: left;
+  height: 22px !important;
+  display: flex;
+  align-items: center;
 }
 
 .diagram-name-pill-editable:focus {
   border: 1.5px solid #2563eb;
   box-shadow: 0 2px 8px rgba(37,99,235,0.08);
   outline: none;
+}
+
+
+
+.file-name-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 280px;
+  height: 34px !important;
+  background: #f3f4f6;
+  border-radius: 9999px;
+  padding: 0 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-sizing: border-box;
+  transition: border 0.2s, box-shadow 0.2s;
+  text-align: left;
+}
+
+.file-name-container.editing {
+  border: 1.5px solid #2563eb;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+}
+
+.file-name-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #374151;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  text-align: left;
 }
 
 /* Analysis Tab Styles */
@@ -2836,6 +2875,49 @@ body {
 .control-toggle:active {
   transform: translateY(0);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* File name suffix styles */
+.file-name-suffix {
+  color: #6b7280;
+  font-weight: 400;
+  font-size: 0.9rem;
+  margin-left: 4px;
+  user-select: none;
+  pointer-events: none;
+  flex-shrink: 0;
+  text-align: left;
+}
+
+.file-name-container {
+  display: flex;
+  align-items: center;
+  width: 280px;
+  height: 40px;
+  background: #f3f4f6;
+  border-radius: 9999px;
+  padding: 0 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  box-sizing: border-box;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.file-name-container.editing {
+  border: 1.5px solid #2563eb;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+}
+
+.file-name-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-weight: 500;
+  font-size: 1.1rem;
+  color: #374151;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
 }
 
 

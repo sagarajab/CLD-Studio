@@ -481,64 +481,43 @@ function SysLoopHeader() {
           </div>
         </div>
 
-        {/* Editable Diagram Name Pill */}
+        {/* Editable Diagram Name Pill with .cld suffix */}
         {editingName ? (
-          <input
-            className="diagram-name-pill-editable"
-            type="text"
-            value={tempName}
-            autoFocus
-            maxLength={20}
-            onChange={e => setTempName(e.target.value)}
-            onBlur={() => {
-              setDiagramName(tempName.trim() || 'Untitled')
-              setEditingName(false)
-            }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
+          <div className="file-name-container editing">
+            <input
+              className="file-name-input"
+              type="text"
+              value={tempName}
+              autoFocus
+              maxLength={20}
+              onChange={e => setTempName(e.target.value)}
+              onBlur={() => {
                 setDiagramName(tempName.trim() || 'Untitled')
                 setEditingName(false)
-              } else if (e.key === 'Escape') {
-                setTempName(diagramName)
-                setEditingName(false)
-              }
-            }}
-            style={{
-              borderRadius: '9999px',
-              padding: '4px 16px',
-              fontWeight: 500,
-              fontSize: '1rem',
-              outline: 'none',
-              width: '200px',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              boxSizing: 'border-box'
-            }}
-          />
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  setDiagramName(tempName.trim() || 'Untitled')
+                  setEditingName(false)
+                } else if (e.key === 'Escape') {
+                  setTempName(diagramName)
+                  setEditingName(false)
+                }
+              }}
+            />
+            <span className="file-name-suffix">.cld</span>
+          </div>
         ) : (
           <button
-            className="diagram-name-pill"
+            className="file-name-container"
             onClick={() => {
               setTempName(diagramName)
               setEditingName(true)
             }}
-            style={{
-              borderRadius: '9999px',
-              padding: '4px 16px',
-              fontWeight: 500,
-              fontSize: '1rem',
-              width: '200px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-              boxSizing: 'border-box'
-            }}
             title="Click to edit diagram name"
           >
-            {diagramName}
+            <span className="file-name-input">{diagramName}</span>
+            <span className="file-name-suffix">.cld</span>
           </button>
         )}
       </div>
