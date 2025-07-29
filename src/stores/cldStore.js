@@ -2371,49 +2371,40 @@ const useCLDStore = create((set, get) => ({
     }
   },
 
-  // New function to list all files in S3
-  listS3Files: async () => {
+  // New function to list all files in S3 with organized structure
+  listS3Files: async (category = 'all') => {
     const { addEvent } = get();
     
     try {
-      addEvent('Listing S3 files...', 'info');
+      addEvent(`Listing S3 files from ${category}...`, 'info');
       
       // Get the list of files from S3
       const { list } = await import('aws-amplify/storage');
       
-      // Try multiple approaches to find files
       console.log('=== S3 Debugging ===');
+      console.log(`Listing from category: ${category}`);
       
-      // Method 1: List from root
-      console.log('Method 1: Listing from root...');
-      let result1;
+      let result;
       try {
-        result1 = await list();
-        console.log('Root result:', result1);
-        console.log('Root items:', result1.items?.map(item => item.key) || []);
+        if (category === 'all') {
+          // List all files
+          result = await list();
+        } else {
+          // List files from specific category
+          result = await list({
+            path: `${category}/`
+          });
+        }
+        
+        console.log('Result:', result);
+        console.log('Items:', result.items?.map(item => item.key) || []);
       } catch (error) {
-        console.log('Root error:', error);
+        console.log('Listing error:', error);
+        throw error;
       }
       
-      // Method 2: List with specific path
-      console.log('Method 2: Listing with specific path...');
-      let result2;
-      try {
-        result2 = await list({
-          path: '/'
-        });
-        console.log('Path result:', result2);
-        console.log('Path items:', result2.items?.map(item => item.key) || []);
-      } catch (error) {
-        console.log('Path error:', error);
-      }
-      
-      // Combine all results
-      const allFiles = [
-        ...(result1?.items || []),
-        ...(result2?.items || [])
-      ];
-      
+      // Get all files
+      const allFiles = result?.items || [];
       console.log('All files found:', allFiles.map(item => item.key));
       
       // Filter files that are .cld files
@@ -2424,9 +2415,9 @@ const useCLDStore = create((set, get) => ({
       console.log('CLD files found:', cldFiles);
       
       if (cldFiles.length === 0) {
-        addEvent('No .cld files found in S3. You can create sample data to get started.', 'info');
+        addEvent(`No .cld files found in ${category}. You can upload sample files to get started.`, 'info');
       } else {
-        addEvent(`Found ${cldFiles.length} .cld files in S3`, 'success');
+        addEvent(`Found ${cldFiles.length} .cld files in ${category}`, 'success');
       }
       
       return cldFiles;
@@ -2440,6 +2431,82 @@ const useCLDStore = create((set, get) => ({
         addEvent('Failed to list S3 files: ' + error.message, 'error');
       }
       
+      throw error;
+    }
+  },
+
+  // Function to list files from specific categories
+  listS3FilesByCategory: async (category) => {
+    const { addEvent } = get();
+    
+    try {
+      addEvent(`Listing files from ${category}...`, 'info');
+      
+      const { list } = await import('aws-amplify/storage');
+      
+      console.log(`=== Listing ${category} files ===`);
+      
+      const result = await list({
+        path: `${category}/`
+      });
+      
+      console.log(`${category} result:`, result);
+      
+      const files = result?.items || [];
+      const cldFiles = files
+        .filter(file => file && file.key && file.key.endsWith('.cld'))
+        .map(file => file.key);
+      
+      console.log(`${category} CLD files:`, cldFiles);
+      
+      if (cldFiles.length === 0) {
+        addEvent(`No .cld files found in ${category}`, 'info');
+      } else {
+        addEvent(`Found ${cldFiles.length} .cld files in ${category}`, 'success');
+      }
+      
+      return cldFiles;
+    } catch (error) {
+      console.error(`Error listing ${category} files:`, error);
+      addEvent(`Failed to list ${category} files: ${error.message}`, 'error');
+      throw error;
+    }
+  },
+
+  // Function to get available categories
+  getS3Categories: async () => {
+    const { addEvent } = get();
+    
+    try {
+      addEvent('Getting S3 categories...', 'info');
+      
+      const { list } = await import('aws-amplify/storage');
+      
+      console.log('=== Getting S3 Categories ===');
+      
+      const result = await list();
+      const items = result?.items || [];
+      
+      // Extract unique prefixes (folders)
+      const prefixes = new Set();
+      items.forEach(item => {
+        if (item.key && item.key.includes('/')) {
+          const prefix = item.key.split('/')[0];
+          if (prefix) {
+            prefixes.add(prefix);
+          }
+        }
+      });
+      
+      const categories = Array.from(prefixes);
+      console.log('Available categories:', categories);
+      
+      addEvent(`Found ${categories.length} categories: ${categories.join(', ')}`, 'success');
+      
+      return categories;
+    } catch (error) {
+      console.error('Error getting categories:', error);
+      addEvent('Failed to get categories: ' + error.message, 'error');
       throw error;
     }
   },
@@ -2647,71 +2714,109 @@ const useCLDStore = create((set, get) => ({
     }
   },
 
-  // Upload sample CLD files directly to S3
-  uploadSampleFiles: async () => {
+  // Upload sample CLD files directly to S3 with organized structure
+  uploadSampleFiles: async (category = 'examples') => {
     const { addEvent } = get();
     
     try {
-      addEvent('Uploading sample CLD files to S3...', 'info');
+      addEvent(`Uploading sample CLD files to S3/${category}...`, 'info');
       
       const { uploadData } = await import('aws-amplify/storage');
       
-      // Sample CLD file content
+      // Sample CLD file content organized by category
       const sampleFiles = {
-        'sample1.cld': {
-          nodes: [
-            { id: '1', label: 'Population', x: 100, y: 100, color: '#000000' },
-            { id: '2', label: 'Birth Rate', x: 300, y: 100, color: '#000000' },
-            { id: '3', label: 'Death Rate', x: 300, y: 200, color: '#000000' }
-          ],
-          edges: [
-            { id: '1', source: '1', target: '2', polarity: 'positive' },
-            { id: '2', source: '2', target: '1', polarity: 'positive' }
-          ],
-          diagramName: 'Sample Population System',
-          mode: 'sandbox',
-          viewTransform: { x: 0, y: 0, scale: 1 },
-          showGrid: false
+        'examples': {
+          'basic-population.cld': {
+            nodes: [
+              { id: '1', label: 'Population', x: 100, y: 100, color: '#000000' },
+              { id: '2', label: 'Birth Rate', x: 300, y: 100, color: '#000000' },
+              { id: '3', label: 'Death Rate', x: 300, y: 200, color: '#000000' }
+            ],
+            edges: [
+              { id: '1', source: '1', target: '2', polarity: 'positive' },
+              { id: '2', source: '2', target: '1', polarity: 'positive' }
+            ],
+            diagramName: 'Basic Population System',
+            mode: 'sandbox',
+            viewTransform: { x: 0, y: 0, scale: 1 },
+            showGrid: false
+          },
+          'business-growth.cld': {
+            nodes: [
+              { id: '1', label: 'Sales', x: 100, y: 100, color: '#000000' },
+              { id: '2', label: 'Marketing', x: 300, y: 100, color: '#000000' },
+              { id: '3', label: 'Revenue', x: 200, y: 200, color: '#000000' }
+            ],
+            edges: [
+              { id: '1', source: '1', target: '2', polarity: 'positive' },
+              { id: '2', source: '2', target: '3', polarity: 'positive' }
+            ],
+            diagramName: 'Business Growth System',
+            mode: 'sandbox',
+            viewTransform: { x: 0, y: 0, scale: 1 },
+            showGrid: false
+          }
         },
-        'sample2.cld': {
-          nodes: [
-            { id: '1', label: 'Sales', x: 100, y: 100, color: '#000000' },
-            { id: '2', label: 'Marketing', x: 300, y: 100, color: '#000000' },
-            { id: '3', label: 'Revenue', x: 200, y: 200, color: '#000000' }
-          ],
-          edges: [
-            { id: '1', source: '1', target: '2', polarity: 'positive' },
-            { id: '2', source: '2', target: '3', polarity: 'positive' }
-          ],
-          diagramName: 'Sample Business System',
-          mode: 'sandbox',
-          viewTransform: { x: 0, y: 0, scale: 1 },
-          showGrid: false
+        'assignments': {
+          'assignment1-basic.cld': {
+            nodes: [
+              { id: '1', label: 'Temperature', x: 100, y: 100, color: '#000000' },
+              { id: '2', label: 'Thermostat', x: 300, y: 100, color: '#000000' },
+              { id: '3', label: 'Heating System', x: 300, y: 200, color: '#000000' }
+            ],
+            edges: [
+              { id: '1', source: '1', target: '2', polarity: 'negative' },
+              { id: '2', source: '2', target: '3', polarity: 'positive' }
+            ],
+            diagramName: 'Assignment 1: Temperature Control',
+            mode: 'assessment',
+            viewTransform: { x: 0, y: 0, scale: 1 },
+            showGrid: false
+          }
+        },
+        'exam': {
+          'practice-exam1.cld': {
+            nodes: [
+              { id: '1', label: 'Productivity', x: 100, y: 100, color: '#000000' },
+              { id: '2', label: 'Workload', x: 300, y: 100, color: '#000000' },
+              { id: '3', label: 'Stress', x: 300, y: 200, color: '#000000' }
+            ],
+            edges: [
+              { id: '1', source: '1', target: '2', polarity: 'positive' },
+              { id: '2', source: '2', target: '3', polarity: 'positive' }
+            ],
+            diagramName: 'Practice Exam: Work Performance',
+            mode: 'assessment',
+            viewTransform: { x: 0, y: 0, scale: 1 },
+            showGrid: false
+          }
         }
       };
       
-      for (const [fileName, fileContent] of Object.entries(sampleFiles)) {
+      const filesToUpload = sampleFiles[category] || sampleFiles['examples'];
+      
+      for (const [fileName, fileContent] of Object.entries(filesToUpload)) {
         try {
-          console.log(`Uploading ${fileName} to S3...`);
+          console.log(`Uploading ${category}/${fileName} to S3...`);
           
           const result = await uploadData({
-            key: fileName,
+            key: `${category}/${fileName}`,
             data: JSON.stringify(fileContent, null, 2)
           }).result;
           
-          console.log(`Successfully uploaded ${fileName}`);
-          addEvent(`Uploaded ${fileName} to S3`, 'success');
+          console.log(`Successfully uploaded ${category}/${fileName}`);
+          addEvent(`Uploaded ${category}/${fileName} to S3`, 'success');
         } catch (error) {
-          console.error(`Error uploading ${fileName}:`, error);
-          addEvent(`Failed to upload ${fileName}: ${error.message}`, 'error');
+          console.error(`Error uploading ${category}/${fileName}:`, error);
+          addEvent(`Failed to upload ${category}/${fileName}: ${error.message}`, 'error');
         }
       }
       
-      addEvent('Sample file upload completed', 'success');
+      addEvent(`Sample file upload completed for ${category}`, 'success');
       
       // Refresh the file list
       setTimeout(() => {
-        get().listS3Files();
+        get().listS3Files(category);
       }, 1000);
       
     } catch (error) {

@@ -31,7 +31,7 @@ const fallbackConfig = {
 
 const configureAmplify = async () => {
   try {
-    // Try to load the configuration from amplify_outputs.json
+    // Try to load the configuration from amplify_outputs.json in public folder
     const response = await fetch('/amplify_outputs.json');
     if (response.ok) {
       const outputs = await response.json();

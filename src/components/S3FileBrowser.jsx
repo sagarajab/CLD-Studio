@@ -2,24 +2,40 @@ import React, { useState, useEffect } from 'react';
 import { useCLDStore } from '../stores/cldStore';
 
 const S3FileBrowser = ({ isOpen, onClose }) => {
-  const { listS3Files, loadFileFromS3, addEvent, checkS3Configuration, uploadSampleFiles } = useCLDStore();
+  const { listS3Files, loadFileFromS3, addEvent, checkS3Configuration, uploadSampleFiles, getS3Categories } = useCLDStore();
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isListingFiles, setIsListingFiles] = useState(false);
   const [isCheckingConfig, setIsCheckingConfig] = useState(false);
   const [isUploadingSamples, setIsUploadingSamples] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categories, setCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
+      loadCategories();
       loadFiles();
     }
   }, [isOpen]);
 
+  const loadCategories = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const availableCategories = await getS3Categories();
+      setCategories(availableCategories);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
   const loadFiles = async () => {
     setIsListingFiles(true);
     try {
-      const fileList = await listS3Files();
+      const fileList = await listS3Files(selectedCategory);
       setFiles(fileList);
       setSelectedFile(null);
     } catch (error) {
@@ -67,7 +83,7 @@ const S3FileBrowser = ({ isOpen, onClose }) => {
   const handleUploadSamples = async () => {
     setIsUploadingSamples(true);
     try {
-      await uploadSampleFiles();
+      await uploadSampleFiles(selectedCategory === 'all' ? 'examples' : selectedCategory);
       // Refresh the file list after upload
       setTimeout(() => {
         loadFiles();
@@ -77,6 +93,11 @@ const S3FileBrowser = ({ isOpen, onClose }) => {
     } finally {
       setIsUploadingSamples(false);
     }
+  };
+
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    loadFiles();
   };
 
   if (!isOpen) return null;
@@ -168,6 +189,40 @@ const S3FileBrowser = ({ isOpen, onClose }) => {
           overflow: 'auto', 
           padding: '20px'
         }}>
+          {/* Category Selector */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              marginBottom: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#374151'
+            }}>
+              Category:
+            </label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '14px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">All Files</option>
+              <option value="examples">Examples</option>
+              <option value="assignments">Assignments</option>
+              <option value="exam">Exam</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+
           {isListingFiles ? (
             <div style={{
               display: 'flex',
