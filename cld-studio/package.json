@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
+    "build": "vite build && npm run copy-amplify-config",
+    "copy-amplify-config": "cp public/amplify_outputs.json dist/ || echo 'amplify_outputs.json not found, using fallback config'",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {

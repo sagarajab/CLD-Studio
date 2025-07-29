@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useCLDStore } from '../stores/cldStore';
 
 const S3FileBrowser = ({ isOpen, onClose }) => {
-  const { listS3Files, loadFileFromS3, addEvent } = useCLDStore();
+  const { listS3Files, loadFileFromS3, addEvent, checkS3Configuration, uploadSampleFiles } = useCLDStore();
   const [files, setFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isListingFiles, setIsListingFiles] = useState(false);
+  const [isCheckingConfig, setIsCheckingConfig] = useState(false);
+  const [isUploadingSamples, setIsUploadingSamples] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -49,6 +51,32 @@ const S3FileBrowser = ({ isOpen, onClose }) => {
 
   const handleRefresh = () => {
     loadFiles();
+  };
+
+  const handleCheckConfig = async () => {
+    setIsCheckingConfig(true);
+    try {
+      await checkS3Configuration();
+    } catch (error) {
+      console.error('Error checking configuration:', error);
+    } finally {
+      setIsCheckingConfig(false);
+    }
+  };
+
+  const handleUploadSamples = async () => {
+    setIsUploadingSamples(true);
+    try {
+      await uploadSampleFiles();
+      // Refresh the file list after upload
+      setTimeout(() => {
+        loadFiles();
+      }, 1000);
+    } catch (error) {
+      console.error('Error uploading samples:', error);
+    } finally {
+      setIsUploadingSamples(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -227,6 +255,58 @@ const S3FileBrowser = ({ isOpen, onClose }) => {
                    onMouseLeave={(e) => e.target.style.backgroundColor = '#f59e0b'}
                  >
                    Debug S3
+                 </button>
+                 <button
+                   onClick={handleCheckConfig}
+                   disabled={isCheckingConfig}
+                   style={{
+                     padding: '8px 16px',
+                     backgroundColor: '#4f46e5',
+                     color: 'white',
+                     border: 'none',
+                     borderRadius: '6px',
+                     cursor: isCheckingConfig ? 'not-allowed' : 'pointer',
+                     fontSize: '14px'
+                   }}
+                   onMouseEnter={(e) => e.target.style.backgroundColor = '#4338ca'}
+                   onMouseLeave={(e) => e.target.style.backgroundColor = '#4f46e5'}
+                 >
+                   {isCheckingConfig ? (
+                     <>
+                       <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                       </svg>
+                       Checking...
+                     </>
+                   ) : (
+                     'Check S3 Config'
+                   )}
+                 </button>
+                 <button
+                   onClick={handleUploadSamples}
+                   disabled={isUploadingSamples}
+                   style={{
+                     padding: '8px 16px',
+                     backgroundColor: '#059669',
+                     color: 'white',
+                     border: 'none',
+                     borderRadius: '6px',
+                     cursor: isUploadingSamples ? 'not-allowed' : 'pointer',
+                     fontSize: '14px'
+                   }}
+                   onMouseEnter={(e) => e.target.style.backgroundColor = '#047857'}
+                   onMouseLeave={(e) => e.target.style.backgroundColor = '#059669'}
+                 >
+                   {isUploadingSamples ? (
+                     <>
+                       <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                       </svg>
+                       Uploading...
+                     </>
+                   ) : (
+                     'Upload Samples'
+                   )}
                  </button>
               </div>
             </div>

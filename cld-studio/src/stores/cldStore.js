@@ -2445,13 +2445,59 @@ const useCLDStore = create((set, get) => ({
         .map(file => file.key);
       
       console.log('CLD files found:', cldFiles);
-      addEvent(`Found ${cldFiles.length} .cld files in S3`, 'success');
+      
+      if (cldFiles.length === 0) {
+        addEvent('No .cld files found in S3. You can create sample data to get started.', 'info');
+      } else {
+        addEvent(`Found ${cldFiles.length} .cld files in S3`, 'success');
+      }
       
       return cldFiles;
     } catch (error) {
       console.error('S3 listing error:', error);
-      addEvent('Failed to list S3 files: ' + error.message, 'error');
+      
+      // Check if it's a configuration error
+      if (error.message.includes('NoBucket') || error.message.includes('Missing bucket')) {
+        addEvent('S3 not properly configured. Please check Amplify configuration.', 'error');
+      } else {
+        addEvent('Failed to list S3 files: ' + error.message, 'error');
+      }
+      
       throw error;
+    }
+  },
+
+  // Function to check S3 configuration
+  checkS3Configuration: async () => {
+    const { addEvent } = get();
+    
+    try {
+      addEvent('Checking S3 configuration...', 'info');
+      
+      // Try to get the Amplify configuration
+      const { Amplify } = await import('aws-amplify');
+      const config = Amplify.getConfig();
+      
+      console.log('=== S3 Configuration Check ===');
+      console.log('Amplify config:', config);
+      console.log('Storage config:', config.storage);
+      
+      if (!config.storage) {
+        addEvent('No storage configuration found in Amplify config', 'error');
+        return false;
+      }
+      
+      if (!config.storage.bucket_name) {
+        addEvent('No bucket name found in storage configuration', 'error');
+        return false;
+      }
+      
+      addEvent(`S3 bucket configured: ${config.storage.bucket_name}`, 'success');
+      return true;
+    } catch (error) {
+      console.error('S3 configuration check error:', error);
+      addEvent('Failed to check S3 configuration: ' + error.message, 'error');
+      return false;
     }
   },
 
@@ -2624,6 +2670,82 @@ const useCLDStore = create((set, get) => ({
       }
     } catch (error) {
       addEvent('Error creating sample data: ' + error.message, 'error');
+    }
+  },
+
+  // Upload sample CLD files directly to S3
+  uploadSampleFiles: async () => {
+    const { addEvent } = get();
+    
+    try {
+      addEvent('Uploading sample CLD files to S3...', 'info');
+      
+      const { uploadData } = await import('aws-amplify/storage');
+      
+      // Sample CLD file content
+      const sampleFiles = {
+        'sample1.cld': {
+          nodes: [
+            { id: '1', label: 'Population', x: 100, y: 100, color: '#000000' },
+            { id: '2', label: 'Birth Rate', x: 300, y: 100, color: '#000000' },
+            { id: '3', label: 'Death Rate', x: 300, y: 200, color: '#000000' }
+          ],
+          edges: [
+            { id: '1', source: '1', target: '2', polarity: 'positive' },
+            { id: '2', source: '2', target: '1', polarity: 'positive' }
+          ],
+          diagramName: 'Sample Population System',
+          mode: 'sandbox',
+          viewTransform: { x: 0, y: 0, scale: 1 },
+          showGrid: false
+        },
+        'sample2.cld': {
+          nodes: [
+            { id: '1', label: 'Sales', x: 100, y: 100, color: '#000000' },
+            { id: '2', label: 'Marketing', x: 300, y: 100, color: '#000000' },
+            { id: '3', label: 'Revenue', x: 200, y: 200, color: '#000000' }
+          ],
+          edges: [
+            { id: '1', source: '1', target: '2', polarity: 'positive' },
+            { id: '2', source: '2', target: '3', polarity: 'positive' }
+          ],
+          diagramName: 'Sample Business System',
+          mode: 'sandbox',
+          viewTransform: { x: 0, y: 0, scale: 1 },
+          showGrid: false
+        }
+      };
+      
+      for (const [fileName, fileContent] of Object.entries(sampleFiles)) {
+        try {
+          console.log(`Uploading ${fileName} to S3...`);
+          
+          const result = await uploadData({
+            key: `public/${fileName}`,
+            data: JSON.stringify(fileContent, null, 2),
+            options: {
+              accessLevel: 'guest'
+            }
+          }).result;
+          
+          console.log(`Successfully uploaded ${fileName}`);
+          addEvent(`Uploaded ${fileName} to S3`, 'success');
+        } catch (error) {
+          console.error(`Error uploading ${fileName}:`, error);
+          addEvent(`Failed to upload ${fileName}: ${error.message}`, 'error');
+        }
+      }
+      
+      addEvent('Sample file upload completed', 'success');
+      
+      // Refresh the file list
+      setTimeout(() => {
+        get().listS3Files();
+      }, 1000);
+      
+    } catch (error) {
+      addEvent('Error uploading sample files: ' + error.message, 'error');
+      throw error;
     }
   }
 }))
