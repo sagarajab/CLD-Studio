@@ -1,16 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
-import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Play, Pause, RotateCcw as StepBack, RotateCw as StepForward, Square, Settings as SettingsIcon, BarChart3, Activity, Undo2, Redo2, Eraser, Grid3x3, BowArrow, Dices, SkipForward, SkipBack, TimerReset, ZoomIn, ZoomOut, Move, Trash, DraftingCompass, Laptop, Database } from 'lucide-react'
+import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Play, Pause, RotateCcw as StepBack, RotateCw as StepForward, Square, Settings as SettingsIcon, BarChart3, Activity, Undo2, Redo2, Eraser, Grid3x3, BowArrow, Dices, SkipForward, SkipBack, TimerReset, ZoomIn, ZoomOut, Move, Trash, DraftingCompass, Laptop, Database, Cloud, HardDrive } from 'lucide-react'
 
 import SettingsModal from './SettingsModal'
 import StateVectorModal from './StateVectorModal'
 import PlotsModal from './PlotsModal'
 import S3FileBrowser from './S3FileBrowser'
+import SaveToS3Modal from './SaveToS3Modal'
 import { loadConfig } from '../config/appConfig'
 import appIcon from '../assets/app_icon.png'
 import tbtIcon from '../assets/tbt_icon.png'
 
-function SysLoopHeader() {
+function SysLoopHeader({ setShowSaveToS3Modal }) {
   const { 
     saveDiagram, 
     loadDiagram, 
@@ -72,6 +73,7 @@ function SysLoopHeader() {
   const [showDesignSettingsDropdown, setShowDesignSettingsDropdown] = useState(false)
   const [showExportDropdown, setShowExportDropdown] = useState(false)
   const [showOpenDropdown, setShowOpenDropdown] = useState(false)
+  const [showSaveDropdown, setShowSaveDropdown] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [tempName, setTempName] = useState(diagramName)
 
@@ -105,6 +107,21 @@ function SysLoopHeader() {
 
   const handleSave = () => {
     saveDiagram()
+  }
+
+  const handleSaveToPC = () => {
+    saveDiagram()
+    setShowSaveDropdown(false)
+  }
+
+  const handleSaveToCloud = () => {
+    setShowSaveToS3Modal(true)
+    setShowSaveDropdown(false)
+  }
+
+  const toggleSaveDropdown = (e) => {
+    e.stopPropagation()
+    setShowSaveDropdown(!showSaveDropdown)
   }
 
   const handleLoad = () => {
@@ -354,6 +371,7 @@ function SysLoopHeader() {
       const isInsideArrowColorDropdown = event.target.closest('.arrow-color-dropdown')
       const isInsideExportDropdown = event.target.closest('.export-dropdown')
       const isInsideOpenDropdown = event.target.closest('.open-dropdown')
+      const isInsideSaveDropdown = event.target.closest('.save-dropdown')
       const isInsideSimSettingsDropdown = event.target.closest('.sim-settings-dropdown')
 
       
@@ -363,6 +381,7 @@ function SysLoopHeader() {
       const isOnArrowColorToggle = event.target.closest('.arrow-color-container')
       const isOnExportToggle = event.target.closest('.export-container')
       const isOnOpenToggle = event.target.closest('.open-container')
+      const isOnSaveToggle = event.target.closest('.save-container')
       const isOnSimSettingsToggle = event.target.closest('.sim-settings-container')
 
       
@@ -382,6 +401,9 @@ function SysLoopHeader() {
       if (showOpenDropdown && !isInsideOpenDropdown && !isOnOpenToggle) {
         setShowOpenDropdown(false)
       }
+      if (showSaveDropdown && !isInsideSaveDropdown && !isOnSaveToggle) {
+        setShowSaveDropdown(false)
+      }
       if (showSimSettingsDropdown && !isInsideSimSettingsDropdown && !isOnSimSettingsToggle) {
         setShowSimSettingsDropdown(false)
       }
@@ -392,7 +414,7 @@ function SysLoopHeader() {
     return () => {
       document.removeEventListener('click', handleClickOutside)
     }
-  }, [showDesignSettingsDropdown, showNodeColorDropdown, showArrowColorDropdown, showExportDropdown, showOpenDropdown, showSimSettingsDropdown])
+  }, [showDesignSettingsDropdown, showNodeColorDropdown, showArrowColorDropdown, showExportDropdown, showOpenDropdown, showSaveDropdown, showSimSettingsDropdown])
 
   // Update tempName when diagramName changes (e.g., when loading a file)
   useEffect(() => {
@@ -410,7 +432,8 @@ function SysLoopHeader() {
     },
     { 
       label: 'Save', 
-      action: handleSave, 
+      type: 'save',
+      action: toggleSaveDropdown, 
       icon: Save,
       title: 'Save' 
     },
@@ -1244,6 +1267,91 @@ function SysLoopHeader() {
                     </div>
                   )}
                 </div>
+              ) : item.type === 'save' ? (
+                <div className="save-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <button
+                    className="menu-icon-btn"
+                    onClick={toggleSaveDropdown}
+                    title="Save diagram"
+                  >
+                    <Save className="menu-icon" />
+                  </button>
+                  {showSaveDropdown && (
+                    <div 
+                      className="save-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: '0',
+                        backgroundColor: 'white',
+                        border: '1px solid #ccc',
+                        borderRadius: '8px',
+                        padding: '8px',
+                        zIndex: 1000,
+                        minWidth: '160px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+                      }}
+                    >
+                      <button
+                        onClick={handleSaveToPC}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: 'none',
+                          background: 'transparent',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          color: '#374151',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#f3f4f6'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent'
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Save to PC
+                      </button>
+                      <button
+                        onClick={handleSaveToCloud}
+                        style={{
+                          width: '100%',
+                          padding: '8px 12px',
+                          border: 'none',
+                          background: 'transparent',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          color: '#374151',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = '#f3f4f6'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = 'transparent'
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                        Save to Cloud
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button
                   className="menu-icon-btn"
@@ -1661,6 +1769,14 @@ function SysLoopHeader() {
         <S3FileBrowser 
           isOpen={showS3FileBrowser} 
           onClose={() => setShowS3FileBrowser(false)} 
+        />
+      )}
+
+      {/* Save To S3 Modal */}
+      {showSaveToS3Modal && (
+        <SaveToS3Modal 
+          isOpen={showSaveToS3Modal} 
+          onClose={() => setShowSaveToS3Modal(false)} 
         />
       )}
 

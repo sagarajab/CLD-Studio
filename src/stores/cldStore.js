@@ -2758,41 +2758,42 @@ const useCLDStore = create((set, get) => ({
           }
         },
         'assignments': {
-          'assignment1-basic.cld': {
+          'assignment-1.cld': {
             nodes: [
-              { id: '1', label: 'Temperature', x: 100, y: 100, color: '#000000' },
-              { id: '2', label: 'Thermostat', x: 300, y: 100, color: '#000000' },
-              { id: '3', label: 'Heating System', x: 300, y: 200, color: '#000000' }
+              { id: '1', label: 'Student Performance', x: 100, y: 100, color: '#000000' },
+              { id: '2', label: 'Study Time', x: 300, y: 100, color: '#000000' },
+              { id: '3', label: 'Understanding', x: 200, y: 200, color: '#000000' }
             ],
             edges: [
-              { id: '1', source: '1', target: '2', polarity: 'negative' },
-              { id: '2', source: '2', target: '3', polarity: 'positive' }
+              { id: '1', source: '2', target: '3', polarity: 'positive' },
+              { id: '2', source: '3', target: '1', polarity: 'positive' }
             ],
-            diagramName: 'Assignment 1: Temperature Control',
-            mode: 'assessment',
+            diagramName: 'Student Learning System',
+            mode: 'sandbox',
             viewTransform: { x: 0, y: 0, scale: 1 },
             showGrid: false
           }
         },
         'exam': {
-          'practice-exam1.cld': {
+          'exam-question-1.cld': {
             nodes: [
-              { id: '1', label: 'Productivity', x: 100, y: 100, color: '#000000' },
-              { id: '2', label: 'Workload', x: 300, y: 100, color: '#000000' },
-              { id: '3', label: 'Stress', x: 300, y: 200, color: '#000000' }
+              { id: '1', label: 'Company Growth', x: 100, y: 100, color: '#000000' },
+              { id: '2', label: 'Market Share', x: 300, y: 100, color: '#000000' },
+              { id: '3', label: 'Competition', x: 200, y: 200, color: '#000000' }
             ],
             edges: [
               { id: '1', source: '1', target: '2', polarity: 'positive' },
-              { id: '2', source: '2', target: '3', polarity: 'positive' }
+              { id: '2', source: '2', target: '3', polarity: 'negative' }
             ],
-            diagramName: 'Practice Exam: Work Performance',
-            mode: 'assessment',
+            diagramName: 'Market Competition System',
+            mode: 'sandbox',
             viewTransform: { x: 0, y: 0, scale: 1 },
             showGrid: false
           }
         }
       };
       
+      // Get files for the specified category
       const filesToUpload = sampleFiles[category] || sampleFiles['examples'];
       
       for (const [fileName, fileContent] of Object.entries(filesToUpload)) {
@@ -2821,6 +2822,106 @@ const useCLDStore = create((set, get) => ({
       
     } catch (error) {
       addEvent('Error uploading sample files: ' + error.message, 'error');
+      throw error;
+    }
+  },
+
+  // Save current diagram to S3
+  saveDiagramToS3: async (fileName, category = 'examples') => {
+    const { addEvent, nodes, edges, diagramName, mode, currentProblem, viewTransform, globalStyles, adjacencyMatrix, allLoops, simulationState, showGrid, config, problemStatement } = get();
+    
+    try {
+      addEvent(`Saving diagram to S3/${category}/${fileName}...`, 'info');
+      
+      // Ensure filename has .cld extension
+      const finalFileName = fileName.endsWith('.cld') ? fileName : `${fileName}.cld`;
+      
+      // Enhanced diagram data with comprehensive metadata
+      const diagramData = {
+        // Basic diagram info
+        diagramName: diagramName || fileName.replace('.cld', ''),
+        timestamp: new Date().toISOString(),
+        version: '2.0',
+        createdWith: 'CLD Studio',
+        
+        // Problem statement and context
+        problemStatement: {
+          mode,
+          currentProblem: currentProblem ? {
+            id: currentProblem.id,
+            title: currentProblem.title,
+            description: currentProblem.description
+          } : null,
+          description: mode === 'sandbox' ? problemStatement || 'Free-form causal loop diagram' : currentProblem?.description || '',
+          customStatement: problemStatement || ''
+        },
+        
+        // Complete node information
+        nodes: nodes.map(node => ({
+          id: node.id,
+          type: node.type,
+          position: node.position,
+          data: {
+            label: node.data.label || 'New Node',
+            type: node.data.type || 'variable',
+            color: node.data.color || '#000000',
+            description: node.data.description || '',
+            value: node.data.value || 0,
+            ...node.data
+          }
+        })),
+        
+        // Complete edge information
+        edges: edges.map(edge => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          type: edge.type,
+          data: {
+            polarity: edge.data.polarity || 'positive',
+            color: edge.data.color || '#000000',
+            description: edge.data.description || '',
+            ...edge.data
+          }
+        })),
+        
+        // View and display settings
+        viewTransform,
+        showGrid,
+        globalStyles,
+        
+        // Analysis data
+        analysis: {
+          adjacencyMatrix,
+          allLoops
+        },
+        
+        // Simulation state
+        simulation: simulationState,
+        
+        // Configuration
+        config
+      };
+      
+      // Upload to S3
+      const { uploadData } = await import('aws-amplify/storage');
+      
+      const result = await uploadData({
+        key: `${category}/${finalFileName}`,
+        data: JSON.stringify(diagramData, null, 2)
+      }).result;
+      
+      addEvent(`Diagram saved to S3: ${category}/${finalFileName}`, 'success');
+      
+      // Update diagram name if it was changed
+      if (diagramName !== fileName.replace('.cld', '')) {
+        get().setDiagramName(fileName.replace('.cld', ''));
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Error saving diagram to S3:', error);
+      addEvent('Failed to save diagram to S3: ' + error.message, 'error');
       throw error;
     }
   }

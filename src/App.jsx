@@ -7,6 +7,7 @@ import SysLoopHeader from './components/SysLoopHeader'
 import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
 import ExamplesBrowser from './components/ExamplesBrowser'
+import SaveToS3Modal from './components/SaveToS3Modal'
 import { useCLDStore } from './stores/cldStore'
 import { Wrench, Settings as SettingsIcon, Info, HelpCircle } from 'lucide-react'
 import './components/StatusBar.css'
@@ -18,6 +19,7 @@ function App() {
   const [devMode, setDevMode] = useState(false) // Add dev mode state
   const [showSettingsModal, setShowSettingsModal] = useState(false) // Add settings modal state
   const [showExamplesBrowser, setShowExamplesBrowser] = useState(false) // Add examples browser modal state
+  const [showSaveToS3Modal, setShowSaveToS3Modal] = useState(false) // Add save to S3 modal state
   
   const { 
     nodes, 
@@ -133,7 +135,11 @@ function App() {
   return (
     <div className="sysloop-app" onClick={handleAppClick}>
       {/* Header */}
-      <SysLoopHeader mode={mode} setMode={setMode} />
+      <SysLoopHeader 
+        mode={mode} 
+        setMode={setMode} 
+        setShowSaveToS3Modal={setShowSaveToS3Modal}
+      />
 
       {/* Main Content */}
       <div className="main-layout">
@@ -268,6 +274,12 @@ function App() {
       <ExamplesBrowser 
         isOpen={showExamplesBrowser} 
         onClose={() => setShowExamplesBrowser(false)} 
+      />
+
+      {/* Save To S3 Modal */}
+      <SaveToS3Modal 
+        isOpen={showSaveToS3Modal} 
+        onClose={() => setShowSaveToS3Modal(false)} 
       />
     </div>
   )
