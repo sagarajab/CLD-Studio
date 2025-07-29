@@ -6,7 +6,6 @@ import SettingsModal from './SettingsModal'
 import StateVectorModal from './StateVectorModal'
 import PlotsModal from './PlotsModal'
 import S3FileBrowser from './S3FileBrowser'
-import SaveToS3Modal from './SaveToS3Modal'
 import { loadConfig } from '../config/appConfig'
 import appIcon from '../assets/app_icon.png'
 import tbtIcon from '../assets/tbt_icon.png'
@@ -1769,14 +1768,6 @@ function SysLoopHeader({ setShowSaveToS3Modal }) {
         <S3FileBrowser 
           isOpen={showS3FileBrowser} 
           onClose={() => setShowS3FileBrowser(false)} 
-        />
-      )}
-
-      {/* Save To S3 Modal */}
-      {showSaveToS3Modal && (
-        <SaveToS3Modal 
-          isOpen={showSaveToS3Modal} 
-          onClose={() => setShowSaveToS3Modal(false)} 
         />
       )}
 
