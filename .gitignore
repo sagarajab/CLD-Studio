@@ -1,5 +1,7 @@
 # amplify
 node_modules
 .amplify
-amplify_outputs*
 amplifyconfiguration*
+
+# Keep amplify_outputs.json but exclude other amplify output files
+# amplify_outputs.json is needed for the app to work
