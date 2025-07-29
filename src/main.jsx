@@ -39,13 +39,37 @@ const configureAmplify = async () => {
       console.log('Full outputs:', outputs);
       console.log('Storage config:', outputs.storage);
       
-      Amplify.configure(outputs);
+      // Convert old Amplify v5 format to new v6 format
+      const v6Config = {
+        Storage: {
+          AWSS3: {
+            bucket: outputs.storage.bucket_name,
+            region: outputs.storage.aws_region
+          }
+        },
+        Auth: {
+          Cognito: {
+            userPoolId: outputs.auth.user_pool_id,
+            userPoolClientId: outputs.auth.user_pool_client_id,
+            identityPoolId: outputs.auth.identity_pool_id
+          }
+        },
+        API: {
+          GraphQL: {
+            endpoint: outputs.data.url,
+            region: outputs.data.aws_region,
+            defaultAuthMode: outputs.data.default_authorization_type === 'AWS_IAM' ? 'iam' : 'userPool'
+          }
+        }
+      };
       
-      console.log('Amplify configured successfully from amplify_outputs.json');
-      console.log('Storage bucket name:', outputs.storage?.bucket_name);
-      console.log('Storage region:', outputs.storage?.aws_region);
+      Amplify.configure(v6Config);
       
-      return outputs;
+      console.log('Amplify configured successfully from amplify_outputs.json (converted to v6 format)');
+      console.log('Storage bucket name:', v6Config.Storage.AWSS3.bucket);
+      console.log('Storage region:', v6Config.Storage.AWSS3.region);
+      
+      return v6Config;
     } else {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
