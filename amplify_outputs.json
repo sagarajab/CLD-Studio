@@ -1,9 +1,9 @@
 {
   "auth": {
-    "user_pool_id": "us-east-1_nlqe8BeEH",
+    "user_pool_id": "us-east-1_9GXOVLRBO",
     "aws_region": "us-east-1",
-    "user_pool_client_id": "1ndq7r327tgjg2br4uj5ql16hr",
-    "identity_pool_id": "us-east-1:61171153-c771-4738-a12d-1383896c97a5",
+    "user_pool_client_id": "4gq5gob1mfmdfqhh85ipui0vjn",
+    "identity_pool_id": "us-east-1:11d6f235-67a1-4113-8d55-27ad81f2341f",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -26,7 +26,7 @@
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://5h7vkjithretjoz34t7fplnqgi.appsync-api.us-east-1.amazonaws.com/graphql",
+    "url": "https://hjejw57o45hrdchecyk365faei.appsync-api.us-east-1.amazonaws.com/graphql",
     "aws_region": "us-east-1",
     "default_authorization_type": "AWS_IAM",
     "authorization_types": [
@@ -205,11 +205,11 @@
   },
   "storage": {
     "aws_region": "us-east-1",
-    "bucket_name": "amplify-cldstudio-kritika-cldexamplesstoragebucket-tecf7tomnqxs",
+    "bucket_name": "amplify-d1eem0gonn1vm2-wi-cldexamplesstoragebucket-muexwxslh1lq",
     "buckets": [
       {
         "name": "cldExamplesStorage",
-        "bucket_name": "amplify-cldstudio-kritika-cldexamplesstoragebucket-tecf7tomnqxs",
+        "bucket_name": "amplify-d1eem0gonn1vm2-wi-cldexamplesstoragebucket-muexwxslh1lq",
         "aws_region": "us-east-1",
         "paths": {
           "public/*": {
@@ -227,5 +227,5 @@
       }
     ]
   },
-  "version": "1.4"
+  "version": "1.3"
 }
