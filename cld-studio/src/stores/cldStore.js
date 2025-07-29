@@ -2384,57 +2384,34 @@ const useCLDStore = create((set, get) => ({
       // Try multiple approaches to find files
       console.log('=== S3 Debugging ===');
       
-      // Method 1: List from public folder
-      console.log('Method 1: Listing from public/ folder...');
+      // Method 1: List from root
+      console.log('Method 1: Listing from root...');
       let result1;
       try {
-        result1 = await list({
-          path: 'public/',
-          options: {
-            accessLevel: 'guest'
-          }
-        });
-        console.log('Public folder result:', result1);
-        console.log('Public folder items:', result1.items?.map(item => item.key) || []);
-      } catch (error) {
-        console.log('Public folder error:', error);
-      }
-      
-      // Method 2: List from root
-      console.log('Method 2: Listing from root...');
-      let result2;
-      try {
-        result2 = await list({
-          options: {
-            accessLevel: 'guest'
-          }
-        });
-        console.log('Root result:', result2);
-        console.log('Root items:', result2.items?.map(item => item.key) || []);
+        result1 = await list();
+        console.log('Root result:', result1);
+        console.log('Root items:', result1.items?.map(item => item.key) || []);
       } catch (error) {
         console.log('Root error:', error);
       }
       
-      // Method 3: List with no path specified
-      console.log('Method 3: Listing with no path...');
-      let result3;
+      // Method 2: List with specific path
+      console.log('Method 2: Listing with specific path...');
+      let result2;
       try {
-        result3 = await list({
-          options: {
-            accessLevel: 'guest'
-          }
+        result2 = await list({
+          path: '/'
         });
-        console.log('No path result:', result3);
-        console.log('No path items:', result3.items?.map(item => item.key) || []);
+        console.log('Path result:', result2);
+        console.log('Path items:', result2.items?.map(item => item.key) || []);
       } catch (error) {
-        console.log('No path error:', error);
+        console.log('Path error:', error);
       }
       
       // Combine all results
       const allFiles = [
         ...(result1?.items || []),
-        ...(result2?.items || []),
-        ...(result3?.items || [])
+        ...(result2?.items || [])
       ];
       
       console.log('All files found:', allFiles.map(item => item.key));
@@ -2480,19 +2457,19 @@ const useCLDStore = create((set, get) => ({
       
       console.log('=== S3 Configuration Check ===');
       console.log('Amplify config:', config);
-      console.log('Storage config:', config.storage);
+      console.log('Storage config:', config.Storage);
       
-      if (!config.storage) {
+      if (!config.Storage) {
         addEvent('No storage configuration found in Amplify config', 'error');
         return false;
       }
       
-      if (!config.storage.bucket_name) {
+      if (!config.Storage.AWSS3 || !config.Storage.AWSS3.bucket) {
         addEvent('No bucket name found in storage configuration', 'error');
         return false;
       }
       
-      addEvent(`S3 bucket configured: ${config.storage.bucket_name}`, 'success');
+      addEvent(`S3 bucket configured: ${config.Storage.AWSS3.bucket}`, 'success');
       return true;
     } catch (error) {
       console.error('S3 configuration check error:', error);
@@ -2604,10 +2581,7 @@ const useCLDStore = create((set, get) => ({
       // Get the file URL from S3
       const { getUrl } = await import('aws-amplify/storage');
       const fileUrl = await getUrl({
-        key: fileName,
-        options: {
-          accessLevel: 'guest'
-        }
+        key: fileName
       });
       
       // Fetch the file content
@@ -2721,11 +2695,8 @@ const useCLDStore = create((set, get) => ({
           console.log(`Uploading ${fileName} to S3...`);
           
           const result = await uploadData({
-            key: `public/${fileName}`,
-            data: JSON.stringify(fileContent, null, 2),
-            options: {
-              accessLevel: 'guest'
-            }
+            key: fileName,
+            data: JSON.stringify(fileContent, null, 2)
           }).result;
           
           console.log(`Successfully uploaded ${fileName}`);

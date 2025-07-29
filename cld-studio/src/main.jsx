@@ -7,35 +7,25 @@ import App from './App';
 
 // Fallback configuration in case amplify_outputs.json fails to load
 const fallbackConfig = {
-  storage: {
-    aws_region: 'us-east-1',
-    bucket_name: 'amplify-cldstudio-kritika-cldexamplesstoragebucket-tecf7tomnqxs',
-    buckets: [
-      {
-        name: 'cldExamplesStorage',
-        bucket_name: 'amplify-cldstudio-kritika-cldexamplesstoragebucket-tecf7tomnqxs',
-        aws_region: 'us-east-1',
-        paths: {
-          'public/*': {
-            authenticated: ['get', 'list', 'write'],
-            guest: ['get', 'list']
-          }
-        }
-      }
-    ]
+  Storage: {
+    AWSS3: {
+      bucket: 'amplify-cldstudio-kritika-cldexamplesstoragebucket-tecf7tomnqxs',
+      region: 'us-east-1'
+    }
   },
-  auth: {
-    user_pool_id: 'us-east-1_nlqe8BeEH',
-    aws_region: 'us-east-1',
-    user_pool_client_id: '1ndq7r327tgjg2br4uj5ql16hr',
-    identity_pool_id: 'us-east-1:61171153-c771-4738-a12d-1383896c97a5',
-    unauthenticated_identities_enabled: true
+  Auth: {
+    Cognito: {
+      userPoolId: 'us-east-1_nlqe8BeEH',
+      userPoolClientId: '1ndq7r327tgjg2br4uj5ql16hr',
+      identityPoolId: 'us-east-1:61171153-c771-4738-a12d-1383896c97a5'
+    }
   },
-  data: {
-    url: 'https://5h7vkjithretjoz34t7fplnqgi.appsync-api.us-east-1.amazonaws.com/graphql',
-    aws_region: 'us-east-1',
-    default_authorization_type: 'AWS_IAM',
-    authorization_types: ['AMAZON_COGNITO_USER_POOLS']
+  API: {
+    GraphQL: {
+      endpoint: 'https://5h7vkjithretjoz34t7fplnqgi.appsync-api.us-east-1.amazonaws.com/graphql',
+      region: 'us-east-1',
+      defaultAuthMode: 'iam'
+    }
   }
 };
 
@@ -66,8 +56,8 @@ const configureAmplify = async () => {
     Amplify.configure(fallbackConfig);
     
     console.log('Amplify configured with fallback configuration');
-    console.log('Storage bucket name:', fallbackConfig.storage.bucket_name);
-    console.log('Storage region:', fallbackConfig.storage.aws_region);
+    console.log('Storage bucket name:', fallbackConfig.Storage.AWSS3.bucket);
+    console.log('Storage region:', fallbackConfig.Storage.AWSS3.region);
     
     return fallbackConfig;
   }

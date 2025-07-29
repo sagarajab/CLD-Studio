@@ -201,11 +201,8 @@ const uploadCLDFile = async (fileName, fileContent) => {
     console.log(`Uploading ${fileName} to S3...`);
     
     const result = await uploadData({
-      key: `public/${fileName}`,
-      data: JSON.stringify(fileContent, null, 2),
-      options: {
-        accessLevel: 'guest'
-      }
+      key: fileName,
+      data: JSON.stringify(fileContent, null, 2)
     }).result;
     
     console.log(`Successfully uploaded ${fileName}`);
