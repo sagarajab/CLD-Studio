@@ -44,7 +44,7 @@ A modern web-based Causal Loop Diagram (CLD) builder and assessment platform bui
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd cld-studio
+# The project is now in the root directory
 ```
 
 2. Install dependencies:
