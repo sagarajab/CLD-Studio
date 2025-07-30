@@ -1,0 +1,135 @@
+{
+  "version": "2.0",
+  "diagramName": "Predator-Prey System",
+  "description": "Classic Lotka-Volterra model showing predator-prey dynamics",
+  "category": "Ecology",
+  "nodes": [
+    {
+      "id": "prey",
+      "label": "Prey Population",
+      "type": "variable",
+      "position": { "x": 150, "y": 200 },
+      "color": "#10B981",
+      "size": 70
+    },
+    {
+      "id": "predator",
+      "label": "Predator Population",
+      "type": "variable",
+      "position": { "x": 350, "y": 200 },
+      "color": "#EF4444",
+      "size": 70
+    },
+    {
+      "id": "prey_growth",
+      "label": "Prey Growth Rate",
+      "type": "variable",
+      "position": { "x": 150, "y": 100 },
+      "color": "#10B981",
+      "size": 60
+    },
+    {
+      "id": "predation",
+      "label": "Predation Rate",
+      "type": "variable",
+      "position": { "x": 250, "y": 150 },
+      "color": "#F59E0B",
+      "size": 60
+    },
+    {
+      "id": "predator_death",
+      "label": "Predator Death Rate",
+      "type": "variable",
+      "position": { "x": 350, "y": 100 },
+      "color": "#EF4444",
+      "size": 60
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge1",
+      "source": "prey",
+      "target": "prey_growth",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "More prey leads to more growth"
+    },
+    {
+      "id": "edge2",
+      "source": "prey_growth",
+      "target": "prey",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Growth increases prey population"
+    },
+    {
+      "id": "edge3",
+      "source": "prey",
+      "target": "predation",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "More prey increases predation"
+    },
+    {
+      "id": "edge4",
+      "source": "predator",
+      "target": "predation",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "More predators increase predation"
+    },
+    {
+      "id": "edge5",
+      "source": "predation",
+      "target": "prey",
+      "polarity": "negative",
+      "type": "causal",
+      "label": "Predation reduces prey population"
+    },
+    {
+      "id": "edge6",
+      "source": "predation",
+      "target": "predator",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Predation increases predator population"
+    },
+    {
+      "id": "edge7",
+      "source": "predator",
+      "target": "predator_death",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "More predators lead to more deaths"
+    },
+    {
+      "id": "edge8",
+      "source": "predator_death",
+      "target": "predator",
+      "polarity": "negative",
+      "type": "causal",
+      "label": "Deaths reduce predator population"
+    }
+  ],
+  "viewTransform": { "x": 0, "y": 0, "scale": 1 },
+  "showGrid": true,
+  "globalStyles": {
+    "nodeColor": "#3B82F6",
+    "edgeColor": "#6B7280",
+    "backgroundColor": "#FFFFFF"
+  },
+  "problemStatement": {
+    "mode": "sandbox",
+    "currentProblem": null,
+    "customStatement": "Analyze the oscillating dynamics between predator and prey populations"
+  },
+  "analysis": {
+    "adjacencyMatrix": [],
+    "allLoops": []
+  },
+  "simulation": {
+    "isInitialized": false,
+    "timeStep": 1,
+    "duration": 100
+  }
+} 

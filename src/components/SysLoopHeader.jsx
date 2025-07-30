@@ -5,6 +5,7 @@ import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Splin
 import SettingsModal from './SettingsModal'
 import StateVectorModal from './StateVectorModal'
 import PlotsModal from './PlotsModal'
+import ExamplesModal from './ExamplesModal'
 import { loadConfig } from '../config/appConfig'
 import appIcon from '../assets/app_icon.png'
 import tbtIcon from '../assets/tbt_icon.png'
@@ -76,6 +77,7 @@ function SysLoopHeader() {
   const [perturbationValue, setPerturbationValue] = useState(1)
   const [showPlotsModal, setShowPlotsModal] = useState(false)
   const [showStateVectorModal, setShowStateVectorModal] = useState(false)
+  const [showExamplesModal, setShowExamplesModal] = useState(false)
 
   
   // Load config for colors
@@ -292,6 +294,11 @@ function SysLoopHeader() {
     if (window.confirm('Are you sure you want to clear the entire canvas? This action cannot be undone.')) {
       clearDiagram()
     }
+  }
+
+  const handleOpenExamples = () => {
+    setShowExamplesModal(true)
+    closeAllDropdowns()
   }
 
   const toggleSimSettingsDropdown = () => {
@@ -875,10 +882,7 @@ function SysLoopHeader() {
                         From PC
                       </button>
                       <button
-                        onClick={() => {
-                          // Handle examples - you can implement this later
-                          closeAllDropdowns()
-                        }}
+                        onClick={handleOpenExamples}
                         className="dropdown-button"
                       >
                         <Database size={14} />
@@ -1255,10 +1259,7 @@ function SysLoopHeader() {
                         From PC
                       </button>
                       <button
-                        onClick={() => {
-                          // Handle examples - you can implement this later
-                          closeAllDropdowns()
-                        }}
+                        onClick={handleOpenExamples}
                         className="dropdown-button"
                       >
                         <Database size={14} />
@@ -1635,10 +1636,7 @@ function SysLoopHeader() {
                         From PC
                       </button>
                       <button
-                        onClick={() => {
-                          // Handle examples - you can implement this later
-                          closeAllDropdowns()
-                        }}
+                        onClick={handleOpenExamples}
                         className="dropdown-button"
                       >
                         <Database size={14} />
@@ -1924,6 +1922,14 @@ function SysLoopHeader() {
         <PlotsModal 
           isOpen={showPlotsModal} 
           onClose={() => setShowPlotsModal(false)} 
+        />
+      )}
+
+      {/* Examples Modal */}
+      {showExamplesModal && (
+        <ExamplesModal 
+          isOpen={showExamplesModal} 
+          onClose={() => setShowExamplesModal(false)} 
         />
       )}
     </header>

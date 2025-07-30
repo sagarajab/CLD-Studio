@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker
+      id="arrowhead"
+      markerWidth="10"
+      markerHeight="7"
+      refX="9"
+      refY="3.5"
+      orient="auto"
+    >
+      <polygon
+        points="0 0, 10 3.5, 0 7"
+        fill="#6B7280"
+      />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#FFFFFF" />
+  
+      <path 
+        d="M 51.81818181818182 31.81818181818182 Q 90.9090909090909 61.81818181818182 130 31.81818181818182" 
+        stroke="#6B7280" 
+        stroke-width="2" 
+        fill="none"
+        marker-end="url(#arrowhead)"
+      />
+      <text 
+        x="90.9090909090909" 
+        y="56.81818181818182" 
+        text-anchor="middle" 
+        font-size="8" 
+        font-family="Arial, sans-serif" 
+        fill="#EF4444" 
+        font-weight="bold"
+      >
+        -
+      </text>
+    
+      <path 
+        d="M 135.85786437626905 45.96031744191277 Q 102.72727272727272 43.63636363636363 105.05122653282186 76.76695528535996" 
+        stroke="#6B7280" 
+        stroke-width="2" 
+        fill="none"
+        marker-end="url(#arrowhead)"
+      />
+      <text 
+        x="102.72727272727272" 
+        y="38.63636363636363" 
+        text-anchor="middle" 
+        font-size="8" 
+        font-family="Arial, sans-serif" 
+        fill="#EF4444" 
+        font-weight="bold"
+      >
+        -
+      </text>
+    
+      <path 
+        d="M 109.88275687010119 84.58453558875415 Q 189.0322875259597 89.82413530515177 249.2081522208079 38.14273713851858" 
+        stroke="#6B7280" 
+        stroke-width="2" 
+        fill="none"
+        marker-end="url(#arrowhead)"
+      />
+      <text 
+        x="189.0322875259597" 
+        y="84.82413530515177" 
+        text-anchor="middle" 
+        font-size="8" 
+        font-family="Arial, sans-serif" 
+        fill="#10B981" 
+        font-weight="bold"
+      >
+        +
+      </text>
+    
+      <path 
+        d="M 248.1818181818182 31.818181818181824 Q 209.0909090909091 1.8181818181818201 170 31.818181818181817" 
+        stroke="#6B7280" 
+        stroke-width="2" 
+        fill="none"
+        marker-end="url(#arrowhead)"
+      />
+      <text 
+        x="209.0909090909091" 
+        y="-3.18181818181818" 
+        text-anchor="middle" 
+        font-size="8" 
+        font-family="Arial, sans-serif" 
+        fill="#10B981" 
+        font-weight="bold"
+      >
+        +
+      </text>
+    
+      <path 
+        d="M 50.791847779192096 38.14273713851858 Q 110.96771247404031 89.82413530515177 190.1172431298988 84.58453558875415" 
+        stroke="#6B7280" 
+        stroke-width="2" 
+        fill="none"
+        marker-end="url(#arrowhead)"
+      />
+      <text 
+        x="110.96771247404031" 
+        y="84.82413530515177" 
+        text-anchor="middle" 
+        font-size="8" 
+        font-family="Arial, sans-serif" 
+        fill="#10B981" 
+        font-weight="bold"
+      >
+        +
+      </text>
+    
+      <path 
+        d="M 223.23304471464004 76.76695528535996 Q 256.3636363636364 79.0909090909091 254.03968255808724 45.96031744191277" 
+        stroke="#6B7280" 
+        stroke-width="2" 
+        fill="none"
+        marker-end="url(#arrowhead)"
+      />
+      <text 
+        x="256.3636363636364" 
+        y="74.0909090909091" 
+        text-anchor="middle" 
+        font-size="8" 
+        font-family="Arial, sans-serif" 
+        fill="#10B981" 
+        font-weight="bold"
+      >
+        +
+      </text>
+    
+  
+      <circle 
+        cx="31.81818181818182" 
+        cy="31.81818181818182" 
+        r="20" 
+        fill="#10B981" 
+        stroke="#374151" 
+        stroke-width="2"
+      />
+      <text 
+        x="31.81818181818182" 
+        y="35.151515151515156" 
+        text-anchor="middle" 
+        font-size="10" 
+        font-family="Arial, sans-serif" 
+        fill="white" 
+        font-weight="bold"
+      >
+        Customer Demand
+      </text>
+    
+      <circle 
+        cx="150" 
+        cy="31.81818181818182" 
+        r="20" 
+        fill="#3B82F6" 
+        stroke="#374151" 
+        stroke-width="2"
+      />
+      <text 
+        x="150" 
+        y="35.151515151515156" 
+        text-anchor="middle" 
+        font-size="10" 
+        font-family="Arial, sans-serif" 
+        fill="white" 
+        font-weight="bold"
+      >
+        Inventory Level
+      </text>
+    
+      <circle 
+        cx="268.1818181818182" 
+        cy="31.81818181818182" 
+        r="20" 
+        fill="#F59E0B" 
+        stroke="#374151" 
+        stroke-width="2"
+      />
+      <text 
+        x="268.1818181818182" 
+        y="35.151515151515156" 
+        text-anchor="middle" 
+        font-size="10" 
+        font-family="Arial, sans-serif" 
+        fill="white" 
+        font-weight="bold"
+      >
+        Production Rate
+      </text>
+    
+      <circle 
+        cx="90.9090909090909" 
+        cy="90.9090909090909" 
+        r="20" 
+        fill="#EF4444" 
+        stroke="#374151" 
+        stroke-width="2"
+      />
+      <text 
+        x="90.9090909090909" 
+        y="94.24242424242424" 
+        text-anchor="middle" 
+        font-size="10" 
+        font-family="Arial, sans-serif" 
+        fill="white" 
+        font-weight="bold"
+      >
+        Order Backlog
+      </text>
+    
+      <circle 
+        cx="209.0909090909091" 
+        cy="90.9090909090909" 
+        r="20" 
+        fill="#8B5CF6" 
+        stroke="#374151" 
+        stroke-width="2"
+      />
+      <text 
+        x="209.0909090909091" 
+        y="94.24242424242424" 
+        text-anchor="middle" 
+        font-size="10" 
+        font-family="Arial, sans-serif" 
+        fill="white" 
+        font-weight="bold"
+      >
+        Demand Forecast
+      </text>
+    
+</svg>

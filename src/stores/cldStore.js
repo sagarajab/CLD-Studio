@@ -677,6 +677,133 @@ const useCLDStore = create((set, get) => ({
       redoStack: []
     })
   },
+
+  loadDiagramData: (diagramData) => {
+    // Set loading state
+    set({ isLoading: true })
+    
+    try {
+      // Handle both new enhanced format (v2.0) and legacy format (v1.0)
+      const isEnhancedFormat = diagramData.version === '2.0' || diagramData.problemStatement
+      
+      // Transform nodes to match expected structure
+      const transformNodes = (nodes) => {
+        return nodes.map((node, index) => {
+          // If node already has data property, use it as is
+          if (node.data) {
+            return node
+          }
+          // Otherwise, wrap node properties in data object
+          const { id, position, ...nodeData } = node
+          return {
+            id: typeof id === 'string' ? index + 1 : id, // Convert string IDs to integers
+            position,
+            data: nodeData
+          }
+        })
+      }
+      
+      // Transform edges to match expected structure
+      const transformEdges = (edges) => {
+        return edges.map((edge, index) => {
+          // If edge already has data property, use it as is
+          if (edge.data) {
+            return edge
+          }
+          // Otherwise, wrap edge properties in data object
+          const { id, source, target, ...edgeData } = edge
+          
+          // Convert string IDs to integers by finding the corresponding node indices
+          const nodes = diagramData.nodes || []
+          const sourceNodeIndex = nodes.findIndex(n => n.id === source)
+          const targetNodeIndex = nodes.findIndex(n => n.id === target)
+          
+          return {
+            id: typeof id === 'string' ? index + 1 : id, // Convert string IDs to integers
+            source: sourceNodeIndex !== -1 ? sourceNodeIndex + 1 : source,
+            target: targetNodeIndex !== -1 ? targetNodeIndex + 1 : target,
+            data: edgeData
+          }
+        })
+      }
+      
+      if (isEnhancedFormat) {
+        // Enhanced format - load all available data
+        set({
+          // Basic diagram data
+          nodes: transformNodes(diagramData.nodes || []),
+          edges: transformEdges(diagramData.edges || []),
+          diagramName: diagramData.diagramName || 'Untitled',
+          
+          // Problem statement and mode
+          mode: diagramData.problemStatement?.mode || 'sandbox',
+          currentProblem: diagramData.problemStatement?.currentProblem || null,
+          problemStatement: diagramData.problemStatement?.customStatement || '',
+          
+          // View and layout
+          viewTransform: diagramData.viewTransform || { x: 0, y: 0, scale: 1 },
+          showGrid: diagramData.showGrid !== undefined ? diagramData.showGrid : false,
+          
+          // Global styles (merge with current config)
+          globalStyles: diagramData.globalStyles ? 
+            { ...get().globalStyles, ...diagramData.globalStyles } : 
+            get().globalStyles,
+          
+          // Analysis data
+          adjacencyMatrix: diagramData.analysis?.adjacencyMatrix || [],
+          allLoops: diagramData.analysis?.allLoops || [],
+          
+          // Simulation state (if available)
+          simulationState: diagramData.simulation ? {
+            ...get().simulationState,
+            ...diagramData.simulation,
+            isInitialized: diagramData.simulation.isInitialized || false
+          } : get().simulationState,
+          
+          // Reset selection states
+          selectedNode: null,
+          selectedEdge: null,
+          highlightedLoop: null,
+          isLoading: false,
+          // Clear undo/redo stacks when loading new diagram
+          undoStack: [],
+          redoStack: []
+        })
+        
+        // Update config if provided
+        if (diagramData.config) {
+          const currentConfig = get().config
+          const newConfig = { ...currentConfig, ...diagramData.config }
+          set({ config: newConfig })
+          saveConfig(newConfig)
+        }
+        
+      } else {
+        // Legacy format - load basic data only
+        set({
+          nodes: transformNodes(diagramData.nodes || []),
+          edges: transformEdges(diagramData.edges || []),
+          diagramName: diagramData.diagramName || 'Untitled',
+          selectedNode: null,
+          selectedEdge: null,
+          isLoading: false,
+          // Clear undo/redo stacks when loading new diagram
+          undoStack: [],
+          redoStack: []
+        })
+      }
+      
+      // Update graph analysis asynchronously to avoid blocking UI
+      setTimeout(() => {
+        get().updateGraphAnalysis()
+      }, 0)
+      
+    } catch (error) {
+      console.error('Error loading diagram data:', error)
+      set({ isLoading: false })
+      throw error
+    }
+  },
   
   saveDiagram: () => {
     const { 
@@ -852,12 +979,53 @@ const useCLDStore = create((set, get) => ({
             // Handle both new enhanced format (v2.0) and legacy format (v1.0)
             const isEnhancedFormat = diagramData.version === '2.0' || diagramData.problemStatement
             
+            // Transform nodes to match expected structure
+            const transformNodes = (nodes) => {
+              return nodes.map((node, index) => {
+                // If node already has data property, use it as is
+                if (node.data) {
+                  return node
+                }
+                // Otherwise, wrap node properties in data object
+                const { id, position, ...nodeData } = node
+                return {
+                  id: typeof id === 'string' ? index + 1 : id, // Convert string IDs to integers
+                  position,
+                  data: nodeData
+                }
+              })
+            }
+            
+            // Transform edges to match expected structure
+            const transformEdges = (edges) => {
+              return edges.map((edge, index) => {
+                // If edge already has data property, use it as is
+                if (edge.data) {
+                  return edge
+                }
+                // Otherwise, wrap edge properties in data object
+                const { id, source, target, ...edgeData } = edge
+                
+                // Convert string IDs to integers by finding the corresponding node indices
+                const nodes = diagramData.nodes || []
+                const sourceNodeIndex = nodes.findIndex(n => n.id === source)
+                const targetNodeIndex = nodes.findIndex(n => n.id === target)
+                
+                return {
+                  id: typeof id === 'string' ? index + 1 : id, // Convert string IDs to integers
+                  source: sourceNodeIndex !== -1 ? sourceNodeIndex + 1 : source,
+                  target: targetNodeIndex !== -1 ? targetNodeIndex + 1 : target,
+                  data: edgeData
+                }
+              })
+            }
+            
             if (isEnhancedFormat) {
               // Enhanced format - load all available data
               set({
                 // Basic diagram data
-                nodes: diagramData.nodes || [],
-                edges: diagramData.edges || [],
+                nodes: transformNodes(diagramData.nodes || []),
+                edges: transformEdges(diagramData.edges || []),
                 diagramName: diagramData.diagramName || 'Untitled',
                 
                 // Problem statement and mode
@@ -908,8 +1076,8 @@ const useCLDStore = create((set, get) => ({
             } else {
               // Legacy format - load basic data only
               set({
-                nodes: diagramData.nodes || [],
-                edges: diagramData.edges || [],
+                nodes: transformNodes(diagramData.nodes || []),
+                edges: transformEdges(diagramData.edges || []),
                 diagramName: diagramData.diagramName || 'Untitled',
                 selectedNode: null,
                 selectedEdge: null,

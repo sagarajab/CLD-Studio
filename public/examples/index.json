@@ -1,0 +1,58 @@
+{
+  "examples": [
+    {
+      "id": "basic-feedback-loop",
+      "filename": "basic-feedback-loop.cld",
+      "name": "Basic Feedback Loop",
+      "description": "A simple positive feedback loop demonstrating exponential growth",
+      "category": "Basic Examples",
+      "difficulty": "Beginner",
+      "tags": ["feedback", "growth", "simple"]
+    },
+    {
+      "id": "predator-prey",
+      "filename": "predator-prey.cld",
+      "name": "Predator-Prey System",
+      "description": "Classic Lotka-Volterra model showing predator-prey dynamics",
+      "category": "Ecology",
+      "difficulty": "Intermediate",
+      "tags": ["ecology", "oscillation", "dynamics"]
+    },
+    {
+      "id": "market-growth",
+      "filename": "market-growth.cld",
+      "name": "Market Growth Model",
+      "description": "Market dynamics with competition and saturation effects",
+      "category": "Business",
+      "difficulty": "Intermediate",
+      "tags": ["business", "competition", "innovation"]
+    },
+    {
+      "id": "supply-chain",
+      "filename": "supply-chain.cld",
+      "name": "Supply Chain Dynamics",
+      "description": "Supply chain with inventory management and demand forecasting",
+      "category": "Operations",
+      "difficulty": "Intermediate",
+      "tags": ["operations", "inventory", "forecasting"]
+    }
+  ],
+  "categories": [
+    {
+      "name": "Basic Examples",
+      "description": "Simple models to get started with causal loop diagrams"
+    },
+    {
+      "name": "Ecology",
+      "description": "Environmental and ecological system models"
+    },
+    {
+      "name": "Business",
+      "description": "Business and market dynamics models"
+    },
+    {
+      "name": "Operations",
+      "description": "Operational and supply chain models"
+    }
+  ]
+} 

@@ -7,10 +7,10 @@ import SysLoopHeader from './components/SysLoopHeader'
 import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
 import { useCLDStore } from './stores/cldStore'
-import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2 } from 'lucide-react'
+import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2, LogOut } from 'lucide-react'
 import './components/StatusBar.css'
 
-function App() {
+function App({ user, signOut }) {
   const [mode, setMode] = useState('sandbox')
   const [dimmingEnabled, setDimmingEnabled] = useState(true) // Add dimming toggle state
   const [hoveredLoop, setHoveredLoop] = useState(null) // Add hovered loop state
@@ -185,11 +185,11 @@ function App() {
         </div>
         <div className="status-right">
           <div className="status-user-session-auth">
-            <span>User: <b>[username]</b></span>
+            <span>User: <b>{user?.username || user?.attributes?.email || 'Guest'}</b></span>
             <div className="status-separator"></div>
-            <span>Session: <b>[session-id]</b></span>
+            <span>Session: <b>{user?.signInDetails?.loginId || 'Active'}</b></span>
             <div className="status-separator"></div>
-            <span>Auth: <b>[auth-status]</b></span>
+            <span>Auth: <b>Authenticated</b></span>
           </div>
           <div className="status-controls">
             {/* Zoom Level Indicator */}
@@ -229,6 +229,14 @@ function App() {
               title="Help"
             >
               <HelpCircle size={18} />
+            </button>
+            {/* Sign Out Button */}
+            <button
+              onClick={signOut}
+              className="statusbar-icon-btn signout-btn"
+              title="Sign Out"
+            >
+              <LogOut size={18} />
             </button>
           </div>
         </div>
