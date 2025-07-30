@@ -111,6 +111,7 @@ function ExamplesModal({ isOpen, onClose }) {
       
       // Load the example into the store
       loadDiagramData(exampleData)
+      console.log(`Successfully loaded example: ${example.name}`)
       onClose()
     } catch (error) {
       console.error('Error loading example:', error)

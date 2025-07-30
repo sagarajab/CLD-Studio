@@ -695,8 +695,15 @@ const useCLDStore = create((set, get) => ({
           }
           // Otherwise, wrap node properties in data object
           const { id, position, ...nodeData } = node
+          const newId = typeof id === 'string' ? index + 1 : id
+          
+          // Log ID conversion for debugging
+          if (typeof id === 'string') {
+            console.log(`Converting node ID: "${id}" → ${newId}`)
+          }
+          
           return {
-            id: typeof id === 'string' ? index + 1 : id, // Convert string IDs to integers
+            id: newId, // Convert string IDs to integers
             position,
             data: nodeData
           }
@@ -718,10 +725,19 @@ const useCLDStore = create((set, get) => ({
           const sourceNodeIndex = nodes.findIndex(n => n.id === source)
           const targetNodeIndex = nodes.findIndex(n => n.id === target)
           
+          const newId = typeof id === 'string' ? index + 1 : id
+          const newSource = sourceNodeIndex !== -1 ? sourceNodeIndex + 1 : source
+          const newTarget = targetNodeIndex !== -1 ? targetNodeIndex + 1 : target
+          
+          // Log ID conversion for debugging
+          if (typeof id === 'string' || typeof source === 'string' || typeof target === 'string') {
+            console.log(`Converting edge ID: "${id}" → ${newId}, source: "${source}" → ${newSource}, target: "${target}" → ${newTarget}`)
+          }
+          
           return {
-            id: typeof id === 'string' ? index + 1 : id, // Convert string IDs to integers
-            source: sourceNodeIndex !== -1 ? sourceNodeIndex + 1 : source,
-            target: targetNodeIndex !== -1 ? targetNodeIndex + 1 : target,
+            id: newId, // Convert string IDs to integers
+            source: newSource,
+            target: newTarget,
             data: edgeData
           }
         })
@@ -988,8 +1004,15 @@ const useCLDStore = create((set, get) => ({
                 }
                 // Otherwise, wrap node properties in data object
                 const { id, position, ...nodeData } = node
+                const newId = typeof id === 'string' ? index + 1 : id
+                
+                // Log ID conversion for debugging
+                if (typeof id === 'string') {
+                  console.log(`Converting node ID: "${id}" → ${newId}`)
+                }
+                
                 return {
-                  id: typeof id === 'string' ? index + 1 : id, // Convert string IDs to integers
+                  id: newId, // Convert string IDs to integers
                   position,
                   data: nodeData
                 }
@@ -1011,10 +1034,19 @@ const useCLDStore = create((set, get) => ({
                 const sourceNodeIndex = nodes.findIndex(n => n.id === source)
                 const targetNodeIndex = nodes.findIndex(n => n.id === target)
                 
+                const newId = typeof id === 'string' ? index + 1 : id
+                const newSource = sourceNodeIndex !== -1 ? sourceNodeIndex + 1 : source
+                const newTarget = targetNodeIndex !== -1 ? targetNodeIndex + 1 : target
+                
+                // Log ID conversion for debugging
+                if (typeof id === 'string' || typeof source === 'string' || typeof target === 'string') {
+                  console.log(`Converting edge ID: "${id}" → ${newId}, source: "${source}" → ${newSource}, target: "${target}" → ${newTarget}`)
+                }
+                
                 return {
-                  id: typeof id === 'string' ? index + 1 : id, // Convert string IDs to integers
-                  source: sourceNodeIndex !== -1 ? sourceNodeIndex + 1 : source,
-                  target: targetNodeIndex !== -1 ? targetNodeIndex + 1 : target,
+                  id: newId, // Convert string IDs to integers
+                  source: newSource,
+                  target: newTarget,
                   data: edgeData
                 }
               })
