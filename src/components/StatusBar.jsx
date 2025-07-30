@@ -1,6 +1,6 @@
 import React from 'react'
 
-function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge }) {
+function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge, allLoops = [] }) {
   const getCurrentTime = () => {
     return new Date().toLocaleTimeString()
   }
@@ -36,9 +36,20 @@ function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge }) {
           </span>
         </div>
         
-        <div className="flex items-center space-x-4">
-          <span>Nodes: <span className="font-medium">{stats.totalNodes}</span></span>
-          <span>Edges: <span className="font-medium">{stats.totalEdges}</span></span>
+        {/* Combined stats in pill-shaped holder */}
+        <div className="bg-gray-700 rounded-full px-4 py-2 flex items-center space-x-4">
+          <span>
+            <span className="text-blue-400">Variables:</span> 
+            <span className="font-medium text-blue-300 ml-1">{stats.totalNodes}</span>
+          </span>
+          <span>
+            <span className="text-green-400">Connections:</span> 
+            <span className="font-medium text-green-300 ml-1">{stats.totalEdges}</span>
+          </span>
+          <span>
+            <span className="text-purple-400">Loops:</span> 
+            <span className="font-medium text-purple-300 ml-1">{allLoops.length}</span>
+          </span>
           {stats.totalEdges > 0 && (
             <>
               <span className="text-green-600">+{stats.positiveEdges}</span>

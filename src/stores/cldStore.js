@@ -641,6 +641,7 @@ const useCLDStore = create((set, get) => ({
   
   // Diagram operations
   clearDiagram: () => {
+    const currentDiagramName = get().diagramName
     set({ 
       nodes: [], 
       edges: [], 
@@ -651,7 +652,7 @@ const useCLDStore = create((set, get) => ({
       highlightedLoop: null,
       adjacencyMatrix: [],
       allLoops: [],
-      diagramName: 'Untitled',
+      diagramName: currentDiagramName, // Preserve the current diagram name
       problemStatement: '',
       undoStack: [],
       redoStack: []

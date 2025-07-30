@@ -154,20 +154,30 @@ function App() {
       {/* Status Bar */}
       <div className="status-bar">
         <div className="status-left">
-          <div className="status-item variables">
-            <span className="status-count">{nodes.length}</span>
-            <span className="status-label">Variables</span>
+          {/* Combined stats in pill-shaped holder */}
+          <div style={{
+            backgroundColor: '#374151',
+            borderRadius: '9999px',
+            padding: '4px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            fontSize: '12px',
+            color: '#d1d5db'
+          }}>
+            <span>
+              <span style={{ color: '#60a5fa' }}>Variables:</span> 
+              <span style={{ fontWeight: '500', color: '#93c5fd', marginLeft: '4px' }}>{nodes.length}</span>
+            </span>
+            <span>
+              <span style={{ color: '#34d399' }}>Connections:</span> 
+              <span style={{ fontWeight: '500', color: '#6ee7b7', marginLeft: '4px' }}>{edges.length}</span>
+            </span>
+            <span>
+              <span style={{ color: '#a78bfa' }}>Loops:</span> 
+              <span style={{ fontWeight: '500', color: '#c4b5fd', marginLeft: '4px' }}>{loops.length}</span>
+            </span>
           </div>
-          <div className="status-item connections">
-            <span className="status-count">{edges.length}</span>
-            <span className="status-label">Connections</span>
-          </div>
-          <div className="status-item loops">
-            <span className="status-count">{loops.length}</span>
-            <span className="status-label">Loops</span>
-          </div>
-          
-          {/* Simulation Mode Indicator */}
           
           {/* Events Log - Show only latest event */}
           <div className="status-item events">
