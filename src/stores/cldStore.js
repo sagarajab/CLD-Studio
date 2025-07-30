@@ -62,6 +62,9 @@ const useCLDStore = create((set, get) => ({
   // Problem statement for sandbox mode
   problemStatement: '',
   
+  // Global dropdown state management - ensures only one dropdown is open at a time
+  activeDropdown: null, // 'designSettings' | 'nodeColor' | 'arrowColor' | 'export' | 'open' | 'simSettings' | null
+  
   // Selected colors state (like PowerPoint)
   selectedNodeColor: loadConfig().colors.defaultSelected.nodeColor,
   selectedArrowColor: loadConfig().colors.defaultSelected.arrowColor,
@@ -91,11 +94,18 @@ const useCLDStore = create((set, get) => ({
     set((state) => ({ showGrid: !state.showGrid }))
   },
   
+  // Global dropdown management operations
+  setActiveDropdown: (dropdownType) => {
+    set({ activeDropdown: dropdownType })
+  },
+  
+  closeAllDropdowns: () => {
+    set({ activeDropdown: null })
+  },
+  
   // Node operations
   addNode: (position, label = 'New Node') => {
     const { nodes, config, updateGraphAnalysis, simulationState, simulationMode, addEvent, recordStateChange } = get()
-    
-    console.log(`Adding node "${label}" at position`, position, `Current nodes: ${nodes.length}`)
     
     // Disable node addition during simulation mode
     if (simulationMode || simulationState.isRunning) {
@@ -130,7 +140,6 @@ const useCLDStore = create((set, get) => ({
     // Verify node was added
     setTimeout(() => {
       const currentState = get()
-      console.log(`Node added successfully. New node count: ${currentState.nodes.length}`, currentState.nodes.map(n => n.id))
     }, 0)
     
     updateGraphAnalysis()
@@ -183,10 +192,7 @@ const useCLDStore = create((set, get) => ({
     const isVisualOnlyUpdate = Object.keys(updates).every(key => visualOnlyUpdates.includes(key))
     
     if (!isVisualOnlyUpdate && !updates.position) {
-      console.log(`Recording state change for node ${nodeId} update:`, updates)
       recordStateChange()
-    } else {
-      console.log(`Skipping state recording for ${isVisualOnlyUpdate ? 'visual-only' : 'position'} update on node ${nodeId}:`, updates)
     }
   },
 
@@ -235,8 +241,6 @@ const useCLDStore = create((set, get) => ({
   // Edge operations
   addEdge: (source, target, polarity = 'positive') => {
     const { edges, config, updateGraphAnalysis, simulationState, simulationMode, addEvent, nodes, recordStateChange } = get()
-    
-    console.log(`Adding edge from ${source} to ${target} with polarity ${polarity}`)
     
     // Disable edge addition during simulation mode
     if (simulationMode || simulationState.isRunning) {
@@ -293,7 +297,6 @@ const useCLDStore = create((set, get) => ({
     }))
     updateGraphAnalysis()
     addEvent(`Arrow "${sourceLabel}" → "${targetLabel}" added`)
-    console.log(`Edge added successfully.`)
     return true
   },
   
@@ -336,10 +339,7 @@ const useCLDStore = create((set, get) => ({
     
     // Record state change for non-radius updates (radius updates are handled by drag functions)
     if (updates.radius === undefined) {
-      console.log(`Recording state change for edge ${edgeId} update:`, updates)
       recordStateChange()
-    } else {
-      console.log(`Skipping state recording for radius update on edge ${edgeId}`)
     }
   },
 
@@ -885,15 +885,6 @@ const useCLDStore = create((set, get) => ({
               }
               
               // Log loading information
-              console.log('Loaded enhanced diagram:', {
-                name: diagramData.diagramName,
-                version: diagramData.version,
-                nodes: diagramData.nodes?.length || 0,
-                edges: diagramData.edges?.length || 0,
-                mode: diagramData.problemStatement?.mode,
-                hasSimulation: !!diagramData.simulation,
-                metadata: diagramData.metadata
-              })
               
             } else {
               // Legacy format - load basic data only
@@ -909,12 +900,7 @@ const useCLDStore = create((set, get) => ({
                 redoStack: []
               })
               
-              console.log('Loaded legacy diagram:', {
-                name: diagramData.diagramName,
-                version: diagramData.version || '1.0',
-                nodes: diagramData.nodes?.length || 0,
-                edges: diagramData.edges?.length || 0
-              })
+
             }
             
             // Update graph analysis asynchronously to avoid blocking UI
@@ -970,37 +956,23 @@ const useCLDStore = create((set, get) => ({
       await new Promise(resolve => setTimeout(resolve, 100))
       
       // Get the ReactFlow container - try multiple selectors
-      console.log('Starting element search for export...')
-      
-      // First, let's see what's available in the DOM
-      console.log('All divs with class containing "react":', document.querySelectorAll('div[class*="react"]'))
-      console.log('All divs with class containing "flow":', document.querySelectorAll('div[class*="flow"]'))
-      console.log('All divs with class containing "cld":', document.querySelectorAll('div[class*="cld"]'))
-      
-      // Try to find the main canvas area first
       let reactFlowElement = document.querySelector('.canvas-area')
-      console.log('Trying .canvas-area first:', reactFlowElement)
       
       if (!reactFlowElement) {
         reactFlowElement = document.querySelector('.cld-diagram-container')
-        console.log('Trying .cld-diagram-container:', reactFlowElement)
       }
       if (!reactFlowElement) {
         reactFlowElement = document.querySelector('.react-flow')
-        console.log('Trying .react-flow:', reactFlowElement)
       }
       if (!reactFlowElement) {
         reactFlowElement = document.querySelector('[data-testid="rf__wrapper"]')
-        console.log('Trying [data-testid="rf__wrapper"]:', reactFlowElement)
       }
       if (!reactFlowElement) {
         reactFlowElement = document.querySelector('.react-flow__viewport')
-        console.log('Trying .react-flow__viewport:', reactFlowElement)
       }
       if (!reactFlowElement) {
         // Try to find any div containing ReactFlow content
         reactFlowElement = document.querySelector('.react-flow__renderer')
-        console.log('Trying .react-flow__renderer:', reactFlowElement)
       }
       if (!reactFlowElement) {
         // Try to find ReactFlow by looking for elements with ReactFlow-specific content
@@ -1010,7 +982,6 @@ const useCLDStore = create((set, get) => ({
               div.innerHTML.includes('rf__') ||
               div.querySelector('.react-flow') ||
               div.querySelector('[data-testid*="rf"]')) {
-            console.log('Found potential ReactFlow container:', div)
             reactFlowElement = div
             break
           }
@@ -1018,11 +989,7 @@ const useCLDStore = create((set, get) => ({
       }
       
       if (!reactFlowElement) {
-        console.log('Available elements with react-flow in class:', document.querySelectorAll('[class*="react-flow"]'))
-        console.log('All divs in document:', document.querySelectorAll('div'))
-        
         // As a last resort, try to export the entire viewport
-        console.log('Trying to export entire viewport as fallback...')
         reactFlowElement = document.body
       }
 
@@ -1095,17 +1062,7 @@ const useCLDStore = create((set, get) => ({
 
   // Debug function to help troubleshoot export issues
   debugExportElements: () => {
-    console.log('=== Export Debug Information ===')
-    console.log('Canvas area:', document.querySelector('.canvas-area'))
-    console.log('CLD diagram container:', document.querySelector('.cld-diagram-container'))
-    console.log('ReactFlow:', document.querySelector('.react-flow'))
-    console.log('ReactFlow wrapper:', document.querySelector('[data-testid="rf__wrapper"]'))
-    console.log('ReactFlow viewport:', document.querySelector('.react-flow__viewport'))
-    console.log('ReactFlow renderer:', document.querySelector('.react-flow__renderer'))
-    console.log('All divs with react in class:', document.querySelectorAll('div[class*="react"]'))
-    console.log('All divs with flow in class:', document.querySelectorAll('div[class*="flow"]'))
-    console.log('All divs with cld in class:', document.querySelectorAll('div[class*="cld"]'))
-    console.log('================================')
+    // Debug function removed for cleaner code
   },
 
   exportAsPDF: async () => {
@@ -1746,15 +1703,7 @@ const useCLDStore = create((set, get) => ({
     // Add the perturbation to the perturbed node
     accumulatedValues[nodeIndex] = 1000 + clampedValue
     
-    console.log('Initializing simulation with increments:', {
-      perturbedNodeId,
-      perturbationValue,
-      nodeIndex,
-      clampedValue,
-      stateVector,
-      accumulatedValues,
-      nodesCount: nodes.length
-    })
+
     
     set((state) => ({
       simulationState: {
@@ -1787,7 +1736,6 @@ const useCLDStore = create((set, get) => ({
     
     // If simulation is completed, reset it to step 0 to allow re-running
     if (simulationState.currentStep >= simulationState.maxSteps) {
-      console.log('Simulation completed, resetting to allow re-run')
       set((state) => ({
         simulationState: {
           ...state.simulationState,
@@ -1801,11 +1749,7 @@ const useCLDStore = create((set, get) => ({
       }))
     }
     
-    console.log('Starting simulation with:', {
-      nodes: nodes.length,
-      edges: edges.length,
-      initialState: simulationState.stateVector
-    })
+
     
     set((state) => ({
       simulationState: {
@@ -2042,7 +1986,6 @@ const useCLDStore = create((set, get) => ({
     
     // Don't record if this is an undo/redo action
     if (isUndoRedoAction) {
-      console.log('Skipping state recording - undo/redo action in progress')
       return
     }
     
@@ -2052,24 +1995,17 @@ const useCLDStore = create((set, get) => ({
       undoStack: [...state.undoStack, snapshot].slice(-maxUndoSteps),
       redoStack: [] // Clear redo stack when new action is performed
     }))
-    
-    console.log(`State recorded. Undo stack: ${undoStack.length + 1}, Redo stack: 0`)
   },
   
   undo: () => {
     const { undoStack, redoStack, isUndoRedoAction, createStateSnapshot, nodes } = get()
     
-    console.log(`Undo called. Stack sizes - Undo: ${undoStack.length}, Redo: ${redoStack.length}, isUndoRedoAction: ${isUndoRedoAction}`)
-    console.log(`Current nodes before undo: ${nodes.length}`, nodes.map(n => n.id))
-    
     if (undoStack.length === 0) {
-      console.log('Nothing to undo')
       return false
     }
     
     // Prevent recursive undo calls
     if (isUndoRedoAction) {
-      console.log('Undo/redo action already in progress, skipping')
       return false
     }
     
@@ -2078,9 +2014,6 @@ const useCLDStore = create((set, get) => ({
     
     // Get the last state from undo stack
     const previousState = undoStack[undoStack.length - 1]
-    
-    console.log(`Restoring state from ${new Date(previousState.timestamp).toLocaleTimeString()}`)
-    console.log(`Previous state nodes: ${previousState.nodes.length}`, previousState.nodes.map(n => n.id))
     
     // Set flag to prevent recording this action
     set({ isUndoRedoAction: true })
@@ -2102,29 +2035,18 @@ const useCLDStore = create((set, get) => ({
     // Update graph analysis immediately after state restoration
     get().updateGraphAnalysis()
     
-    // Verify the state was restored correctly
-    setTimeout(() => {
-      const currentState = get()
-      console.log(`State after restoration - Nodes: ${currentState.nodes.length}`, currentState.nodes.map(n => n.id))
-    }, 0)
-    
-    console.log(`Undo completed. New stack sizes - Undo: ${undoStack.length - 1}, Redo: ${redoStack.length + 1}`)
     return true
   },
   
   redo: () => {
     const { undoStack, redoStack, isUndoRedoAction, createStateSnapshot } = get()
     
-    console.log(`Redo called. Stack sizes - Undo: ${undoStack.length}, Redo: ${redoStack.length}, isUndoRedoAction: ${isUndoRedoAction}`)
-    
     if (redoStack.length === 0) {
-      console.log('Nothing to redo')
       return false
     }
     
     // Prevent recursive redo calls
     if (isUndoRedoAction) {
-      console.log('Undo/redo action already in progress, skipping')
       return false
     }
     
@@ -2133,8 +2055,6 @@ const useCLDStore = create((set, get) => ({
     
     // Get the last state from redo stack
     const nextState = redoStack[redoStack.length - 1]
-    
-    console.log(`Restoring state from ${new Date(nextState.timestamp).toLocaleTimeString()}`)
     
     // Set flag to prevent recording this action
     set({ isUndoRedoAction: true })
@@ -2158,18 +2078,15 @@ const useCLDStore = create((set, get) => ({
       get().updateGraphAnalysis()
     }, 0)
     
-    console.log(`Redo completed. New stack sizes - Undo: ${undoStack.length + 1}, Redo: ${redoStack.length - 1}`)
     return true
   },
   
   clearUndoRedoStacks: () => {
-    console.log('Clearing undo/redo stacks')
     set({ undoStack: [], redoStack: [], isUndoRedoAction: false })
   },
   
   // Force reset undo/redo state (for debugging)
   resetUndoRedoState: () => {
-    console.log('Force resetting undo/redo state')
     set({ 
       undoStack: [], 
       redoStack: [], 
@@ -2179,25 +2096,15 @@ const useCLDStore = create((set, get) => ({
   
   // Debug function to check undo/redo state
   debugUndoRedoState: () => {
-    const { undoStack, redoStack, isUndoRedoAction } = get()
-    console.log('=== UNDO/REDO DEBUG STATE ===')
-    console.log(`Undo stack size: ${undoStack.length}`)
-    console.log(`Redo stack size: ${redoStack.length}`)
-    console.log(`isUndoRedoAction flag: ${isUndoRedoAction}`)
-    console.log('Undo stack timestamps:', undoStack.map(s => new Date(s.timestamp).toLocaleTimeString()))
-    console.log('Redo stack timestamps:', redoStack.map(s => new Date(s.timestamp).toLocaleTimeString()))
-    console.log('=== END DEBUG STATE ===')
+    // Debug function removed for cleaner code
   },
   
   // Special function for drag operations - only records start and end positions
   recordDragStart: (nodeId, startPosition) => {
     const { isUndoRedoAction, undoStack, redoStack, maxUndoSteps, createStateSnapshot } = get()
     
-    console.log(`Drag start recorded for node ${nodeId} at position`, startPosition)
-    
     // Don't record if this is an undo/redo action
     if (isUndoRedoAction) {
-      console.log('Skipping drag start recording - undo/redo action in progress')
       return
     }
     
@@ -2209,18 +2116,13 @@ const useCLDStore = create((set, get) => ({
       undoStack: [...state.undoStack, snapshot].slice(-maxUndoSteps),
       redoStack: [] // Clear redo stack when new action is performed
     }))
-    
-    console.log(`Drag start state recorded. Undo stack: ${undoStack.length + 1}`)
   },
   
   recordDragEnd: (nodeId, endPosition) => {
     const { isUndoRedoAction, undoStack, redoStack, maxUndoSteps, createStateSnapshot } = get()
     
-    console.log(`Drag end recorded for node ${nodeId} at position`, endPosition)
-    
     // Don't record if this is an undo/redo action
     if (isUndoRedoAction) {
-      console.log('Skipping drag end recording - undo/redo action in progress')
       return
     }
     
@@ -2232,42 +2134,11 @@ const useCLDStore = create((set, get) => ({
       undoStack: [...state.undoStack, snapshot].slice(-maxUndoSteps),
       redoStack: [] // Clear redo stack when new action is performed
     }))
-    
-    console.log(`Drag end state recorded. Undo stack: ${undoStack.length + 1}`)
   },
   
   // Test function for debugging propagation
   testPropagation: () => {
-    const { nodes, edges } = get()
-    console.log('=== PROPAGATION TEST ===')
-    console.log('Nodes:', nodes.map(n => ({ id: n.id, label: n.data.label })))
-    console.log('Edges:', edges.map(e => ({ 
-      source: e.source, 
-      target: e.target, 
-      polarity: e.data.polarity 
-    })))
-    
-    // Test with a simple increment vector
-    const testIncrements = new Array(nodes.length).fill(0)
-    if (nodes.length > 0) {
-      testIncrements[0] = 5 // Initial increment for first node
-    }
-    
-    console.log('Initial increments:', testIncrements)
-    
-    // Track accumulated values
-    let accumulatedValues = [...testIncrements]
-    let currentIncrements = [...testIncrements]
-    
-    // Run multiple steps to show increment-based propagation
-    for (let step = 1; step <= 5; step++) {
-      currentIncrements = get().calculateNextState(currentIncrements)
-      accumulatedValues = accumulatedValues.map((val, i) => val + currentIncrements[i])
-      console.log(`Step ${step} increments:`, currentIncrements)
-      console.log(`Step ${step} accumulated:`, accumulatedValues)
-    }
-    
-    console.log('=== END TEST ===')
+    // Test function removed for cleaner code
   }
 }))
 
@@ -2281,8 +2152,6 @@ const initializeStore = () => {
   useCLDStore.setState({
     undoStack: [initialSnapshot]
   })
-  
-  console.log('Initial state recorded in undo stack')
 }
 
 // Initialize when the store is first created

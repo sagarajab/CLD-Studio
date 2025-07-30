@@ -6,8 +6,7 @@ import PlotsModal from './PlotsModal'
 import './Toolbar.css'
 
 function Toolbar() {
-  const [showExportDropdown, setShowExportDropdown] = useState(false)
-  const [showSimSettingsDropdown, setShowSimSettingsDropdown] = useState(false)
+
   const [selectedNode, setSelectedNode] = useState('')
   const [perturbationValue, setPerturbationValue] = useState(1)
   const [showPlotsModal, setShowPlotsModal] = useState(false)
@@ -33,7 +32,10 @@ function Toolbar() {
     stepSimulation,
     stepBackSimulation,
     resetSimulation,
-    updateSimulationSettings
+    updateSimulationSettings,
+    activeDropdown,
+    setActiveDropdown,
+    closeAllDropdowns
   } = useCLDStore()
 
   const handleClear = () => {
@@ -48,7 +50,7 @@ function Toolbar() {
       return
     }
     exportMatrix()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportAsPNG = () => {
@@ -57,7 +59,7 @@ function Toolbar() {
       return
     }
     exportAsPNG()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportAsSVG = () => {
@@ -66,7 +68,7 @@ function Toolbar() {
       return
     }
     exportAsSVG()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportAsPDF = () => {
@@ -75,7 +77,7 @@ function Toolbar() {
       return
     }
     exportAsPDF()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportDetailedData = () => {
@@ -84,22 +86,30 @@ function Toolbar() {
       return
     }
     exportDetailedData()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const toggleExportDropdown = () => {
-    setShowExportDropdown(!showExportDropdown)
+    if (activeDropdown === 'export') {
+      closeAllDropdowns()
+    } else {
+      setActiveDropdown('export')
+    }
   }
 
   const toggleSimSettingsDropdown = () => {
-    setShowSimSettingsDropdown(!showSimSettingsDropdown)
+    if (activeDropdown === 'simSettings') {
+      closeAllDropdowns()
+    } else {
+      setActiveDropdown('simSettings')
+    }
   }
 
   const handleStartSimulation = () => {
     if (selectedNode && perturbationValue !== 0) {
       const success = initializeSimulation(parseInt(selectedNode), perturbationValue)
       if (success) {
-        console.log('Simulation initialized successfully')
+        // Simulation initialized successfully
       } else {
         console.error('Failed to initialize simulation')
       }
@@ -130,10 +140,10 @@ function Toolbar() {
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowExportDropdown(false)
+        closeAllDropdowns()
       }
       if (simSettingsRef.current && !simSettingsRef.current.contains(event.target)) {
-        setShowSimSettingsDropdown(false)
+        closeAllDropdowns()
       }
     }
 
@@ -141,7 +151,7 @@ function Toolbar() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [])
+  }, [closeAllDropdowns])
 
   const handleSubmitAssessment = () => {
     if (mode === 'assessment') {
@@ -173,7 +183,7 @@ function Toolbar() {
               >
                 Export ▼
               </button>
-              {showExportDropdown && (
+              {activeDropdown === 'export' && (
                 <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-48">
                   <button
                     onClick={handleExportAsPNG}
@@ -345,7 +355,7 @@ function Toolbar() {
               >
                 ⚙
               </button>
-              {showSimSettingsDropdown && (
+              {activeDropdown === 'simSettings' && (
                 <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-64 p-3">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">

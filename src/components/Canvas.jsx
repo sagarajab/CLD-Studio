@@ -297,6 +297,17 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         lastClickPositionRef.current = currentPosition
       }
     } else if (event.button === 2) { // Right mouse button on canvas
+      // Deselect all nodes and arrows when right-clicking on canvas
+      setSelectedNode(null)
+      setSelectedEdge(null)
+      clearNodeSelection()
+      clearEdgeSelection()
+      
+      // Clear highlighted loop when right-clicking on empty space
+      if (highlightedLoop !== null) {
+        clearHighlightedLoop()
+      }
+      
       // Cancel connection creation if right-clicking on empty space
       if (isCreatingConnection) {
         setIsCreatingConnection(false)
@@ -307,7 +318,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         setMousePosition({ x: 0, y: 0 })
       }
     }
-  }, [mode, addNode, setSelectedNode, setSelectedEdge, viewTransform, isCreatingConnection, connectionSource, updateNode, highlightedLoop, clearHighlightedLoop, panningMode])
+  }, [mode, addNode, setSelectedNode, setSelectedEdge, viewTransform, isCreatingConnection, connectionSource, updateNode, highlightedLoop, clearHighlightedLoop, panningMode, clearNodeSelection, clearEdgeSelection])
 
   // Update cursor based on interaction state
   useEffect(() => {

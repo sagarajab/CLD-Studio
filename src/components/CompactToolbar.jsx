@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 
 function CompactToolbar({ mode }) {
-  const [showExportDropdown, setShowExportDropdown] = useState(false)
+
   const dropdownRef = useRef(null)
   
   const { 
@@ -11,7 +11,10 @@ function CompactToolbar({ mode }) {
     exportAsPNG,
     exportAsSVG,
     exportAsPDF,
-    submitAssessment 
+    submitAssessment,
+    activeDropdown,
+    setActiveDropdown,
+    closeAllDropdowns
   } = useCLDStore()
 
   const handleClear = () => {
@@ -24,33 +27,37 @@ function CompactToolbar({ mode }) {
 
   const handleExportAsPNG = () => {
     exportAsPNG()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportAsSVG = () => {
     exportAsSVG()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportAsPDF = () => {
     exportAsPDF()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportMatrix = () => {
     exportMatrix()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const toggleExportDropdown = () => {
-    setShowExportDropdown(!showExportDropdown)
+    if (activeDropdown === 'export') {
+      closeAllDropdowns()
+    } else {
+      setActiveDropdown('export')
+    }
   }
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowExportDropdown(false)
+        closeAllDropdowns()
       }
     }
 
@@ -58,7 +65,7 @@ function CompactToolbar({ mode }) {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [])
+  }, [closeAllDropdowns])
 
   const handleSubmit = () => {
     if (mode === 'assessment') {
@@ -91,7 +98,7 @@ function CompactToolbar({ mode }) {
           </svg>
           Export
         </button>
-        {showExportDropdown && (
+        {activeDropdown === 'export' && (
           <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-40">
             <button
               onClick={handleExportAsPNG}

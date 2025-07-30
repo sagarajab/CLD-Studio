@@ -242,7 +242,7 @@ function CLDNode({
               key={index}
               ref={index === 0 ? textRef : null}
               x={ellipseDimensions.centerX}
-              y={y + 4}
+              y={y}
               textAnchor="middle"
               dominantBaseline="middle"
               fontSize={globalStyles.nodeFontSize}

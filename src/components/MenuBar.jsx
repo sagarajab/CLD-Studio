@@ -17,7 +17,9 @@ function MenuBar({ mode, setMode }) {
     undo,
     redo,
     undoStack,
-    redoStack
+    redoStack,
+    activeDropdown,
+    closeAllDropdowns
   } = useCLDStore()
   const [activeMenu, setActiveMenu] = useState(null)
   const menuRef = useRef(null)
@@ -28,13 +30,17 @@ function MenuBar({ mode, setMode }) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setActiveMenu(null)
       }
+      // Also close any other dropdowns when clicking outside
+      if (activeDropdown) {
+        closeAllDropdowns()
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [])
+  }, [activeDropdown, closeAllDropdowns])
 
   const handleMenuClick = (menuName) => {
     setActiveMenu(activeMenu === menuName ? null : menuName)

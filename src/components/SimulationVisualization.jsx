@@ -28,7 +28,6 @@ function SimulationVisualization() {
   // Memoize chart data to prevent unnecessary re-renders
   const chartData = useMemo(() => {
     if (!simulationState.valueHistory || simulationState.valueHistory.length === 0) {
-      console.log('No simulation data, using test data')
       return testData
     }
     
@@ -42,30 +41,14 @@ function SimulationVisualization() {
       return dataPoint
     })
     
-    console.log('Chart data prepared:', {
-      dataLength: data.length,
-      firstDataPoint: data[0],
-      lastDataPoint: data[data.length - 1],
-      nodeLabels: nodes.map(n => n.data.label || `Node ${n.id}`),
-      valueHistoryLength: simulationState.valueHistory.length,
-      firstHistoryEntry: simulationState.valueHistory[0],
-      fullData: data // Log the complete data array
-    })
+
     
     return data
   }, [simulationState.valueHistory, nodes, testData])
   
   if (!simulationMode) return null
   
-  // Debug info
-  console.log('SimulationVisualization render:', {
-    simulationMode,
-    hasStateVector: !!simulationState.stateVector.length,
-    valueHistoryLength: simulationState.valueHistory?.length || 0,
-    chartDataLength: chartData.length,
-    nodesCount: nodes.length,
-    chartData: chartData
-  })
+  // Debug info removed for cleaner code
   
   return (
     <div className="simulation-visualization">

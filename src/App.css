@@ -96,7 +96,7 @@ body {
 .menu-icon-btn {
   background: transparent;
   border: none;
-  color: #cccccc;
+  color: #808080;
   padding: 6px;
   border-radius: 3px;
   cursor: pointer;
@@ -109,16 +109,14 @@ body {
 }
 
 .menu-icon-btn:hover {
-  background: #444444 !important;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  color: white !important;
+  background: #404040 !important;
+  color: #ffffff !important;
 }
 
 .menu-icon {
   width: 16px;
   height: 16px;
-  color: #cccccc !important;
+  color: #808080 !important;
   stroke-width: 2;
   transition: color 0.2s ease;
 }
@@ -135,12 +133,12 @@ body {
 .menu-icon-btn.active,
 .menu-icon-btn[style*="background"] {
   background: transparent !important;
-  color: #cccccc !important;
+  color: #808080 !important;
 }
 
 .menu-icon-btn.active .menu-icon,
 .menu-icon-btn[style*="background"] .menu-icon {
-  color: #cccccc !important;
+  color: #808080 !important;
 }
 
 /* Exception for simulation mode toggle - allow red background */
@@ -155,8 +153,8 @@ body {
 
 .menu-icon-btn.active:hover,
 .menu-icon-btn[style*="background"]:hover {
-  background: #444444 !important;
-  color: white !important;
+  background: #404040 !important;
+  color: #ffffff !important;
 }
 
 .menu-icon-btn.active:hover .menu-icon,
@@ -235,12 +233,14 @@ body {
   cursor: not-allowed;
 }
 
-.menu-icon-btn.disabled {
+.menu-icon-btn.disabled,
+.menu-icon-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.menu-icon-btn.disabled:hover {
+.menu-icon-btn.disabled:hover,
+.menu-icon-btn:disabled:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 

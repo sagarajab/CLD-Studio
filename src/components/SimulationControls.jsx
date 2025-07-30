@@ -22,7 +22,7 @@ function SimulationControls() {
     if (selectedNode && perturbationValue !== 0) {
       const success = initializeSimulation(parseInt(selectedNode), perturbationValue)
       if (success) {
-        console.log('Simulation initialized successfully')
+        // Simulation initialized successfully
       } else {
         console.error('Failed to initialize simulation')
       }

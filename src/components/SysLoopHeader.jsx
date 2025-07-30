@@ -62,18 +62,15 @@ function SysLoopHeader() {
     undo,
     redo,
     undoStack,
-    redoStack
+    redoStack,
+    activeDropdown,
+    setActiveDropdown,
+    closeAllDropdowns
   } = useCLDStore()
-  const [showNodeColorDropdown, setShowNodeColorDropdown] = useState(false)
-  const [showArrowColorDropdown, setShowArrowColorDropdown] = useState(false)
-  const [showDesignSettingsDropdown, setShowDesignSettingsDropdown] = useState(false)
-  const [showExportDropdown, setShowExportDropdown] = useState(false)
-  const [showOpenDropdown, setShowOpenDropdown] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [tempName, setTempName] = useState(diagramName)
 
   const [showSettingsModal, setShowSettingsModal] = useState(false)
-  const [showSimSettingsDropdown, setShowSimSettingsDropdown] = useState(false)
   const [selectedSimNode, setSelectedSimNode] = useState('')
   const [perturbationValue, setPerturbationValue] = useState(1)
   const [showPlotsModal, setShowPlotsModal] = useState(false)
@@ -117,33 +114,33 @@ function SysLoopHeader() {
 
   const handleExportAsPNG = () => {
     exportAsPNG()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportAsJPEG = () => {
     // For now, using PNG export - you can implement JPEG-specific export later
     exportAsPNG()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportAsSVG = () => {
     exportAsSVG()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportAsPDF = () => {
     exportAsPDF()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportDetailedData = () => {
     exportDetailedData()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleExportMatrix = () => {
     exportMatrix()
-    setShowExportDropdown(false)
+    closeAllDropdowns()
   }
 
   const handleUndo = () => {
@@ -191,21 +188,17 @@ function SysLoopHeader() {
 
   const handleNodeColorDropdownToggle = (e) => {
     e.stopPropagation()
-    // Close arrow color dropdown if it's open
-    if (showArrowColorDropdown) {
-      setShowArrowColorDropdown(false)
+    if (activeDropdown === 'nodeColor') {
+      closeAllDropdowns()
+    } else {
+      setActiveDropdown('nodeColor')
     }
-    setShowNodeColorDropdown(!showNodeColorDropdown)
   }
 
   const handleNodeColorSelect = (color) => {
     // Update the selected color (like PowerPoint)
     setSelectedNodeColor(color)
-    setShowNodeColorDropdown(false)
-    // Also close arrow color dropdown if it's open
-    if (showArrowColorDropdown) {
-      setShowArrowColorDropdown(false)
-    }
+    closeAllDropdowns()
     // Apply the color directly to the selected node(s) if any are selected
     if (selectedNodes.length > 0) {
       updateSelectedNodesColor(color)
@@ -227,21 +220,17 @@ function SysLoopHeader() {
 
   const handleArrowColorDropdownToggle = (e) => {
     e.stopPropagation()
-    // Close node color dropdown if it's open
-    if (showNodeColorDropdown) {
-      setShowNodeColorDropdown(false)
+    if (activeDropdown === 'arrowColor') {
+      closeAllDropdowns()
+    } else {
+      setActiveDropdown('arrowColor')
     }
-    setShowArrowColorDropdown(!showArrowColorDropdown)
   }
 
   const handleArrowColorSelect = (color) => {
     // Update the selected color (like PowerPoint)
     setSelectedArrowColor(color)
-    setShowArrowColorDropdown(false)
-    // Also close node color dropdown if it's open
-    if (showNodeColorDropdown) {
-      setShowNodeColorDropdown(false)
-    }
+    closeAllDropdowns()
     // Apply the color directly to the selected edge(s) if any are selected
     if (selectedEdges.length > 0) {
       updateSelectedEdgesColor(color)
@@ -256,7 +245,11 @@ function SysLoopHeader() {
 
   const handleDesignSettingsDropdownToggle = (e) => {
     e.stopPropagation()
-    setShowDesignSettingsDropdown(!showDesignSettingsDropdown)
+    if (activeDropdown === 'designSettings') {
+      closeAllDropdowns()
+    } else {
+      setActiveDropdown('designSettings')
+    }
   }
 
   const handleResetStyles = () => {
@@ -269,7 +262,7 @@ function SysLoopHeader() {
       const success = initializeSimulation(parseInt(selectedSimNode), perturbationValue)
       if (success) {
         // Close the dropdown after successful initialization
-        setShowSimSettingsDropdown(false)
+        closeAllDropdowns()
       }
     }
   }
@@ -316,19 +309,31 @@ function SysLoopHeader() {
   }
 
   const toggleSimSettingsDropdown = () => {
-    setShowSimSettingsDropdown(!showSimSettingsDropdown)
+    if (activeDropdown === 'simSettings') {
+      closeAllDropdowns()
+    } else {
+      setActiveDropdown('simSettings')
+    }
   }
 
 
 
   const toggleExportDropdown = (e) => {
     e.stopPropagation()
-    setShowExportDropdown(!showExportDropdown)
+    if (activeDropdown === 'export') {
+      closeAllDropdowns()
+    } else {
+      setActiveDropdown('export')
+    }
   }
 
   const toggleOpenDropdown = (e) => {
     e.stopPropagation()
-    setShowOpenDropdown(!showOpenDropdown)
+    if (activeDropdown === 'open') {
+      closeAllDropdowns()
+    } else {
+      setActiveDropdown('open')
+    }
   }
 
   // Close dropdowns when clicking outside
@@ -353,23 +358,23 @@ function SysLoopHeader() {
 
       
       // Only close if clicking outside both the dropdown and its toggle button
-      if (showDesignSettingsDropdown && !isInsideDesignDropdown && !isOnDesignToggle) {
-        setShowDesignSettingsDropdown(false)
+      if (activeDropdown === 'designSettings' && !isInsideDesignDropdown && !isOnDesignToggle) {
+        closeAllDropdowns()
       }
-      if (showNodeColorDropdown && !isInsideNodeColorDropdown && !isOnNodeColorToggle) {
-        setShowNodeColorDropdown(false)
+      if (activeDropdown === 'nodeColor' && !isInsideNodeColorDropdown && !isOnNodeColorToggle) {
+        closeAllDropdowns()
       }
-      if (showArrowColorDropdown && !isInsideArrowColorDropdown && !isOnArrowColorToggle) {
-        setShowArrowColorDropdown(false)
+      if (activeDropdown === 'arrowColor' && !isInsideArrowColorDropdown && !isOnArrowColorToggle) {
+        closeAllDropdowns()
       }
-      if (showExportDropdown && !isInsideExportDropdown && !isOnExportToggle) {
-        setShowExportDropdown(false)
+      if (activeDropdown === 'export' && !isInsideExportDropdown && !isOnExportToggle) {
+        closeAllDropdowns()
       }
-      if (showOpenDropdown && !isInsideOpenDropdown && !isOnOpenToggle) {
-        setShowOpenDropdown(false)
+      if (activeDropdown === 'open' && !isInsideOpenDropdown && !isOnOpenToggle) {
+        closeAllDropdowns()
       }
-      if (showSimSettingsDropdown && !isInsideSimSettingsDropdown && !isOnSimSettingsToggle) {
-        setShowSimSettingsDropdown(false)
+      if (activeDropdown === 'simSettings' && !isInsideSimSettingsDropdown && !isOnSimSettingsToggle) {
+        closeAllDropdowns()
       }
 
     }
@@ -378,7 +383,7 @@ function SysLoopHeader() {
     return () => {
       document.removeEventListener('click', handleClickOutside)
     }
-  }, [showDesignSettingsDropdown, showNodeColorDropdown, showArrowColorDropdown, showExportDropdown, showOpenDropdown, showSimSettingsDropdown])
+  }, [activeDropdown, closeAllDropdowns])
 
   // Update tempName when diagramName changes (e.g., when loading a file)
   useEffect(() => {
@@ -572,7 +577,7 @@ function SysLoopHeader() {
                       zIndex: 999
                     }}
                   />
-                  {showNodeColorDropdown && (
+                  {activeDropdown === 'nodeColor' && (
                     <div 
                       className="node-color-dropdown" 
                       onClick={(e) => e.stopPropagation()}
@@ -644,7 +649,7 @@ function SysLoopHeader() {
                       zIndex: 999
                     }}
                   />
-                  {showArrowColorDropdown && (
+                  {activeDropdown === 'arrowColor' && (
                     <div 
                       className="arrow-color-dropdown" 
                       onClick={(e) => e.stopPropagation()}
@@ -766,7 +771,7 @@ function SysLoopHeader() {
                   >
                     <item.icon className="menu-icon" />
                   </button>
-                  {showDesignSettingsDropdown && (
+                  {activeDropdown === 'designSettings' && (
                     <div 
                       className="design-settings-dropdown" 
                       onClick={(e) => e.stopPropagation()}
@@ -909,7 +914,7 @@ function SysLoopHeader() {
                   >
                     <item.icon className="menu-icon" />
                   </button>
-                  {showExportDropdown && (
+                  {activeDropdown === 'export' && (
                     <div 
                       className="export-dropdown" 
                       onClick={(e) => e.stopPropagation()}
@@ -1130,7 +1135,7 @@ function SysLoopHeader() {
                   >
                     <item.icon className="menu-icon" />
                   </button>
-                  {showOpenDropdown && (
+                  {activeDropdown === 'open' && (
                     <div 
                       className="open-dropdown" 
                       onClick={(e) => e.stopPropagation()}
@@ -1176,7 +1181,7 @@ function SysLoopHeader() {
                       <button
                         onClick={() => {
                           // Handle examples - you can implement this later
-                          setShowOpenDropdown(false)
+                          closeAllDropdowns()
                         }}
                         style={{
                           width: '100%',
@@ -1232,7 +1237,6 @@ function SysLoopHeader() {
         display: 'flex', 
         alignItems: 'center', 
         gap: '8px',
-        borderLeft: '1px solid #374151',
         paddingLeft: '16px',
         marginLeft: '16px'
       }}>
@@ -1277,7 +1281,7 @@ function SysLoopHeader() {
             >
               <Dices className="menu-icon" />
             </button>
-            {showSimSettingsDropdown && (
+                              {activeDropdown === 'simSettings' && (
               <div 
                 className="sim-settings-dropdown" 
                 onClick={(e) => e.stopPropagation()}
