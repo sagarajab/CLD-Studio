@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { TimerReset } from 'lucide-react'
 import { useCLDStore } from '../stores/cldStore'
+import './SimulationControls.css'
 
 function SimulationControls() {
   const { 
@@ -50,19 +51,14 @@ function SimulationControls() {
   }
   
   return (
-    <div style={{ 
-      padding: '10px', 
-      borderBottom: '1px solid #e5e7eb',
-      backgroundColor: '#f9fafb',
-      fontSize: '12px'
-    }}>
+    <div className="simulation-controls-container">
       {/* Setup Controls */}
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+      <div className="setup-controls">
         <select 
           value={selectedNode} 
           onChange={(e) => setSelectedNode(e.target.value)}
           disabled={simulationState.isRunning}
-          style={{ padding: '4px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '3px' }}
+          className="simulation-select"
         >
           <option value="">Select node...</option>
           {nodes.map(node => (
@@ -79,39 +75,24 @@ function SimulationControls() {
           value={perturbationValue}
           onChange={(e) => handlePerturbationChange(parseInt(e.target.value))}
           disabled={simulationState.isRunning}
-          style={{ width: '60px', padding: '4px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '3px' }}
+          className="simulation-input"
         />
         
         <button
           onClick={handleStartSimulation}
           disabled={!selectedNode || simulationState.isRunning}
-          style={{
-            padding: '4px 8px',
-            fontSize: '11px',
-            border: '1px solid #d1d5db',
-            borderRadius: '3px',
-            background: '#ffffff',
-            cursor: !selectedNode || simulationState.isRunning ? 'not-allowed' : 'pointer',
-            opacity: !selectedNode || simulationState.isRunning ? 0.5 : 1
-          }}
+          className="simulation-button"
         >
           Init
         </button>
       </div>
       
       {/* Control Buttons */}
-      <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+      <div className="control-buttons">
         {/* Settings Button - moved before play button */}
         <button
           onClick={() => updateSimulationSettings({ stepDelay: simulationState.stepDelay })}
-          style={{
-            padding: '4px 8px',
-            fontSize: '11px',
-            border: '1px solid #d1d5db',
-            borderRadius: '3px',
-            background: '#ffffff',
-            cursor: 'pointer'
-          }}
+          className="control-button"
           title="Simulation Settings"
         >
           ⚙️
@@ -120,15 +101,7 @@ function SimulationControls() {
         <button
           onClick={handlePlayWithAutoInit}
           disabled={!simulationState.isInitialized || simulationState.isRunning}
-          style={{
-            padding: '4px 8px',
-            fontSize: '11px',
-            border: '1px solid #d1d5db',
-            borderRadius: '3px',
-            background: '#ffffff',
-            cursor: !simulationState.isInitialized || simulationState.isRunning ? 'not-allowed' : 'pointer',
-            opacity: !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1
-          }}
+          className="control-button success"
           title={
             !simulationState.isInitialized ? "Initialize simulation first" :
             simulationState.isRunning ? "Simulation is running" :
@@ -143,15 +116,7 @@ function SimulationControls() {
         <button
           onClick={pauseSimulation}
           disabled={!simulationState.isRunning}
-          style={{
-            padding: '4px 8px',
-            fontSize: '11px',
-            border: '1px solid #d1d5db',
-            borderRadius: '3px',
-            background: '#ffffff',
-            cursor: !simulationState.isRunning ? 'not-allowed' : 'pointer',
-            opacity: !simulationState.isRunning ? 0.5 : 1
-          }}
+          className="control-button warning"
         >
           Pause
         </button>
@@ -159,15 +124,7 @@ function SimulationControls() {
         <button
           onClick={stepBackSimulation}
           disabled={!simulationState.isInitialized || simulationState.isRunning || simulationState.currentStep <= 0}
-          style={{
-            padding: '4px 8px',
-            fontSize: '11px',
-            border: '1px solid #d1d5db',
-            borderRadius: '3px',
-            background: '#ffffff',
-            cursor: !simulationState.isInitialized || simulationState.isRunning || simulationState.currentStep <= 0 ? 'not-allowed' : 'pointer',
-            opacity: !simulationState.isInitialized || simulationState.isRunning || simulationState.currentStep <= 0 ? 0.5 : 1
-          }}
+          className="control-button secondary"
         >
           ←
         </button>
@@ -175,42 +132,24 @@ function SimulationControls() {
         <button
           onClick={stepSimulation}
           disabled={!simulationState.isInitialized || simulationState.isRunning}
-          style={{
-            padding: '4px 8px',
-            fontSize: '11px',
-            border: '1px solid #d1d5db',
-            borderRadius: '3px',
-            background: '#ffffff',
-            cursor: !simulationState.isInitialized || simulationState.isRunning ? 'not-allowed' : 'pointer',
-            opacity: !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1
-          }}
+          className="control-button primary"
         >
           →
         </button>
         
         <button
           onClick={resetSimulation}
-          style={{
-            padding: '4px 8px',
-            fontSize: '11px',
-            border: '1px solid #d1d5db',
-            borderRadius: '3px',
-            background: '#ffffff',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
+          className="control-button danger"
         >
-          <TimerReset style={{ width: '12px', height: '12px' }} />
+          <TimerReset className="control-icon" />
           Reset
         </button>
       </div>
       
       {/* Settings */}
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ fontSize: '11px' }}>Speed:</span>
+      <div className="settings-section">
+        <div className="settings-group">
+          <span className="settings-label">Speed:</span>
           <input
             type="range"
             min="1"
@@ -219,13 +158,13 @@ function SimulationControls() {
             value={Math.round(2000 / simulationState.stepDelay * 10) / 10}
             onChange={(e) => updateSimulationSettings({ stepDelay: Math.round(2000 / parseFloat(e.target.value)) })}
             disabled={simulationState.isRunning}
-            style={{ width: '80px' }}
+            className="settings-input"
           />
-          <span style={{ fontSize: '11px', minWidth: '40px' }}>{Math.round(2000 / simulationState.stepDelay * 10) / 10}x</span>
+          <span className="settings-value">{Math.round(2000 / simulationState.stepDelay * 10) / 10}x</span>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ fontSize: '11px' }}>Max:</span>
+        <div className="settings-group">
+          <span className="settings-label">Max:</span>
           <input
             type="number"
             min="10"
@@ -233,13 +172,13 @@ function SimulationControls() {
             value={simulationState.maxSteps}
             onChange={(e) => updateSimulationSettings({ maxSteps: parseInt(e.target.value) })}
             disabled={simulationState.isRunning}
-            style={{ width: '50px', padding: '2px', fontSize: '11px', border: '1px solid #d1d5db', borderRadius: '3px' }}
+            className="settings-input"
           />
         </div>
       </div>
       
       {/* Status */}
-      <div style={{ fontSize: '11px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="status-section">
         <div>
           Step: {simulationState.currentStep} / {simulationState.maxSteps} | 
           Status: {simulationState.isRunning ? 'Running' : simulationState.isPaused ? 'Paused' : 'Stopped'}

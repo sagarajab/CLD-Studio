@@ -1,5 +1,15 @@
 /* Status Bar Component Styles */
 
+/* Status Separator Styles */
+.status-separator {
+  width: 1px;
+  height: 16px;
+  background-color: #666666;
+  opacity: 0.7;
+  margin: 0;
+  border-radius: 0.5px;
+}
+
 /* Events Log */
 .events-log {
   width: 400px;
@@ -14,7 +24,7 @@
 .status-user-session-auth {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 4px;
   margin-right: 16px;
 }
 

@@ -1,0 +1,220 @@
+/* StateVectorModal Component Styles */
+
+/* Modal Container */
+.state-vector-modal {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.state-vector-modal.dragging {
+  cursor: grabbing;
+}
+
+.state-vector-modal.default {
+  cursor: default;
+}
+
+/* Modal Header */
+.state-vector-modal-header {
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.state-vector-modal-header:active {
+  cursor: grabbing;
+}
+
+/* Modal Title */
+.state-vector-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  pointer-events: none;
+}
+
+/* Close Button */
+.state-vector-modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #333;
+  transition: background-color 0.2s ease;
+}
+
+.state-vector-modal-close:hover {
+  background-color: #e9ecef;
+}
+
+/* Modal Content */
+.state-vector-modal-content {
+  flex: 1;
+  padding: 16px;
+  overflow: auto;
+}
+
+/* Description Text */
+.state-vector-description {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Table Container */
+.state-vector-table-container {
+  overflow: auto;
+}
+
+/* Table Styles */
+.state-vector-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.state-vector-table-header {
+  background-color: #f8f9fa;
+}
+
+.state-vector-table-header th {
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  text-align: left;
+  min-width: 120px;
+  color: #333;
+  font-weight: 600;
+}
+
+.state-vector-table-header th.center {
+  text-align: center;
+  min-width: 80px;
+}
+
+.state-vector-table-header th.highlighted {
+  background-color: #e3f2fd;
+}
+
+/* Table Row */
+.state-vector-table-row {
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Table Cell */
+.state-vector-table-cell {
+  padding: 8px;
+  border: 1px solid #dee2e6;
+  font-weight: 500;
+  color: #333;
+}
+
+.state-vector-table-cell.center {
+  text-align: center;
+  font-family: monospace;
+  color: #333;
+}
+
+.state-vector-table-cell.highlighted {
+  background-color: #f3f8ff;
+  color: #333;
+}
+
+/* Resize Handles */
+.state-vector-resize-handle {
+  position: absolute;
+  background-color: transparent;
+  z-index: 10;
+}
+
+.state-vector-resize-handle.top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: n-resize;
+}
+
+.state-vector-resize-handle.bottom {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: s-resize;
+}
+
+.state-vector-resize-handle.left {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: w-resize;
+}
+
+.state-vector-resize-handle.right {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  cursor: e-resize;
+}
+
+.state-vector-resize-handle.top-left {
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  cursor: nw-resize;
+}
+
+.state-vector-resize-handle.top-right {
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  cursor: ne-resize;
+}
+
+.state-vector-resize-handle.bottom-left {
+  bottom: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  cursor: sw-resize;
+}
+
+.state-vector-resize-handle.bottom-right {
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  cursor: se-resize;
+} 

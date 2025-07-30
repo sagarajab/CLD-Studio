@@ -1,0 +1,53 @@
+/* SimulationVisualization Component Styles */
+
+/* Debug Info Section */
+.simulation-debug-info {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+/* Chart Section Container */
+.chart-section {
+  margin-bottom: 20px;
+}
+
+/* Chart Section Title */
+.chart-section-title {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* Chart Container */
+.chart-container {
+  width: 100%;
+  height: 250px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+}
+
+/* Chart Container for Current Increments */
+.chart-container-increments {
+  width: 100%;
+  height: 200px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+}
+
+/* Chart Placeholder */
+.chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Description Text */
+.simulation-description {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 10px;
+} 

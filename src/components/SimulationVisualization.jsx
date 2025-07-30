@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import './SimulationVisualization.css'
 
 function SimulationVisualization() {
   const { nodes, simulationMode, simulationState } = useCLDStore()
@@ -56,21 +57,16 @@ function SimulationVisualization() {
         <h4>Node Values Over Time</h4>
         
         {/* Debug info */}
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
+        <div className="simulation-debug-info">
           Data points: {chartData.length} | Nodes: {nodes.length} | 
           History: {simulationState.valueHistory?.length || 0} | 
           Using: {simulationState.valueHistory?.length > 0 ? 'Simulation' : 'Test'} data
         </div>
         
         {/* Accumulated Values Chart */}
-        <div style={{ marginBottom: '20px' }}>
-          <h5 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#374151' }}>Accumulated Values</h5>
-          <div style={{ 
-            width: '100%', 
-            height: '250px', 
-            border: '1px solid #ddd',
-            backgroundColor: '#f9f9f9'
-          }}>
+        <div className="chart-section">
+          <h5 className="chart-section-title">Accumulated Values</h5>
+          <div className="chart-container">
             {chartData.length > 0 ? (
               <LineChart
                 width={window.innerWidth > 1200 ? 600 : 400}
@@ -143,16 +139,7 @@ function SimulationVisualization() {
                 })}
               </LineChart>
             ) : (
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                height: '100%',
-                color: '#666',
-                fontSize: '14px',
-                textAlign: 'center',
-                padding: '20px'
-              }}>
+              <div className="chart-placeholder">
                 {nodes.length > 0 ? 
                   'Sample data shown. Initialize and run a simulation to see real data.' : 
                   'No nodes available. Add nodes to see the chart.'
@@ -164,14 +151,9 @@ function SimulationVisualization() {
         
         {/* State Vector (Increments) Chart */}
         {simulationState.valueHistory?.length > 0 && (
-          <div>
-            <h5 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#374151' }}>Current Increments (State Vector)</h5>
-            <div style={{ 
-              width: '100%', 
-              height: '250px', 
-              border: '1px solid #ddd',
-              backgroundColor: '#f9f9f9'
-            }}>
+          <div className="chart-section">
+            <h5 className="chart-section-title">Current Increments (State Vector)</h5>
+            <div className="chart-container">
               <LineChart
                 width={window.innerWidth > 1200 ? 600 : 400}
                 height={230}
@@ -224,7 +206,7 @@ function SimulationVisualization() {
         )}
         
         <div className="chart-info">
-          <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '10px' }}>
+          <p className="simulation-description">
             Top chart shows accumulated values, bottom chart shows current increments (state vector) for each node over simulation steps
           </p>
         </div>

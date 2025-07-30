@@ -8,6 +8,7 @@ import PlotsModal from './PlotsModal'
 import { loadConfig } from '../config/appConfig'
 import appIcon from '../assets/app_icon.png'
 import tbtIcon from '../assets/tbt_icon.png'
+import './SysLoopHeader.css'
 
 function SysLoopHeader() {
   const { 
@@ -29,7 +30,7 @@ function SysLoopHeader() {
     setArrowWidth,
     setArrowTransparency,
     setArrowHeadSize,
-    resetGlobalStyles,
+
     updateSelectedNodeColor,
     updateSelectedEdgeColor,
     updateSelectedNodesColor,
@@ -44,11 +45,9 @@ function SysLoopHeader() {
     setDiagramName,
     showGrid,
     toggleGrid,
-    viewTransform,
-    updateViewTransform,
+
     resetView,
-    panningMode,
-    togglePanningMode,
+
     arrowDrawingMode,
     toggleArrowDrawingMode,
     simulationState,
@@ -106,11 +105,7 @@ function SysLoopHeader() {
     loadDiagram()
   }
 
-  const handleClear = () => {
-    if (window.confirm('Clear diagram?')) {
-      clearDiagram()
-    }
-  }
+
 
 
 
@@ -254,9 +249,7 @@ function SysLoopHeader() {
     }
   }
 
-  const handleResetStyles = () => {
-    resetGlobalStyles()
-  }
+
 
   // Simulation functions
   const handleStartSimulation = () => {
@@ -289,16 +282,7 @@ function SysLoopHeader() {
     setPerturbationValue(clampedValue)
   }
 
-  // Zoom, Pan, and Clear Canvas handlers
-  const handleZoomIn = () => {
-    const newScale = Math.min(viewTransform.scale * 1.2, 3.0) // Max zoom 300%
-    updateViewTransform({ scale: newScale })
-  }
 
-  const handleZoomOut = () => {
-    const newScale = Math.max(viewTransform.scale / 1.2, 0.1) // Min zoom 10%
-    updateViewTransform({ scale: newScale })
-  }
 
   const handleResetView = () => {
     resetView()
@@ -430,6 +414,18 @@ function SysLoopHeader() {
       disabled: redoStack.length === 0
     },
     { 
+      label: 'Reset View', 
+      action: handleResetView, 
+      icon: RefreshCw,
+      title: 'Reset View (Fit to Canvas)' 
+    },
+    { 
+      label: 'Clear Canvas', 
+      action: handleClearCanvas, 
+      icon: Trash,
+      title: 'Clear Canvas' 
+    },
+    { 
       label: 'Node Color', 
       type: 'nodeColor', 
       action: handleNodeColorClick,
@@ -446,25 +442,6 @@ function SysLoopHeader() {
       title: 'Arrow Color'
     },
     { 
-      label: 'Design Settings', 
-      type: 'designSettings', 
-      dropdownAction: handleDesignSettingsDropdownToggle,
-      icon: DraftingCompass,
-      title: 'Global Design Settings' 
-    },
-    { 
-      label: 'Reset View', 
-      action: handleResetView, 
-      icon: RefreshCw,
-      title: 'Reset View (Fit to Canvas)' 
-    },
-    { 
-      label: 'Show Grid', 
-      action: toggleGrid, 
-      icon: Grid3x3,
-      title: showGrid ? 'Hide Grid' : 'Show Grid' 
-    },
-    { 
       label: 'Arrow Mode', 
       action: toggleArrowDrawingMode, 
       icon: SplinePointer,
@@ -472,10 +449,17 @@ function SysLoopHeader() {
       disabled: simulationMode
     },
     { 
-      label: 'Clear Canvas', 
-      action: handleClearCanvas, 
-      icon: Trash,
-      title: 'Clear Canvas' 
+      label: 'Design Settings', 
+      type: 'designSettings', 
+      dropdownAction: handleDesignSettingsDropdownToggle,
+      icon: DraftingCompass,
+      title: 'Global Design Settings' 
+    },
+    { 
+      label: 'Show Grid', 
+      action: toggleGrid, 
+      icon: Grid3x3,
+      title: showGrid ? 'Hide Grid' : 'Show Grid' 
     }
   ]
 
@@ -539,7 +523,8 @@ function SysLoopHeader() {
       {/* Menu Bar - Centered */}
       <div className="header-center">
         <div className="menu-bar">
-          {menuItems.map((item, index) => (
+          {/* Group 1: File Operations */}
+          {menuItems.slice(0, 3).map((item, index) => (
             <div key={index} className="menu-item">
               {item.type === 'color' ? (
                 <div className="color-picker-container">
@@ -552,8 +537,8 @@ function SysLoopHeader() {
                   />
                 </div>
               ) : item.type === 'nodeColor' ? (
-                <div className="menu-item" style={{ position: 'relative' }}>
-                  <div className="node-color-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div className="menu-item menu-item-relative">
+                  <div className="node-color-container node-color-container-relative">
                     <button
                       className="menu-icon-btn"
                       onClick={item.action}
@@ -573,49 +558,23 @@ function SysLoopHeader() {
                   </div>
                   {/* Accent line showing currently selected color - always visible */}
                   <div 
-                    className="accent-line"
+                    className="accent-line accent-line-node"
                     style={{
-                      position: 'absolute',
-                      bottom: '-3px',
-                      left: '0',
-                      width: '32px', // Width of the main icon button only
-                      height: '3px',
-                      backgroundColor: getCurrentNodeColor(),
-                      borderRadius: '1px',
-                      opacity: 1,
-                      zIndex: 999
+                      backgroundColor: getCurrentNodeColor()
                     }}
                   />
                   {activeDropdown === 'nodeColor' && (
                     <div 
                       className="node-color-dropdown" 
                       onClick={(e) => e.stopPropagation()}
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: '0',
-                        backgroundColor: 'white',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        padding: '8px',
-                        zIndex: 1000,
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(5, 1fr)',
-                        gap: '4px',
-                        minWidth: '200px'
-                      }}
                     >
                       {predefinedColors.map((color, colorIndex) => (
                         <button
                           key={colorIndex}
                           onClick={() => handleNodeColorSelect(color)}
+                          className="color-button"
                           style={{
-                            width: '24px',
-                            height: '24px',
-                            backgroundColor: color,
-                            border: '1px solid #ccc',
-                            borderRadius: '3px',
-                            cursor: 'pointer'
+                            backgroundColor: color
                           }}
                           title={color}
                         />
@@ -624,8 +583,8 @@ function SysLoopHeader() {
                   )}
                 </div>
               ) : item.type === 'arrowColor' ? (
-                <div className="menu-item" style={{ position: 'relative' }}>
-                  <div className="arrow-color-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div className="menu-item menu-item-relative">
+                  <div className="arrow-color-container arrow-color-container-relative">
                     <button
                       className="menu-icon-btn"
                       onClick={item.action}
@@ -645,49 +604,23 @@ function SysLoopHeader() {
                   </div>
                   {/* Accent line showing currently selected color - always visible */}
                   <div 
-                    className="accent-line"
+                    className="accent-line accent-line-arrow"
                     style={{
-                      position: 'absolute',
-                      bottom: '-3px',
-                      left: '0',
-                      width: '32px', // Width of the main icon button only
-                      height: '3px',
-                      backgroundColor: getCurrentArrowColor(),
-                      borderRadius: '1px',
-                      opacity: 1,
-                      zIndex: 999
+                      backgroundColor: getCurrentArrowColor()
                     }}
                   />
                   {activeDropdown === 'arrowColor' && (
                     <div 
                       className="arrow-color-dropdown" 
                       onClick={(e) => e.stopPropagation()}
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: '0',
-                        backgroundColor: 'white',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        padding: '8px',
-                        zIndex: 1000,
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(5, 1fr)',
-                        gap: '4px',
-                        minWidth: '200px'
-                      }}
                     >
                       {predefinedColors.map((color, colorIndex) => (
                         <button
                           key={colorIndex}
                           onClick={() => handleArrowColorSelect(color)}
+                          className="color-button"
                           style={{
-                            width: '24px',
-                            height: '24px',
-                            backgroundColor: color,
-                            border: '1px solid #ccc',
-                            borderRadius: '3px',
-                            cursor: 'pointer'
+                            backgroundColor: color
                           }}
                           title={color}
                         />
@@ -711,28 +644,9 @@ function SysLoopHeader() {
                   </select>
                 </div>
               ) : item.type === 'slider' ? (
-                <div className="slider-container" style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  alignItems: 'center', 
-                  gap: '4px',
-                  minWidth: '80px',
-                  maxWidth: '100px'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    width: '100%'
-                  }}>
-                    <div className={item.iconClass} style={{ 
-                      width: '16px',
-                      height: '16px',
-                      minWidth: '16px',
-                      backgroundSize: 'contain',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'center'
-                    }}></div>
+                <div className="slider-container slider-container-vertical">
+                  <div className="slider-input-container">
+                    <div className={`${item.iconClass} slider-icon`}></div>
                     <input
                       type="range"
                       min={item.min}
@@ -740,39 +654,18 @@ function SysLoopHeader() {
                       step={item.step}
                       value={item.value}
                       onChange={(e) => item.action(e.target.value)}
-                      className="slider-input"
+                      className="slider-input slider-input-custom"
                       title={item.title}
-                      style={{
-                        flex: 1,
-                        height: '2px',
-                        borderRadius: '1px',
-                        background: '#d1d5db',
-                        outline: 'none',
-                        cursor: 'pointer',
-                        minWidth: '40px',
-                        opacity: '0.7',
-                        transition: 'opacity 0.2s ease'
-                      }}
                     />
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    width: '100%',
-                    paddingLeft: '22px' // 16px icon width + 6px gap
-                  }}>
-                    <span style={{ 
-                      fontSize: '9px', 
-                      color: '#6b7280',
-                      fontWeight: '500',
-                      textAlign: 'center'
-                    }}>
+                  <div className="slider-value-display">
+                    <span className="slider-value-text">
                       {parseFloat(item.value).toFixed(1)}
                     </span>
                   </div>
                 </div>
               ) : item.type === 'designSettings' ? (
-                <div className="design-settings-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div className="design-settings-container design-settings-container-relative">
                   <button
                     className="menu-icon-btn"
                     onClick={item.dropdownAction}
@@ -784,57 +677,33 @@ function SysLoopHeader() {
                     <div 
                       className="design-settings-dropdown" 
                       onClick={(e) => e.stopPropagation()}
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: '0',
-                        backgroundColor: 'white',
-                        border: '1px solid #ccc',
-                        borderRadius: '8px',
-                        padding: '16px',
-                        zIndex: 1000,
-                        minWidth: '280px',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                      }}
                     >
-                      <div style={{ marginBottom: '16px' }}>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                      <div className="form-section">
+                        <h4 className="form-section-title">
                           Node Settings
                         </h4>
-                        <div style={{ marginBottom: '12px' }}>
-                          <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                        <div className="form-group">
+                          <label className="form-label">
                             Font Family
                           </label>
                           <select
                             value={globalStyles.nodeFont}
                             onChange={(e) => handleNodeFontChange(e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '6px 8px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '12px'
-                            }}
+                            className="form-select"
                           >
                             {['Arial', 'Helvetica', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Nunito', 'Ubuntu', 'Segoe UI', 'SF Pro Display', 'Times New Roman', 'Georgia', 'Verdana'].map((font) => (
                               <option key={font} value={font}>{font}</option>
                             ))}
                           </select>
                         </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                        <div className="form-group">
+                          <label className="form-label">
                             Font Size
                           </label>
                           <select
                             value={globalStyles.nodeFontSize}
                             onChange={(e) => handleNodeFontSizeChange(e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '6px 8px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '4px',
-                              fontSize: '12px'
-                            }}
+                            className="form-select"
                           >
                             {[10, 12, 14, 16, 18, 20, 24].map((size) => (
                               <option key={size} value={size}>{size}px</option>
@@ -843,12 +712,12 @@ function SysLoopHeader() {
                         </div>
                       </div>
                       
-                      <div>
-                        <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                      <div className="form-section">
+                        <h4 className="form-section-title">
                           Arrow Settings
                         </h4>
-                        <div style={{ marginBottom: '12px' }}>
-                          <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                        <div className="form-group">
+                          <label className="form-label">
                             Stroke Width: {globalStyles.arrowWidth}
                           </label>
                           <input
@@ -858,18 +727,11 @@ function SysLoopHeader() {
                             step="0.1"
                             value={globalStyles.arrowWidth}
                             onChange={(e) => handleArrowWidthChange(e.target.value)}
-                            style={{
-                              width: '100%',
-                              height: '4px',
-                              borderRadius: '2px',
-                              background: '#e5e7eb',
-                              outline: 'none',
-                              cursor: 'pointer'
-                            }}
+                            className="form-range"
                           />
                         </div>
-                        <div style={{ marginBottom: '12px' }}>
-                          <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                        <div className="form-group">
+                          <label className="form-label">
                             Transparency: {globalStyles.arrowTransparency}
                           </label>
                           <input
@@ -879,18 +741,11 @@ function SysLoopHeader() {
                             step="0.1"
                             value={globalStyles.arrowTransparency}
                             onChange={(e) => handleArrowTransparencyChange(e.target.value)}
-                            style={{
-                              width: '100%',
-                              height: '4px',
-                              borderRadius: '2px',
-                              background: '#e5e7eb',
-                              outline: 'none',
-                              cursor: 'pointer'
-                            }}
+                            className="form-range"
                           />
                         </div>
-                        <div>
-                          <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                        <div className="form-group">
+                          <label className="form-label">
                             Head Size: {globalStyles.arrowHeadSize}
                           </label>
                           <input
@@ -900,14 +755,7 @@ function SysLoopHeader() {
                             step="0.1"
                             value={globalStyles.arrowHeadSize}
                             onChange={(e) => handleArrowHeadSizeChange(e.target.value)}
-                            style={{
-                              width: '100%',
-                              height: '4px',
-                              borderRadius: '2px',
-                              background: '#e5e7eb',
-                              outline: 'none',
-                              cursor: 'pointer'
-                            }}
+                            className="form-range"
                           />
                         </div>
                       </div>
@@ -915,7 +763,7 @@ function SysLoopHeader() {
                   )}
                 </div>
               ) : item.type === 'export' ? (
-                <div className="export-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div className="export-container export-container-relative">
                   <button
                     className="menu-icon-btn"
                     onClick={item.dropdownAction}
@@ -927,41 +775,10 @@ function SysLoopHeader() {
                     <div 
                       className="export-dropdown" 
                       onClick={(e) => e.stopPropagation()}
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: '0',
-                        backgroundColor: 'white',
-                        border: '1px solid #ccc',
-                        borderRadius: '8px',
-                        padding: '8px',
-                        zIndex: 1000,
-                        minWidth: '160px',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                      }}
                     >
                       <button
                         onClick={handleExportAsPNG}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: '#374151',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f3f4f6'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent'
-                        }}
+                        className="dropdown-button"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -972,26 +789,7 @@ function SysLoopHeader() {
                       </button>
                       <button
                         onClick={handleExportAsJPEG}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: '#374151',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f3f4f6'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent'
-                        }}
+                        className="dropdown-button"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -1002,26 +800,7 @@ function SysLoopHeader() {
                       </button>
                       <button
                         onClick={handleExportAsSVG}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: '#374151',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f3f4f6'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent'
-                        }}
+                        className="dropdown-button"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -1034,26 +813,7 @@ function SysLoopHeader() {
                       </button>
                       <button
                         onClick={handleExportAsPDF}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: '#374151',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f3f4f6'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent'
-                        }}
+                        className="dropdown-button"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -1064,33 +824,10 @@ function SysLoopHeader() {
                         </svg>
                         Export as PDF
                       </button>
-                      <div style={{
-                        height: '1px',
-                        backgroundColor: '#e5e7eb',
-                        margin: '4px 0'
-                      }}></div>
+                      <div className="dropdown-divider"></div>
                       <button
                         onClick={handleExportDetailedData}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: '#374151',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f3f4f6'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent'
-                        }}
+                        className="dropdown-button"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -1103,26 +840,7 @@ function SysLoopHeader() {
                       </button>
                       <button
                         onClick={handleExportMatrix}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: '#374151',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f3f4f6'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent'
-                        }}
+                        className="dropdown-button"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M3 3h18v18H3z"/>
@@ -1136,7 +854,7 @@ function SysLoopHeader() {
                   )}
                 </div>
               ) : item.type === 'open' ? (
-                <div className="open-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <div className="open-container open-container-relative">
                   <button
                     className="menu-icon-btn"
                     onClick={item.dropdownAction}
@@ -1148,41 +866,10 @@ function SysLoopHeader() {
                     <div 
                       className="open-dropdown" 
                       onClick={(e) => e.stopPropagation()}
-                      style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: '0',
-                        backgroundColor: 'white',
-                        border: '1px solid #ccc',
-                        borderRadius: '8px',
-                        padding: '8px',
-                        zIndex: 1000,
-                        minWidth: '160px',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                      }}
                     >
                       <button
                         onClick={handleLoad}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: '#374151',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f3f4f6'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent'
-                        }}
+                        className="dropdown-button"
                       >
                         <Laptop size={14} />
                         From PC
@@ -1192,26 +879,7 @@ function SysLoopHeader() {
                           // Handle examples - you can implement this later
                           closeAllDropdowns()
                         }}
-                        style={{
-                          width: '100%',
-                          padding: '8px 12px',
-                          border: 'none',
-                          background: 'transparent',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: '#374151',
-                          borderRadius: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = '#f3f4f6'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = 'transparent'
-                        }}
+                        className="dropdown-button"
                       >
                         <Database size={14} />
                         Examples
@@ -1221,21 +889,776 @@ function SysLoopHeader() {
                 </div>
               ) : (
                 <button
-                  className={`menu-icon-btn ${item.label === 'Arrow Mode' && arrowDrawingMode ? 'arrow-mode-active' : ''}`}
+                  className={`menu-icon-btn ${item.label === 'Arrow Mode' && arrowDrawingMode ? 'arrow-mode-active' : ''} ${item.disabled ? 'menu-button-disabled' : 'menu-button-enabled'}`}
                   onClick={item.action}
                   disabled={item.disabled}
                   title={item.title}
-                  style={{
-                    opacity: item.disabled ? 0.4 : 1,
-                    cursor: item.disabled ? 'not-allowed' : 'pointer',
-                    padding: '6px'
-                  }}
                 >
                   <item.icon className="menu-icon" />
                 </button>
               )}
             </div>
+          ))}
+          
+          {/* Separator between File Operations and Edit Actions */}
+          <div className="menu-separator"></div>
+          
+          {/* Group 2: Edit Actions */}
+          {menuItems.slice(3, 7).map((item, index) => (
+            <div key={index + 3} className="menu-item">
+              {item.type === 'color' ? (
+                <div className="color-picker-container">
+                  <input
+                    type="color"
+                    value={item.value}
+                    onChange={(e) => item.action(e.target.value)}
+                    className="color-picker-btn"
+                    title={item.title}
+                  />
+                </div>
+              ) : item.type === 'nodeColor' ? (
+                <div className="menu-item menu-item-relative">
+                  <div className="node-color-container node-color-container-relative">
+                    <button
+                      className="menu-icon-btn"
+                      onClick={item.action}
+                      title={item.title}
+                    >
+                      <item.icon className="menu-icon" />
+                    </button>
+                    <button
+                      className="dropdown-arrow-btn"
+                      onClick={item.dropdownAction}
+                      title="Color options"
+                    >
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+                        <path d="M0 2l4 4 4-4z"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Accent line showing currently selected color - always visible */}
+                  <div 
+                    className="accent-line accent-line-node"
+                    style={{
+                      backgroundColor: getCurrentNodeColor()
+                    }}
+                  />
+                  {activeDropdown === 'nodeColor' && (
+                    <div 
+                      className="node-color-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {predefinedColors.map((color, colorIndex) => (
+                        <button
+                          key={colorIndex}
+                          onClick={() => handleNodeColorSelect(color)}
+                          className="color-button"
+                          style={{
+                            backgroundColor: color
+                          }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : item.type === 'arrowColor' ? (
+                <div className="menu-item menu-item-relative">
+                  <div className="arrow-color-container arrow-color-container-relative">
+                    <button
+                      className="menu-icon-btn"
+                      onClick={item.action}
+                      title={item.title}
+                    >
+                      <item.icon className="menu-icon" />
+                    </button>
+                    <button
+                      className="dropdown-arrow-btn"
+                      onClick={item.dropdownAction}
+                      title="Color options"
+                    >
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+                        <path d="M0 2l4 4 4-4z"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Accent line showing currently selected color - always visible */}
+                  <div 
+                    className="accent-line accent-line-arrow"
+                    style={{
+                      backgroundColor: getCurrentArrowColor()
+                    }}
+                  />
+                  {activeDropdown === 'arrowColor' && (
+                    <div 
+                      className="arrow-color-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {predefinedColors.map((color, colorIndex) => (
+                        <button
+                          key={colorIndex}
+                          onClick={() => handleArrowColorSelect(color)}
+                          className="color-button"
+                          style={{
+                            backgroundColor: color
+                          }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : item.type === 'select' ? (
+                <div className="select-container">
+                  <select
+                    value={item.value}
+                    onChange={(e) => item.action(e.target.value)}
+                    className="select-btn"
+                    title={item.title}
+                  >
+                    {item.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
                     ))}
+                  </select>
+                </div>
+              ) : item.type === 'slider' ? (
+                <div className="slider-container slider-container-vertical">
+                  <div className="slider-input-container">
+                    <div className={`${item.iconClass} slider-icon`}></div>
+                    <input
+                      type="range"
+                      min={item.min}
+                      max={item.max}
+                      step={item.step}
+                      value={item.value}
+                      onChange={(e) => item.action(e.target.value)}
+                      className="slider-input slider-input-custom"
+                      title={item.title}
+                    />
+                  </div>
+                  <div className="slider-value-display">
+                    <span className="slider-value-text">
+                      {parseFloat(item.value).toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+              ) : item.type === 'designSettings' ? (
+                <div className="design-settings-container design-settings-container-relative">
+                  <button
+                    className="menu-icon-btn"
+                    onClick={item.dropdownAction}
+                    title={item.title}
+                  >
+                    <item.icon className="menu-icon" />
+                  </button>
+                  {activeDropdown === 'designSettings' && (
+                    <div 
+                      className="design-settings-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="form-section">
+                        <h4 className="form-section-title">
+                          Node Settings
+                        </h4>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Font Family
+                          </label>
+                          <select
+                            value={globalStyles.nodeFont}
+                            onChange={(e) => handleNodeFontChange(e.target.value)}
+                            className="form-select"
+                          >
+                            {['Arial', 'Helvetica', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Nunito', 'Ubuntu', 'Segoe UI', 'SF Pro Display', 'Times New Roman', 'Georgia', 'Verdana'].map((font) => (
+                              <option key={font} value={font}>{font}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Font Size
+                          </label>
+                          <select
+                            value={globalStyles.nodeFontSize}
+                            onChange={(e) => handleNodeFontSizeChange(e.target.value)}
+                            className="form-select"
+                          >
+                            {[10, 12, 14, 16, 18, 20, 24].map((size) => (
+                              <option key={size} value={size}>{size}px</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="form-section">
+                        <h4 className="form-section-title">
+                          Arrow Settings
+                        </h4>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Stroke Width: {globalStyles.arrowWidth}
+                          </label>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="5"
+                            step="0.1"
+                            value={globalStyles.arrowWidth}
+                            onChange={(e) => handleArrowWidthChange(e.target.value)}
+                            className="form-range"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Transparency: {globalStyles.arrowTransparency}
+                          </label>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="1"
+                            step="0.1"
+                            value={globalStyles.arrowTransparency}
+                            onChange={(e) => handleArrowTransparencyChange(e.target.value)}
+                            className="form-range"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Head Size: {globalStyles.arrowHeadSize}
+                          </label>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="5"
+                            step="0.1"
+                            value={globalStyles.arrowHeadSize}
+                            onChange={(e) => handleArrowHeadSizeChange(e.target.value)}
+                            className="form-range"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : item.type === 'export' ? (
+                <div className="export-container export-container-relative">
+                  <button
+                    className="menu-icon-btn"
+                    onClick={item.dropdownAction}
+                    title={item.title}
+                  >
+                    <item.icon className="menu-icon" />
+                  </button>
+                  {activeDropdown === 'export' && (
+                    <div 
+                      className="export-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={handleExportAsPNG}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21,15 16,10 5,21"/>
+                        </svg>
+                        Export as PNG
+                      </button>
+                      <button
+                        onClick={handleExportAsJPEG}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21,15 16,10 5,21"/>
+                        </svg>
+                        Export as JPEG
+                      </button>
+                      <button
+                        onClick={handleExportAsSVG}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14,2 14,8 20,8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10,9 9,9 8,9"/>
+                        </svg>
+                        Export as SVG
+                      </button>
+                      <button
+                        onClick={handleExportAsPDF}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14,2 14,8 20,8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10,9 9,9 8,9"/>
+                        </svg>
+                        Export as PDF
+                      </button>
+                      <div className="dropdown-divider"></div>
+                      <button
+                        onClick={handleExportDetailedData}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14,2 14,8 20,8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10,9 9,9 8,9"/>
+                        </svg>
+                        Export Detailed Data (JSON)
+                      </button>
+                      <button
+                        onClick={handleExportMatrix}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 3h18v18H3z"/>
+                          <path d="M9 9h6v6H9z"/>
+                          <path d="M15 3v18"/>
+                          <path d="M3 15h18"/>
+                        </svg>
+                        Export Matrix (CSV)
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : item.type === 'open' ? (
+                <div className="open-container open-container-relative">
+                  <button
+                    className="menu-icon-btn"
+                    onClick={item.dropdownAction}
+                    title={item.title}
+                  >
+                    <item.icon className="menu-icon" />
+                  </button>
+                  {activeDropdown === 'open' && (
+                    <div 
+                      className="open-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={handleLoad}
+                        className="dropdown-button"
+                      >
+                        <Laptop size={14} />
+                        From PC
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Handle examples - you can implement this later
+                          closeAllDropdowns()
+                        }}
+                        className="dropdown-button"
+                      >
+                        <Database size={14} />
+                        Examples
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  className={`menu-icon-btn ${item.label === 'Arrow Mode' && arrowDrawingMode ? 'arrow-mode-active' : ''} ${item.disabled ? 'menu-button-disabled' : 'menu-button-enabled'}`}
+                  onClick={item.action}
+                  disabled={item.disabled}
+                  title={item.title}
+                >
+                  <item.icon className="menu-icon" />
+                </button>
+              )}
+            </div>
+          ))}
+          
+          {/* Separator between Edit Actions and Drawing Tools */}
+          <div className="menu-separator"></div>
+          
+          {/* Group 3: Drawing Tools */}
+          {menuItems.slice(7, 12).map((item, index) => (
+            <div key={index + 7} className="menu-item">
+              {item.type === 'color' ? (
+                <div className="color-picker-container">
+                  <input
+                    type="color"
+                    value={item.value}
+                    onChange={(e) => item.action(e.target.value)}
+                    className="color-picker-btn"
+                    title={item.title}
+                  />
+                </div>
+              ) : item.type === 'nodeColor' ? (
+                <div className="menu-item menu-item-relative">
+                  <div className="node-color-container node-color-container-relative">
+                    <button
+                      className="menu-icon-btn"
+                      onClick={item.action}
+                      title={item.title}
+                    >
+                      <item.icon className="menu-icon" />
+                    </button>
+                    <button
+                      className="dropdown-arrow-btn"
+                      onClick={item.dropdownAction}
+                      title="Color options"
+                    >
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+                        <path d="M0 2l4 4 4-4z"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Accent line showing currently selected color - always visible */}
+                  <div 
+                    className="accent-line accent-line-node"
+                    style={{
+                      backgroundColor: getCurrentNodeColor()
+                    }}
+                  />
+                  {activeDropdown === 'nodeColor' && (
+                    <div 
+                      className="node-color-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {predefinedColors.map((color, colorIndex) => (
+                        <button
+                          key={colorIndex}
+                          onClick={() => handleNodeColorSelect(color)}
+                          className="color-button"
+                          style={{
+                            backgroundColor: color
+                          }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : item.type === 'arrowColor' ? (
+                <div className="menu-item menu-item-relative">
+                  <div className="arrow-color-container arrow-color-container-relative">
+                    <button
+                      className="menu-icon-btn"
+                      onClick={item.action}
+                      title={item.title}
+                    >
+                      <item.icon className="menu-icon" />
+                    </button>
+                    <button
+                      className="dropdown-arrow-btn"
+                      onClick={item.dropdownAction}
+                      title="Color options"
+                    >
+                      <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+                        <path d="M0 2l4 4 4-4z"/>
+                      </svg>
+                    </button>
+                  </div>
+                  {/* Accent line showing currently selected color - always visible */}
+                  <div 
+                    className="accent-line accent-line-arrow"
+                    style={{
+                      backgroundColor: getCurrentArrowColor()
+                    }}
+                  />
+                  {activeDropdown === 'arrowColor' && (
+                    <div 
+                      className="arrow-color-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {predefinedColors.map((color, colorIndex) => (
+                        <button
+                          key={colorIndex}
+                          onClick={() => handleArrowColorSelect(color)}
+                          className="color-button"
+                          style={{
+                            backgroundColor: color
+                          }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : item.type === 'select' ? (
+                <div className="select-container">
+                  <select
+                    value={item.value}
+                    onChange={(e) => item.action(e.target.value)}
+                    className="select-btn"
+                    title={item.title}
+                  >
+                    {item.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : item.type === 'slider' ? (
+                <div className="slider-container slider-container-vertical">
+                  <div className="slider-input-container">
+                    <div className={`${item.iconClass} slider-icon`}></div>
+                    <input
+                      type="range"
+                      min={item.min}
+                      max={item.max}
+                      step={item.step}
+                      value={item.value}
+                      onChange={(e) => item.action(e.target.value)}
+                      className="slider-input slider-input-custom"
+                      title={item.title}
+                    />
+                  </div>
+                  <div className="slider-value-display">
+                    <span className="slider-value-text">
+                      {parseFloat(item.value).toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+              ) : item.type === 'designSettings' ? (
+                <div className="design-settings-container design-settings-container-relative">
+                  <button
+                    className="menu-icon-btn"
+                    onClick={item.dropdownAction}
+                    title={item.title}
+                  >
+                    <item.icon className="menu-icon" />
+                  </button>
+                  {activeDropdown === 'designSettings' && (
+                    <div 
+                      className="design-settings-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="form-section">
+                        <h4 className="form-section-title">
+                          Node Settings
+                        </h4>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Font Family
+                          </label>
+                          <select
+                            value={globalStyles.nodeFont}
+                            onChange={(e) => handleNodeFontChange(e.target.value)}
+                            className="form-select"
+                          >
+                            {['Arial', 'Helvetica', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Nunito', 'Ubuntu', 'Segoe UI', 'SF Pro Display', 'Times New Roman', 'Georgia', 'Verdana'].map((font) => (
+                              <option key={font} value={font}>{font}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Font Size
+                          </label>
+                          <select
+                            value={globalStyles.nodeFontSize}
+                            onChange={(e) => handleNodeFontSizeChange(e.target.value)}
+                            className="form-select"
+                          >
+                            {[10, 12, 14, 16, 18, 20, 24].map((size) => (
+                              <option key={size} value={size}>{size}px</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="form-section">
+                        <h4 className="form-section-title">
+                          Arrow Settings
+                        </h4>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Stroke Width: {globalStyles.arrowWidth}
+                          </label>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="5"
+                            step="0.1"
+                            value={globalStyles.arrowWidth}
+                            onChange={(e) => handleArrowWidthChange(e.target.value)}
+                            className="form-range"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Transparency: {globalStyles.arrowTransparency}
+                          </label>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="1"
+                            step="0.1"
+                            value={globalStyles.arrowTransparency}
+                            onChange={(e) => handleArrowTransparencyChange(e.target.value)}
+                            className="form-range"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">
+                            Head Size: {globalStyles.arrowHeadSize}
+                          </label>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="5"
+                            step="0.1"
+                            value={globalStyles.arrowHeadSize}
+                            onChange={(e) => handleArrowHeadSizeChange(e.target.value)}
+                            className="form-range"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : item.type === 'export' ? (
+                <div className="export-container export-container-relative">
+                  <button
+                    className="menu-icon-btn"
+                    onClick={item.dropdownAction}
+                    title={item.title}
+                  >
+                    <item.icon className="menu-icon" />
+                  </button>
+                  {activeDropdown === 'export' && (
+                    <div 
+                      className="export-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={handleExportAsPNG}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21,15 16,10 5,21"/>
+                        </svg>
+                        Export as PNG
+                      </button>
+                      <button
+                        onClick={handleExportAsJPEG}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                          <circle cx="8.5" cy="8.5" r="1.5"/>
+                          <polyline points="21,15 16,10 5,21"/>
+                        </svg>
+                        Export as JPEG
+                      </button>
+                      <button
+                        onClick={handleExportAsSVG}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14,2 14,8 20,8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10,9 9,9 8,9"/>
+                        </svg>
+                        Export as SVG
+                      </button>
+                      <button
+                        onClick={handleExportAsPDF}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14,2 14,8 20,8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10,9 9,9 8,9"/>
+                        </svg>
+                        Export as PDF
+                      </button>
+                      <div className="dropdown-divider"></div>
+                      <button
+                        onClick={handleExportDetailedData}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14,2 14,8 20,8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                          <polyline points="10,9 9,9 8,9"/>
+                        </svg>
+                        Export Detailed Data (JSON)
+                      </button>
+                      <button
+                        onClick={handleExportMatrix}
+                        className="dropdown-button"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 3h18v18H3z"/>
+                          <path d="M9 9h6v6H9z"/>
+                          <path d="M15 3v18"/>
+                          <path d="M3 15h18"/>
+                        </svg>
+                        Export Matrix (CSV)
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : item.type === 'open' ? (
+                <div className="open-container open-container-relative">
+                  <button
+                    className="menu-icon-btn"
+                    onClick={item.dropdownAction}
+                    title={item.title}
+                  >
+                    <item.icon className="menu-icon" />
+                  </button>
+                  {activeDropdown === 'open' && (
+                    <div 
+                      className="open-dropdown" 
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={handleLoad}
+                        className="dropdown-button"
+                      >
+                        <Laptop size={14} />
+                        From PC
+                      </button>
+                      <button
+                        onClick={() => {
+                          // Handle examples - you can implement this later
+                          closeAllDropdowns()
+                        }}
+                        className="dropdown-button"
+                      >
+                        <Database size={14} />
+                        Examples
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  className={`menu-icon-btn ${item.label === 'Arrow Mode' && arrowDrawingMode ? 'arrow-mode-active' : ''} ${item.disabled ? 'menu-button-disabled' : 'menu-button-enabled'}`}
+                  onClick={item.action}
+                  disabled={item.disabled}
+                  title={item.title}
+                >
+                  <item.icon className="menu-icon" />
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       </div>
       
@@ -1243,51 +1666,26 @@ function SysLoopHeader() {
     
       
       {/* Simulation Controls */}
-      <div className="header-center" style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '8px',
-        paddingLeft: '16px',
-        marginLeft: '16px'
-      }}>
+      <div className="header-center header-center-simulation">
         
         {/* Simulation Controls Pill */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          background: 'rgba(255, 255, 255, 0.05)',
-          borderRadius: '20px',
-          padding: '4px 8px',
-          border: '1px solid rgba(255, 255, 255, 0.1)'
-        }}>
+        <div className="simulation-controls-pill">
           {/* Simulation Mode Toggle */}
           <button
             onClick={toggleSimulationMode}
-            className={`menu-icon-btn ${simulationMode ? 'simulation-active' : ''}`}
+            className={`menu-icon-btn ${simulationMode ? 'simulation-active' : ''} simulation-button-enabled`}
             title={simulationMode ? 'Disable Simulation Mode' : 'Enable Simulation Mode'}
-            style={{
-              border: 'none',
-              borderRadius: '4px',
-              padding: '6px',
-              marginRight: '0'
-            }}
           >
             <Gamepad2 className="menu-icon" />
           </button>
           
           {/* Settings Dropdown - moved to second position */}
-          <div className="sim-settings-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div className="sim-settings-container sim-settings-container-relative">
             <button
-              className="menu-icon-btn"
+              className={`menu-icon-btn ${!simulationMode ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
               onClick={toggleSimSettingsDropdown}
               disabled={!simulationMode}
               title="Simulation settings"
-              style={{
-                opacity: !simulationMode ? 0.5 : 1,
-                borderRadius: '4px',
-                padding: '6px'
-              }}
             >
               <Settings2 className="menu-icon" />
             </button>
@@ -1295,41 +1693,22 @@ function SysLoopHeader() {
               <div 
                 className="sim-settings-dropdown" 
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: '0',
-                  backgroundColor: 'white',
-                  border: '1px solid #ccc',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  zIndex: 1000,
-                  minWidth: '280px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                }}
               >
-                <div style={{ marginBottom: '16px' }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                <div className="form-section">
+                  <h4 className="form-section-title">
                     Simulation Settings
                   </h4>
                   
                   {/* Node Selection */}
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                  <div className="form-group">
+                    <label className="form-label">
                       Select Node
                     </label>
                     <select 
                       value={selectedSimNode} 
                       onChange={(e) => setSelectedSimNode(e.target.value)}
                       disabled={simulationState.isRunning}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        background: 'white'
-                      }}
+                      className="form-select"
                     >
                       <option value="">Select node...</option>
                       {nodes.map(node => (
@@ -1341,8 +1720,8 @@ function SysLoopHeader() {
                   </div>
                   
                   {/* Perturbation Value */}
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                  <div className="form-group">
+                    <label className="form-label">
                       Perturbation Value
                     </label>
                     <input
@@ -1352,18 +1731,12 @@ function SysLoopHeader() {
                       value={perturbationValue}
                       onChange={(e) => handlePerturbationChange(parseInt(e.target.value))}
                       disabled={simulationState.isRunning}
-                      style={{
-                        width: '100%',
-                        padding: '6px 8px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '4px',
-                        fontSize: '12px'
-                      }}
+                      className="form-input"
                     />
                   </div>
                   
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                  <div className="form-group">
+                    <label className="form-label">
                       Speed: {Math.round(2000 / simulationState.stepDelay * 10) / 10}x
                     </label>
                     <input
@@ -1374,19 +1747,12 @@ function SysLoopHeader() {
                       value={Math.round(2000 / simulationState.stepDelay * 10) / 10}
                       onChange={(e) => updateSimulationSettings({ stepDelay: Math.round(2000 / parseFloat(e.target.value)) })}
                       disabled={simulationState.isRunning}
-                      style={{
-                        width: '100%',
-                        height: '6px',
-                        borderRadius: '3px',
-                        background: '#d1d5db',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
+                      className="simulation-range"
                     />
                   </div>
                   
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>
+                  <div className="form-group">
+                    <label className="form-label">
                       Max Steps: {simulationState.maxSteps}
                     </label>
                     <input
@@ -1397,14 +1763,7 @@ function SysLoopHeader() {
                       value={simulationState.maxSteps}
                       onChange={(e) => updateSimulationSettings({ maxSteps: parseInt(e.target.value) })}
                       disabled={simulationState.isRunning}
-                      style={{
-                        width: '100%',
-                        height: '6px',
-                        borderRadius: '3px',
-                        background: '#d1d5db',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
+                      className="simulation-range"
                     />
                   </div>
                   
@@ -1412,17 +1771,7 @@ function SysLoopHeader() {
                   <button
                     onClick={handleStartSimulation}
                     disabled={!selectedSimNode || simulationState.isRunning}
-                    style={{
-                      width: '100%',
-                      padding: '8px 12px',
-                      backgroundColor: '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      cursor: !selectedSimNode || simulationState.isRunning ? 'not-allowed' : 'pointer',
-                      opacity: !selectedSimNode || simulationState.isRunning ? 0.5 : 1
-                    }}
+                    className="initialize-button"
                   >
                     Initialize Simulation
                   </button>
@@ -1435,7 +1784,7 @@ function SysLoopHeader() {
           <button
             onClick={handlePlayWithAutoInit}
             disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
-            className="menu-icon-btn"
+            className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : simulationState.isRunning ? 'simulation-button-running' : 'simulation-button-enabled'}`}
             title={
               !simulationState.isInitialized ? "Initialize simulation first" :
               simulationState.isRunning ? "Simulation is running" :
@@ -1443,13 +1792,6 @@ function SysLoopHeader() {
               simulationState.currentStep >= simulationState.maxSteps ? "Re-run simulation from beginning" :
               "Start simulation"
             }
-            style={{
-              opacity: !simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1,
-              animation: simulationState.isRunning ? 'blink 1s infinite' : 'none',
-              padding: '6px',
-              marginRight: '0',
-              borderRadius: '4px'
-            }}
           >
             <Play className="menu-icon" />
           </button>
@@ -1457,14 +1799,8 @@ function SysLoopHeader() {
           <button
             onClick={pauseSimulation}
             disabled={!simulationMode || !simulationState.isRunning}
-            className="menu-icon-btn"
+            className={`menu-icon-btn ${!simulationMode || !simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
             title="Pause simulation"
-            style={{
-              opacity: !simulationMode || !simulationState.isRunning ? 0.5 : 1,
-              padding: '6px',
-              marginRight: '0',
-              borderRadius: '4px'
-            }}
           >
             <Pause className="menu-icon" />
           </button>
@@ -1472,14 +1808,8 @@ function SysLoopHeader() {
           <button
             onClick={stepBackSimulation}
             disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
-            className="menu-icon-btn"
+            className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
             title="Step back"
-            style={{
-              opacity: !simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1,
-              padding: '6px',
-              marginRight: '0',
-              borderRadius: '4px'
-            }}
           >
             <SkipBack className="menu-icon" />
           </button>
@@ -1487,14 +1817,8 @@ function SysLoopHeader() {
           <button
             onClick={stepSimulation}
             disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
-            className="menu-icon-btn"
+            className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
             title="Step forward"
-            style={{
-              opacity: !simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1,
-              padding: '6px',
-              marginRight: '0',
-              borderRadius: '4px'
-            }}
           >
             <SkipForward className="menu-icon" />
           </button>
@@ -1502,14 +1826,8 @@ function SysLoopHeader() {
           <button
             onClick={resetSimulation}
             disabled={!simulationMode}
-            className="menu-icon-btn"
+            className={`menu-icon-btn ${!simulationMode ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
             title="Reset simulation"
-            style={{
-              opacity: !simulationMode ? 0.5 : 1,
-              padding: '6px',
-              marginRight: '0',
-              borderRadius: '4px'
-            }}
           >
             <TimerReset className="menu-icon" />
           </button>
@@ -1517,38 +1835,17 @@ function SysLoopHeader() {
         
         {/* Progress Bar */}
         {simulationMode && simulationState.isInitialized && (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '2px',
-            marginLeft: '5px'
-          }}>
-            <span style={{
-              fontSize: '10px',
-              color: '#9ca3af',
-              textAlign: 'center'
-            }}>
+          <div className="progress-container">
+            <span className="progress-text">
               {simulationState.currentStep}/{simulationState.maxSteps}
             </span>
-            <div style={{
-              width: '80px',
-              height: '4px',
-              backgroundColor: '#374151',
-              borderRadius: '2px',
-              overflow: 'hidden',
-              position: 'relative'
-            }}>
-              <div style={{
-                width: `${Math.min(100, (simulationState.currentStep / simulationState.maxSteps) * 100)}%`,
-                height: '100%',
-                backgroundColor: '#ffffff',
-                borderRadius: '2px',
-                transition: 'width 0.3s ease',
-                position: 'absolute',
-                left: 0,
-                top: 0
-              }} />
+            <div className="progress-bar">
+              <div 
+                className="progress-fill"
+                style={{
+                  width: `${Math.min(100, (simulationState.currentStep / simulationState.maxSteps) * 100)}%`
+                }} 
+              />
             </div>
           </div>
         )}
@@ -1557,11 +1854,8 @@ function SysLoopHeader() {
         <button
           onClick={() => setShowStateVectorModal(true)}
           disabled={!simulationMode}
-          className="menu-icon-btn"
+          className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
           title="Show state vectors"
-          style={{
-            opacity: !simulationMode ? 0.5 : 1
-          }}
         >
           <BarChart3 className="menu-icon" />
         </button>
@@ -1569,13 +1863,8 @@ function SysLoopHeader() {
         <button
           onClick={() => setShowPlotsModal(true)}
           disabled={!simulationMode}
-          className="menu-icon-btn"
+          className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
           title="Show plots"
-          style={{
-            opacity: !simulationMode ? 0.5 : 1,
-            borderRadius: '4px',
-            padding: '6px'
-          }}
         >
           <Activity className="menu-icon" />
         </button>
@@ -1602,7 +1891,7 @@ function SysLoopHeader() {
         </div>
       </div>
 
-      <div className="header-right" style={{ marginLeft: 'auto', paddingRight: '0' }}>
+      <div className="header-right header-right-custom">
         {/* TBT Logo */}
         <div className="logo">
           <div className="logo-icon">

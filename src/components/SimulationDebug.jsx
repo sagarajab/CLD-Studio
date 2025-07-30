@@ -1,5 +1,6 @@
 import React from 'react'
 import { useCLDStore } from '../stores/cldStore'
+import './SimulationDebug.css'
 
 function SimulationDebug() {
   const { nodes, edges, simulationMode, simulationState } = useCLDStore()
@@ -34,22 +35,12 @@ function SimulationDebug() {
   const adjacencyMatrix = createAdjacencyMatrix()
   
   return (
-    <div className="simulation-debug" style={{ 
-      position: 'fixed', 
-      top: '70px', 
-      right: '10px', 
-      background: 'white', 
-      border: '1px solid #ccc', 
-      padding: '10px', 
-      fontSize: '12px',
-      maxWidth: '300px',
-      zIndex: 1000
-    }}>
+    <div className="simulation-debug">
       <h4>Debug Info</h4>
       
-      <div>
-        <strong>Nodes:</strong>
-        <ul style={{ margin: '5px 0', paddingLeft: '20px' }}>
+      <div className="debug-section">
+        <div className="debug-section-title">Nodes:</div>
+        <ul className="debug-list">
           {nodes.map((node, index) => (
             <li key={node.id}>
               {index}: {node.data.label || `Node ${node.id}`}
@@ -58,35 +49,35 @@ function SimulationDebug() {
         </ul>
       </div>
       
-      <div>
-        <strong>Current Increments:</strong>
-        <div style={{ fontFamily: 'monospace', margin: '5px 0' }}>
+      <div className="debug-section">
+        <div className="debug-section-title">Current Increments:</div>
+        <div className="debug-values">
           {simulationState.stateVector.map((val, i) => (
-            <span key={i} style={{ marginRight: '5px' }}>
+            <span key={i} className="debug-value">
               {val}
             </span>
           ))}
         </div>
       </div>
       
-      <div>
-        <strong>Accumulated Values:</strong>
-        <div style={{ fontFamily: 'monospace', margin: '5px 0' }}>
+      <div className="debug-section">
+        <div className="debug-section-title">Accumulated Values:</div>
+        <div className="debug-values">
           {simulationState.accumulatedValues.map((val, i) => (
-            <span key={i} style={{ marginRight: '5px' }}>
+            <span key={i} className="debug-value">
               {val}
             </span>
           ))}
         </div>
       </div>
       
-      <div>
-        <strong>Adjacency Matrix:</strong>
-        <div style={{ fontFamily: 'monospace', margin: '5px 0' }}>
+      <div className="debug-section">
+        <div className="debug-section-title">Adjacency Matrix:</div>
+        <div className="debug-values">
           {adjacencyMatrix.map((row, i) => (
-            <div key={i}>
+            <div key={i} className="debug-matrix-row">
               {row.map((val, j) => (
-                <span key={j} style={{ marginRight: '5px' }}>
+                <span key={j} className="debug-matrix-cell">
                   {val}
                 </span>
               ))}
@@ -95,8 +86,9 @@ function SimulationDebug() {
         </div>
       </div>
       
-      <div>
-        <strong>Step:</strong> {simulationState.currentStep}
+      <div className="debug-section">
+        <div className="debug-section-title">Step:</div>
+        <div>{simulationState.currentStep}</div>
       </div>
       
       <div>

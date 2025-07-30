@@ -47,8 +47,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   
   // Arrow drawing mode state
   const [arrowSourceNode, setArrowSourceNode] = useState(null)
-  const [arrowTargetNode, setArrowTargetNode] = useState(null)
-  const [isDrawingArrow, setIsDrawingArrow] = useState(false)
+  const [_arrowTargetNode, setArrowTargetNode] = useState(null)
+  const [_isDrawingArrow, setIsDrawingArrow] = useState(false)
 
   const {
     nodes: storeNodes,

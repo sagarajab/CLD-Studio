@@ -2966,4 +2966,57 @@ body {
   min-width: 0;
 }
 
+/* Status bar stats container */
+.status-stats-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #4b5563;
+  user-select: none;
+}
+
+/* Status bar stat labels */
+.status-stat-label {
+  font-weight: bold;
+}
+
+/* Status bar stat values */
+.status-stat-value {
+  margin-left: 4px;
+}
+
+/* Zoom level container */
+.zoom-level-container {
+  font-size: 12px;
+  color: #374151;
+  padding: 3px 10px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  width: 90px;
+  justify-content: space-between;
+}
+
+/* Zoom level label */
+.zoom-level-label {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* Zoom level value */
+.zoom-level-value {
+  color: #1f2937;
+  font-weight: 600;
+  min-width: 30px;
+  text-align: right;
+}
+
 

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import AnalysisTab from './AnalysisTab'
 import { Infinity as InfinityIcon } from 'lucide-react'
+import './SysLoopSidebar.css'
 
 function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLoop }) {
   const [activeTab, setActiveTab] = useState('problem') // 'problem', 'loops', 'analysis'
@@ -384,54 +385,18 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
         return (
           <div className="sidebar-section">
             {/* Loop Controls - Fixed */}
-            <div style={{ 
-              padding: '8px 12px', 
-              borderBottom: '1px solid #e5e7eb',
-              backgroundColor: 'transparent'
-            }}>
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                marginBottom: '8px'
-              }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px'
-                }}>
-                  <span style={{ 
-                    fontSize: '12px', 
-                    color: '#6b7280',
-                    fontWeight: '500'
-                  }}>
+            <div className="loop-controls-container">
+              <div className="loop-controls-header">
+                <div className="loop-controls-left">
+                  <span className="auto-dim-label">
                     Auto Dim Others
                   </span>
                   <button
                     onClick={() => setDimmingEnabled(!dimmingEnabled)}
-                    style={{
-                      width: '44px',
-                      height: '24px',
-                      border: 'none',
-                      borderRadius: '12px',
-                      background: dimmingEnabled ? '#10b981' : '#d1d5db',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      transition: 'background-color 0.2s ease'
-                    }}
+                    className={`toggle-switch ${dimmingEnabled ? 'enabled' : 'disabled'}`}
                     title={dimmingEnabled ? 'Disable dimming' : 'Enable dimming'}
                   >
-                    <div style={{
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      background: '#ffffff',
-                      position: 'absolute',
-                      top: '3px',
-                      left: dimmingEnabled ? '23px' : '3px',
-                      transition: 'left 0.2s ease',
-                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                    }} />
+                    <div className={`toggle-switch-thumb ${dimmingEnabled ? 'enabled' : 'disabled'}`} />
                   </button>
                 </div>
                 <button
@@ -507,12 +472,10 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
 
   return (
     <div 
-      className={`sysloop-sidebar ${isCollapsed ? 'collapsed' : ''} ${isResizing ? 'resizing' : ''}`}
+      className={`sysloop-sidebar ${isCollapsed ? 'collapsed' : ''} ${isResizing ? 'resizing' : ''} sidebar-container ${isCollapsed ? 'collapsed' : ''}`}
       ref={sidebarRef}
       style={{ 
-        width: isCollapsed ? `${COLLAPSED_WIDTH}px` : `${sidebarWidth}px`,
-        minWidth: isCollapsed ? `${COLLAPSED_WIDTH}px` : `${MIN_WIDTH}px`,
-        maxWidth: isCollapsed ? `${COLLAPSED_WIDTH}px` : `${MAX_WIDTH}px`
+        width: isCollapsed ? `${COLLAPSED_WIDTH}px` : `${sidebarWidth}px`
       }}
     >
       {/* Collapse/Expand Button */}
@@ -534,10 +497,7 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
           fill="none" 
           stroke="currentColor" 
           viewBox="0 0 24 24"
-          style={{
-            transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease'
-          }}
+          className={`collapse-icon ${isCollapsed ? 'collapsed' : 'expanded'}`}
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
@@ -559,7 +519,7 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
           onClick={() => setActiveTab('problem')}
           title="Problem Statement"
         >
-          <svg style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           Problem
@@ -569,7 +529,7 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
           onClick={() => setActiveTab('loops')}
           title="System Loops"
         >
-          <InfinityIcon style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0 }} />
+          <InfinityIcon className="tab-icon" />
           Loops
         </button>
                   <button
@@ -577,7 +537,7 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
           onClick={() => setActiveTab('analysis')}
           title="Graph Analysis"
         >
-          <svg style={{ width: '16px', height: '16px', minWidth: '16px', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
           </svg>
           Analysis
@@ -809,7 +769,7 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
                     <tbody>
                       {/* This would need to be populated with actual edge data */}
                       <tr>
-                        <td colSpan="4" style={{ textAlign: 'center', color: '#666' }}>
+                        <td colSpan="4" className="loops-table-cell">
                           Connection data would be displayed here
                         </td>
                       </tr>
@@ -843,7 +803,7 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
               
               {activeAnalysisModal === 'adjMatrix' && (
                 <div className="modal-table-container">
-                  <div style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+                  <div className="empty-loops-container">
                     Adjacency Matrix would be displayed here
                   </div>
                 </div>

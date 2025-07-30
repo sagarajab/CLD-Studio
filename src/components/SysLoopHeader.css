@@ -1,0 +1,438 @@
+/* SysLoopHeader Component Styles */
+
+/* Menu Separator Styles */
+.menu-separator {
+  width: 1px;
+  height: 24px;
+  background-color: #666666;
+  opacity: 0.7;
+  margin: 0 8px;
+  border-radius: 0.5px;
+}
+
+/* Menu Item Container */
+.menu-item-relative {
+  position: relative;
+}
+
+/* Color Container Styles */
+.node-color-container-relative {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.arrow-color-container-relative {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Accent Line Styles */
+.accent-line-node {
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 32px;
+  height: 3px;
+  border-radius: 1px;
+  opacity: 1;
+  z-index: 999;
+}
+
+.accent-line-arrow {
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 32px;
+  height: 3px;
+  border-radius: 1px;
+  opacity: 1;
+  z-index: 999;
+}
+
+/* Dropdown Styles */
+.node-color-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  min-width: 200px;
+}
+
+.arrow-color-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  min-width: 200px;
+}
+
+/* Color Button Styles */
+.color-button {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* Slider Container Styles */
+.slider-container-vertical {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+  max-width: 100px;
+}
+
+.slider-input-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.slider-icon {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.slider-input-custom {
+  flex: 1;
+  height: 2px;
+  border-radius: 1px;
+  background: #d1d5db;
+  outline: none;
+  cursor: pointer;
+  min-width: 40px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.slider-value-display {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-left: 22px;
+}
+
+.slider-value-text {
+  font-size: 9px;
+  color: #6b7280;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Design Settings Container */
+.design-settings-container-relative {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.design-settings-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 1000;
+  min-width: 280px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Form Section Styles */
+.form-section {
+  margin-bottom: 16px;
+}
+
+.form-section-title {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.form-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.form-range {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: #e5e7eb;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Export Container */
+.export-container-relative {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.export-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px;
+  z-index: 1000;
+  min-width: 160px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dropdown Button Styles */
+.dropdown-button {
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+  color: #374151;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-button:hover {
+  background-color: #f3f4f6;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 4px 0;
+}
+
+/* Open Container */
+.open-container-relative {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.open-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 8px;
+  z-index: 1000;
+  min-width: 160px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Menu Button Styles */
+.menu-button-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  padding: 6px;
+}
+
+.menu-button-enabled {
+  opacity: 1;
+  cursor: pointer;
+  padding: 6px;
+}
+
+/* Header Center Styles */
+.header-center-simulation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 16px;
+  margin-left: 16px;
+}
+
+/* Simulation Controls Pill */
+.simulation-controls-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Simulation Settings Container */
+.sim-settings-container-relative {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sim-settings-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 16px;
+  z-index: 1000;
+  min-width: 280px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Simulation Button Styles */
+.simulation-button-disabled {
+  opacity: 0.5;
+  padding: 6px;
+  margin-right: 0;
+  border-radius: 4px;
+}
+
+.simulation-button-enabled {
+  opacity: 1;
+  padding: 6px;
+  margin-right: 0;
+  border-radius: 4px;
+}
+
+.simulation-button-running {
+  opacity: 1;
+  animation: blink 1s infinite;
+  padding: 6px;
+  margin-right: 0;
+  border-radius: 4px;
+}
+
+/* Progress Bar Styles */
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-left: 5px;
+}
+
+.progress-text {
+  font-size: 10px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.progress-bar {
+  width: 80px;
+  height: 4px;
+  background-color: #374151;
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #ffffff;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Header Right Styles */
+.header-right-custom {
+  margin-left: auto;
+  padding-right: 0;
+}
+
+/* Simulation Range Input */
+.simulation-range {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #d1d5db;
+  outline: none;
+  cursor: pointer;
+}
+
+/* Initialize Button */
+.initialize-button {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.initialize-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Modal Button Styles */
+.modal-button-disabled {
+  opacity: 0.5;
+}
+
+.modal-button-enabled {
+  opacity: 1;
+  border-radius: 4px;
+  padding: 6px;
+}
+
+/* Blink Animation */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.3; }
+} 

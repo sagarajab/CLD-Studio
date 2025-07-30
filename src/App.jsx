@@ -33,8 +33,6 @@ function App() {
     eventsLog,
     undo,
     redo,
-    undoStack,
-    redoStack,
     viewTransform
   } = useCLDStore()
 
@@ -168,54 +166,36 @@ function App() {
           </div>
           
           {/* Normal text labels for stats */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            fontSize: '12px',
-            color: '#4b5563',
-            userSelect: 'none'
-          }}>
+          <div className="status-stats-container">
             <span>
-              <span style={{ fontWeight: 'bold' }}>Variables</span> 
-              <span style={{ marginLeft: '4px' }}>{nodes.length}</span>
+              <span className="status-stat-label">Variables</span> 
+              <span className="status-stat-value">{nodes.length}</span>
             </span>
+            <div className="status-separator"></div>
             <span>
-              <span style={{ fontWeight: 'bold' }}>Connections</span> 
-              <span style={{ marginLeft: '4px' }}>{edges.length}</span>
+              <span className="status-stat-label">Connections</span> 
+              <span className="status-stat-value">{edges.length}</span>
             </span>
+            <div className="status-separator"></div>
             <span>
-              <span style={{ fontWeight: 'bold' }}>Loops</span> 
-              <span style={{ marginLeft: '4px' }}>{loops.length}</span>
+              <span className="status-stat-label">Loops</span> 
+              <span className="status-stat-value">{loops.length}</span>
             </span>
           </div>
         </div>
         <div className="status-right">
           <div className="status-user-session-auth">
             <span>User: <b>[username]</b></span>
+            <div className="status-separator"></div>
             <span>Session: <b>[session-id]</b></span>
+            <div className="status-separator"></div>
             <span>Auth: <b>[auth-status]</b></span>
           </div>
           <div className="status-controls">
             {/* Zoom Level Indicator */}
-            <div className="status-item zoom-level" style={{
-              fontSize: '12px',
-              color: '#374151',
-              padding: '3px 10px',
-              background: '#f3f4f6',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              fontWeight: '500',
-              border: '1px solid #d1d5db',
-              boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
-              width: '90px',
-              justifyContent: 'space-between'
-            }}>
-              <span style={{ color: '#6b7280', fontSize: '11px', fontWeight: '400' }}>Zoom:</span>
-              <span style={{ color: '#1f2937', fontWeight: '600', minWidth: '30px', textAlign: 'right' }}>{Math.round(viewTransform.scale * 100)}%</span>
+            <div className="status-item zoom-level zoom-level-container">
+              <span className="zoom-level-label">Zoom:</span>
+              <span className="zoom-level-value">{Math.round(viewTransform.scale * 100)}%</span>
             </div>
             
             {/* Dev Mode Toggle */}

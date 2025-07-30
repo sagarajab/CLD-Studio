@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import { defaultConfig } from '../config/appConfig'
+import './SettingsModal.css'
 
 function SettingsModal({ isOpen, onClose }) {
   const { config, updateConfig, resetConfig } = useCLDStore()
@@ -45,74 +46,33 @@ function SettingsModal({ isOpen, onClose }) {
   if (!isOpen) return null
 
   return (
-    <div className="settings-modal-overlay" style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div className="settings-modal" style={{
-        backgroundColor: 'white',
-        borderRadius: '8px',
-        padding: '20px',
-        maxWidth: '800px',
-        width: '95%',
-        maxHeight: '90vh',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+    <div className="settings-modal-overlay">
+      <div className="settings-modal">
         {/* Header */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginBottom: '16px',
-          borderBottom: '1px solid #e5e7eb',
-          paddingBottom: '12px'
-        }}>
-          <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Settings</h2>
+        <div className="settings-modal-header">
+          <h2 className="settings-modal-title">Settings</h2>
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '20px',
-              cursor: 'pointer',
-              color: '#6b7280'
-            }}
+            className="settings-modal-close"
           >
             ×
           </button>
         </div>
 
         {/* Content - Single Page with Subsections */}
-        <div style={{ flex: 1, overflow: 'auto', paddingRight: '8px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="settings-modal-content">
+          <div className="settings-grid">
             
             {/* Left Column */}
             <div>
               {/* Constraints Section */}
-              <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ 
-                  marginBottom: '12px', 
-                  fontSize: '14px', 
-                  fontWeight: '600',
-                  color: '#374151',
-                  borderBottom: '1px solid #e5e7eb',
-                  paddingBottom: '4px'
-                }}>
+              <div className="settings-section">
+                <h3 className="settings-section-title">
                   Constraints
                 </h3>
                 
-                <div style={{ marginBottom: '8px' }}>
-                  <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', color: '#6b7280' }}>
+                <div className="settings-form-group">
+                  <label className="settings-label">
                     Max Nodes: {localConfig.constraints.maxNodes}
                   </label>
                   <input
@@ -121,12 +81,12 @@ function SettingsModal({ isOpen, onClose }) {
                     max="200"
                     value={localConfig.constraints.maxNodes}
                     onChange={(e) => updateLocalConfig('constraints.maxNodes', parseInt(e.target.value))}
-                    style={{ width: '80%', height: '4px' }}
+                    className="settings-input"
                   />
                 </div>
 
-                <div style={{ marginBottom: '8px' }}>
-                  <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', color: '#6b7280' }}>
+                <div className="settings-form-group">
+                  <label className="settings-label">
                     Max Edges: {localConfig.constraints.maxEdges}
                   </label>
                   <input
@@ -135,12 +95,12 @@ function SettingsModal({ isOpen, onClose }) {
                     max="500"
                     value={localConfig.constraints.maxEdges}
                     onChange={(e) => updateLocalConfig('constraints.maxEdges', parseInt(e.target.value))}
-                    style={{ width: '80%', height: '4px' }}
+                    className="settings-input"
                   />
                 </div>
 
-                <div style={{ marginBottom: '8px' }}>
-                  <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', color: '#6b7280' }}>
+                <div className="settings-form-group">
+                  <label className="settings-label">
                     Loop Analysis Limit: {localConfig.constraints.maxLoopsForAnalysis}
                   </label>
                   <input
@@ -149,38 +109,25 @@ function SettingsModal({ isOpen, onClose }) {
                     max="100"
                     value={localConfig.constraints.maxLoopsForAnalysis}
                     onChange={(e) => updateLocalConfig('constraints.maxLoopsForAnalysis', parseInt(e.target.value))}
-                    style={{ width: '80%', height: '4px' }}
+                    className="settings-input"
                   />
                 </div>
               </div>
 
               {/* Styling Section */}
-              <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ 
-                  marginBottom: '12px', 
-                  fontSize: '14px', 
-                  fontWeight: '600',
-                  color: '#374151',
-                  borderBottom: '1px solid #e5e7eb',
-                  paddingBottom: '4px'
-                }}>
+              <div className="settings-section">
+                <h3 className="settings-section-title">
                   Styling
                 </h3>
                 
-                <div style={{ marginBottom: '8px' }}>
-                  <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', color: '#6b7280' }}>
+                <div className="settings-form-group">
+                  <label className="settings-label">
                     Node Font
                   </label>
                   <select
                     value={localConfig.globalStyles.nodeFont}
                     onChange={(e) => updateLocalConfig('globalStyles.nodeFont', e.target.value)}
-                    style={{ 
-                      width: '100%', 
-                      padding: '4px 6px', 
-                      border: '1px solid #d1d5db', 
-                      borderRadius: '3px',
-                      fontSize: '12px'
-                    }}
+                    className="settings-input"
                   >
                     {['Arial', 'Helvetica', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Source Sans Pro', 'Nunito', 'Ubuntu', 'Segoe UI', 'SF Pro Display', 'Times New Roman', 'Georgia', 'Verdana'].map(font => (
                       <option key={font} value={font}>{font}</option>
@@ -188,8 +135,8 @@ function SettingsModal({ isOpen, onClose }) {
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '8px' }}>
-                  <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', color: '#6b7280' }}>
+                <div className="settings-form-group">
+                  <label className="settings-label">
                     Font Size: {localConfig.globalStyles.nodeFontSize}px
                   </label>
                   <input
@@ -198,12 +145,12 @@ function SettingsModal({ isOpen, onClose }) {
                     max="24"
                     value={localConfig.globalStyles.nodeFontSize}
                     onChange={(e) => updateLocalConfig('globalStyles.nodeFontSize', parseInt(e.target.value))}
-                    style={{ width: '80%', height: '4px' }}
+                    className="settings-input"
                   />
                 </div>
 
-                <div style={{ marginBottom: '8px' }}>
-                  <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', color: '#6b7280' }}>
+                <div className="settings-form-group">
+                  <label className="settings-label">
                     Arrow Width: {localConfig.globalStyles.arrowWidth}
                   </label>
                   <input
@@ -213,12 +160,12 @@ function SettingsModal({ isOpen, onClose }) {
                     step="0.1"
                     value={localConfig.globalStyles.arrowWidth}
                     onChange={(e) => updateLocalConfig('globalStyles.arrowWidth', parseFloat(e.target.value))}
-                    style={{ width: '80%', height: '4px' }}
+                    className="settings-input"
                   />
                 </div>
 
-                <div style={{ marginBottom: '8px' }}>
-                  <label style={{ display: 'block', marginBottom: '2px', fontSize: '12px', color: '#6b7280' }}>
+                <div className="settings-form-group">
+                  <label className="settings-label">
                     Arrow Transparency: {localConfig.globalStyles.arrowTransparency}
                   </label>
                   <input
@@ -228,55 +175,48 @@ function SettingsModal({ isOpen, onClose }) {
                     step="0.1"
                     value={localConfig.globalStyles.arrowTransparency}
                     onChange={(e) => updateLocalConfig('globalStyles.arrowTransparency', parseFloat(e.target.value))}
-                    style={{ width: '80%', height: '4px' }}
+                    className="settings-input"
                   />
                 </div>
               </div>
 
               {/* Performance Section */}
-              <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ 
-                  marginBottom: '12px', 
-                  fontSize: '14px', 
-                  fontWeight: '600',
-                  color: '#374151',
-                  borderBottom: '1px solid #e5e7eb',
-                  paddingBottom: '4px'
-                }}>
+              <div className="settings-section">
+                <h3 className="settings-section-title">
                   Performance
                 </h3>
                 
-                <div style={{ marginBottom: '6px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                <div className="settings-checkbox-group">
+                  <label className="settings-checkbox-label">
                     <input
                       type="checkbox"
                       checked={localConfig.performance.enableLoopDetection}
                       onChange={(e) => updateLocalConfig('performance.enableLoopDetection', e.target.checked)}
-                      style={{ width: '12px', height: '12px' }}
+                      className="settings-checkbox"
                     />
                     Enable Loop Detection
                   </label>
                 </div>
 
-                <div style={{ marginBottom: '6px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                <div className="settings-checkbox-group">
+                  <label className="settings-checkbox-label">
                     <input
                       type="checkbox"
                       checked={localConfig.performance.enableAdjacencyMatrix}
                       onChange={(e) => updateLocalConfig('performance.enableAdjacencyMatrix', e.target.checked)}
-                      style={{ width: '12px', height: '12px' }}
+                      className="settings-checkbox"
                     />
                     Enable Adjacency Matrix
                   </label>
                 </div>
 
-                <div style={{ marginBottom: '6px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                <div className="settings-checkbox-group">
+                  <label className="settings-checkbox-label">
                     <input
                       type="checkbox"
                       checked={localConfig.performance.asyncGraphAnalysis}
                       onChange={(e) => updateLocalConfig('performance.asyncGraphAnalysis', e.target.checked)}
-                      style={{ width: '12px', height: '12px' }}
+                      className="settings-checkbox"
                     />
                     Async Graph Analysis
                   </label>
@@ -287,47 +227,40 @@ function SettingsModal({ isOpen, onClose }) {
             {/* Right Column */}
             <div>
                              {/* Colors Section */}
-               <div style={{ marginBottom: '20px' }}>
-                 <h3 style={{ 
-                   marginBottom: '12px', 
-                   fontSize: '14px', 
-                   fontWeight: '600',
-                   color: '#374151',
-                   borderBottom: '1px solid #e5e7eb',
-                   paddingBottom: '4px'
-                 }}>
+               <div className="settings-section">
+                 <h3 className="settings-section-title">
                    Colors
                  </h3>
                  
-                 <div style={{ marginBottom: '8px' }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                     <label style={{ fontSize: '12px', color: '#6b7280', minWidth: '80px' }}>
+                 <div className="settings-color-group">
+                   <div className="settings-color-row">
+                     <label className="settings-color-label">
                        Node Color:
                      </label>
                      <input
                        type="color"
                        value={localConfig.colors.defaults.nodeColor}
                        onChange={(e) => updateLocalConfig('colors.defaults.nodeColor', e.target.value)}
-                       style={{ width: '25px', height: '20px', border: '1px solid #d1d5db', borderRadius: '2px' }}
+                       className="settings-color-input"
                      />
-                     <span style={{ fontSize: '10px', color: '#6b7280' }}>
+                     <span className="settings-color-name">
                        {localConfig.colors.defaults.nodeColor}
                      </span>
                    </div>
                  </div>
 
-                 <div style={{ marginBottom: '8px' }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                     <label style={{ fontSize: '12px', color: '#6b7280', minWidth: '80px' }}>
+                 <div className="settings-color-group">
+                   <div className="settings-color-row">
+                     <label className="settings-color-label">
                        Arrow Color:
                      </label>
                      <input
                        type="color"
                        value={localConfig.colors.defaults.arrowColor}
                        onChange={(e) => updateLocalConfig('colors.defaults.arrowColor', e.target.value)}
-                       style={{ width: '25px', height: '20px', border: '1px solid #d1d5db', borderRadius: '2px' }}
+                       className="settings-color-input"
                      />
-                     <span style={{ fontSize: '10px', color: '#6b7280' }}>
+                     <span className="settings-color-name">
                        {localConfig.colors.defaults.arrowColor}
                      </span>
                    </div>
@@ -532,55 +465,24 @@ function SettingsModal({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginTop: '16px',
-          borderTop: '1px solid #e5e7eb',
-          paddingTop: '12px'
-        }}>
+        <div className="settings-modal-footer">
           <button
             onClick={handleReset}
-            style={{
-              background: '#ef4444',
-              color: 'white',
-              border: 'none',
-              padding: '6px 12px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
+            className="settings-button danger"
           >
             Reset to Defaults
           </button>
           
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="settings-footer-buttons">
             <button
               onClick={handleCancel}
-              style={{
-                background: '#6b7280',
-                color: 'white',
-                border: 'none',
-                padding: '6px 12px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
+              className="settings-button secondary"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              style={{
-                background: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                padding: '6px 12px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
+              className="settings-button primary"
             >
               Save Settings
             </button>

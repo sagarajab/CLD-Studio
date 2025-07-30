@@ -159,10 +159,7 @@ const useCLDStore = create((set, get) => ({
       nodes: [...state.nodes, newNode]
     }))
     
-    // Verify node was added
-    setTimeout(() => {
-      const currentState = get()
-    }, 0)
+
     
     updateGraphAnalysis()
     addEvent(`Node "${label}" added`)
@@ -539,7 +536,7 @@ const useCLDStore = create((set, get) => ({
   },
 
   deleteSelectedNodes: () => {
-    const { selectedNodes, nodes, edges, updateGraphAnalysis, addEvent, recordStateChange } = get()
+    const { selectedNodes, nodes, updateGraphAnalysis, addEvent, recordStateChange } = get()
     
     if (selectedNodes.length === 0) return
     
@@ -1749,7 +1746,7 @@ const useCLDStore = create((set, get) => ({
   },
   
   runSimulation: () => {
-    const { simulationState, nodes, edges } = get()
+    const { simulationState } = get()
     if (simulationState.isRunning) return
     
     // Check if simulation is properly initialized
@@ -2006,7 +2003,7 @@ const useCLDStore = create((set, get) => ({
   },
   
   recordStateChange: () => {
-    const { isUndoRedoAction, undoStack, redoStack, maxUndoSteps, createStateSnapshot } = get()
+    const { isUndoRedoAction, undoStack: _undoStack, redoStack: _redoStack, maxUndoSteps, createStateSnapshot } = get()
     
     // Don't record if this is an undo/redo action
     if (isUndoRedoAction) {
@@ -2022,7 +2019,7 @@ const useCLDStore = create((set, get) => ({
   },
   
   undo: () => {
-    const { undoStack, redoStack, isUndoRedoAction, createStateSnapshot, nodes } = get()
+    const { undoStack, redoStack, isUndoRedoAction, createStateSnapshot } = get()
     
     if (undoStack.length === 0) {
       return false
@@ -2125,7 +2122,7 @@ const useCLDStore = create((set, get) => ({
   
   // Special function for drag operations - only records start and end positions
   recordDragStart: (nodeId, startPosition) => {
-    const { isUndoRedoAction, undoStack, redoStack, maxUndoSteps, createStateSnapshot } = get()
+    const { isUndoRedoAction, undoStack: _undoStack, redoStack: _redoStack, maxUndoSteps, createStateSnapshot } = get()
     
     // Don't record if this is an undo/redo action
     if (isUndoRedoAction) {
@@ -2143,7 +2140,7 @@ const useCLDStore = create((set, get) => ({
   },
   
   recordDragEnd: (nodeId, endPosition) => {
-    const { isUndoRedoAction, undoStack, redoStack, maxUndoSteps, createStateSnapshot } = get()
+    const { isUndoRedoAction, undoStack: _undoStack, redoStack: _redoStack, maxUndoSteps, createStateSnapshot } = get()
     
     // Don't record if this is an undo/redo action
     if (isUndoRedoAction) {
