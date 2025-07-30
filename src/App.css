@@ -85,7 +85,7 @@ body {
 .menu-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 4px;
 }
 
 .menu-item {
@@ -141,10 +141,22 @@ body {
   color: #808080 !important;
 }
 
+/* Exception for Arrow Mode button when active - allow mustard yellow background and black icon */
+.menu-icon-btn.arrow-mode-active {
+  background: #DAA520 !important;
+  color: #000000 !important;
+  border-radius: 50% !important;
+}
+
+.menu-icon-btn.arrow-mode-active .menu-icon {
+  color: #000000 !important;
+}
+
 /* Exception for simulation mode toggle - allow red background */
 .menu-icon-btn.simulation-active {
   background: #dc2626 !important;
   color: white !important;
+  border-radius: 50% !important;
 }
 
 .menu-icon-btn.simulation-active .menu-icon {
@@ -778,6 +790,40 @@ body {
   background: #d35400;
 }
 
+/* Collapsed Sidebar Icons */
+.collapsed-sidebar-icons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 60px; /* Space for collapse button */
+  padding-bottom: 16px;
+}
+
+.collapsed-icon-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #7f8c8d;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.collapsed-icon-btn:hover {
+  background: #c6c5c5;
+  color: #181818;
+}
+
+.collapsed-icon-btn:active {
+  transform: scale(1);
+}
+
 /* Prevent text selection during resize */
 .sysloop-sidebar.resizing {
   user-select: none;
@@ -1146,7 +1192,7 @@ body {
   padding: 4px 10px;
   border: none;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   background: #f3f4f6;
   color: #374151;
   width: 280px;
@@ -1196,7 +1242,7 @@ body {
   border: none;
   outline: none;
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.8rem;
   color: #374151;
   padding: 0;
   margin: 0;

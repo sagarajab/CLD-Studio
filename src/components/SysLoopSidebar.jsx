@@ -20,6 +20,16 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
   const [resizeDirection, setResizeDirection] = useState(null)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 })
+  
+  // Analysis modal states
+  const [activeAnalysisModal, setActiveAnalysisModal] = useState(null) // 'nodes', 'connections', 'stats', 'adjMatrix'
+  const [analysisModalPosition, setAnalysisModalPosition] = useState({ x: 0, y: 0 })
+  const [analysisModalSize, setAnalysisModalSize] = useState({ width: '700px', height: '450px' })
+  const [isAnalysisModalDragging, setIsAnalysisModalDragging] = useState(false)
+  const [isAnalysisModalResizing, setIsAnalysisModalResizing] = useState(false)
+  const [analysisModalResizeDirection, setAnalysisModalResizeDirection] = useState(null)
+  const [analysisModalDragStart, setAnalysisModalDragStart] = useState({ x: 0, y: 0 })
+  const [analysisModalResizeStart, setAnalysisModalResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 })
 
   const sidebarRef = useRef(null)
   const { 
@@ -122,6 +132,44 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
     setEditValue('')
   }
 
+  // Analysis modal functions
+  const openAnalysisModal = (modalType) => {
+    setActiveAnalysisModal(modalType)
+    setAnalysisModalPosition({ x: 0, y: 0 })
+    
+    // Calculate initial size based on content
+    let initialWidth = '600px'
+    let initialHeight = '400px'
+    
+    switch (modalType) {
+      case 'nodes':
+        initialWidth = '800px'
+        initialHeight = '500px'
+        break
+      case 'connections':
+        initialWidth = '900px'
+        initialHeight = '500px'
+        break
+      case 'stats':
+        initialWidth = '600px'
+        initialHeight = '400px'
+        break
+      case 'adjMatrix':
+        initialWidth = '700px'
+        initialHeight = '450px'
+        break
+      default:
+        initialWidth = '700px'
+        initialHeight = '450px'
+    }
+    
+    setAnalysisModalSize({ width: initialWidth, height: initialHeight })
+  }
+
+  const closeAnalysisModal = () => {
+    setActiveAnalysisModal(null)
+  }
+
   const startEditing = (type, id, currentValue) => {
     setEditingCell({ type, id })
     setEditValue(currentValue)
@@ -212,17 +260,66 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
     setResizeDirection(null)
   }
 
+  // Analysis modal handlers
+  const handleAnalysisModalMouseMove = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (isAnalysisModalDragging) {
+      const newX = e.clientX - analysisModalDragStart.x
+      const newY = e.clientY - analysisModalDragStart.y
+      setAnalysisModalPosition({ x: newX, y: newY })
+    }
+    
+    if (isAnalysisModalResizing) {
+      const deltaX = e.clientX - analysisModalResizeStart.x
+      const deltaY = e.clientY - analysisModalResizeStart.y
+      
+      let newWidth = analysisModalResizeStart.width
+      let newHeight = analysisModalResizeStart.height
+      
+      if (analysisModalResizeDirection.includes('right')) {
+        newWidth = Math.max(500, analysisModalResizeStart.width + deltaX)
+      }
+      if (analysisModalResizeDirection.includes('left')) {
+        newWidth = Math.max(500, analysisModalResizeStart.width - deltaX)
+        setAnalysisModalPosition(prev => ({ ...prev, x: analysisModalResizeStart.x + deltaX }))
+      }
+      if (analysisModalResizeDirection.includes('bottom')) {
+        newHeight = Math.max(300, analysisModalResizeStart.height + deltaY)
+      }
+      if (analysisModalResizeDirection.includes('top')) {
+        newHeight = Math.max(300, analysisModalResizeStart.height - deltaY)
+        setAnalysisModalPosition(prev => ({ ...prev, y: analysisModalResizeStart.y + deltaY }))
+      }
+      
+      setAnalysisModalSize({ width: `${newWidth}px`, height: `${newHeight}px` })
+    }
+  }
+
+  const handleAnalysisModalMouseUp = () => {
+    setIsAnalysisModalDragging(false)
+    setIsAnalysisModalResizing(false)
+    setAnalysisModalResizeDirection(null)
+  }
+
   // Global mouse event listeners for modal
   useEffect(() => {
     const handleGlobalMouseMove = (e) => {
       if (isModalDragging || isModalResizing) {
         handleModalMouseMove(e)
       }
+      if (isAnalysisModalDragging || isAnalysisModalResizing) {
+        handleAnalysisModalMouseMove(e)
+      }
     }
 
     const handleGlobalMouseUp = () => {
       if (isModalDragging || isModalResizing) {
         handleModalMouseUp()
+      }
+      if (isAnalysisModalDragging || isAnalysisModalResizing) {
+        handleAnalysisModalMouseUp()
       }
     }
 
@@ -496,6 +593,54 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
         </div>
       )}
 
+      {/* Collapsed State Icons - Only show when collapsed */}
+      {isCollapsed && (
+        <div className="collapsed-sidebar-icons">
+          <button
+            className="collapsed-icon-btn"
+            onClick={() => openAnalysisModal('nodes')}
+            title="Node Analysis"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </button>
+          
+          <button
+            className="collapsed-icon-btn"
+            onClick={() => openAnalysisModal('connections')}
+            title="Connection Analysis"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </button>
+          
+          <button
+            className="collapsed-icon-btn"
+            onClick={() => openAnalysisModal('stats')}
+            title="System Statistics"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </button>
+          
+          <button
+            className="collapsed-icon-btn"
+            onClick={() => openAnalysisModal('adjMatrix')}
+            title="Adjacency Matrix"
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h18v18H3z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9h6v6H9z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 3v18" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15h18" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Loops Detail Modal */}
       {showLoopsModal && (
         <div 
@@ -576,6 +721,184 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
             <div className="analysis-modal-resize-handle bottom" onMouseDown={(e) => handleModalResizeStart(e, 'bottom')} />
             <div className="analysis-modal-resize-handle left" onMouseDown={(e) => handleModalResizeStart(e, 'left')} />
             <div className="analysis-modal-resize-handle right" onMouseDown={(e) => handleModalResizeStart(e, 'right')} />
+          </div>
+        </div>
+      )}
+
+      {/* Analysis Modals */}
+      {activeAnalysisModal && (
+        <div 
+          className="analysis-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isAnalysisModalResizing && !isAnalysisModalDragging) {
+              closeAnalysisModal()
+            }
+          }}
+        >
+          <div 
+            className={`analysis-modal ${isAnalysisModalResizing ? 'resizing' : ''}`}
+            style={{
+              width: analysisModalSize.width,
+              height: analysisModalSize.height,
+              transform: `translate(calc(-50% + ${analysisModalPosition.x}px), calc(-50% + ${analysisModalPosition.y}px))`
+            }}
+          >
+            {/* Modal Header */}
+            <div className="analysis-modal-header">
+              <div className="analysis-modal-drag-handle" onMouseDown={(e) => {
+                setIsAnalysisModalDragging(true)
+                setAnalysisModalDragStart({ x: e.clientX - analysisModalPosition.x, y: e.clientY - analysisModalPosition.y })
+              }} />
+              <h3>
+                {activeAnalysisModal === 'nodes' && 'Nodes Analysis'}
+                {activeAnalysisModal === 'connections' && 'Connections Analysis'}
+                {activeAnalysisModal === 'stats' && 'System Statistics'}
+                {activeAnalysisModal === 'adjMatrix' && 'Adjacency Matrix'}
+              </h3>
+              <button 
+                className="analysis-modal-close"
+                onClick={closeAnalysisModal}
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="analysis-modal-content">
+              {activeAnalysisModal === 'nodes' && (
+                <div className="modal-table-container">
+                  <table className="modal-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Label</th>
+                        <th>In Count</th>
+                        <th>Out Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {nodes.map(node => {
+                        const inCount = nodes.filter(n => n.id === node.id).length
+                        const outCount = nodes.filter(n => n.id === node.id).length
+                        return (
+                          <tr key={node.id}>
+                            <td>{node.id}</td>
+                            <td>{node.data?.label || 'Unnamed'}</td>
+                            <td>{inCount}</td>
+                            <td>{outCount}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              
+              {activeAnalysisModal === 'connections' && (
+                <div className="modal-table-container">
+                  <table className="modal-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>From Node</th>
+                        <th>Polarity</th>
+                        <th>To Node</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* This would need to be populated with actual edge data */}
+                      <tr>
+                        <td colSpan="4" style={{ textAlign: 'center', color: '#666' }}>
+                          Connection data would be displayed here
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              
+              {activeAnalysisModal === 'stats' && (
+                <div className="modal-table-container">
+                  <table className="modal-table">
+                    <thead>
+                      <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Total Nodes</td>
+                        <td>{nodes.length}</td>
+                      </tr>
+                      <tr>
+                        <td>Total Loops</td>
+                        <td>{loops.length}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              
+              {activeAnalysisModal === 'adjMatrix' && (
+                <div className="modal-table-container">
+                  <div style={{ textAlign: 'center', color: '#666', padding: '20px' }}>
+                    Adjacency Matrix would be displayed here
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Resize Handles */}
+            <div className="analysis-modal-resize-handle top" onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsAnalysisModalResizing(true)
+              setAnalysisModalResizeDirection('top')
+              setAnalysisModalResizeStart({ 
+                x: e.clientX, 
+                y: e.clientY, 
+                width: parseInt(analysisModalSize.width), 
+                height: parseInt(analysisModalSize.height) 
+              })
+            }} />
+            <div className="analysis-modal-resize-handle bottom" onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsAnalysisModalResizing(true)
+              setAnalysisModalResizeDirection('bottom')
+              setAnalysisModalResizeStart({ 
+                x: e.clientX, 
+                y: e.clientY, 
+                width: parseInt(analysisModalSize.width), 
+                height: parseInt(analysisModalSize.height) 
+              })
+            }} />
+            <div className="analysis-modal-resize-handle left" onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsAnalysisModalResizing(true)
+              setAnalysisModalResizeDirection('left')
+              setAnalysisModalResizeStart({ 
+                x: e.clientX, 
+                y: e.clientY, 
+                width: parseInt(analysisModalSize.width), 
+                height: parseInt(analysisModalSize.height) 
+              })
+            }} />
+            <div className="analysis-modal-resize-handle right" onMouseDown={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setIsAnalysisModalResizing(true)
+              setAnalysisModalResizeDirection('right')
+              setAnalysisModalResizeStart({ 
+                x: e.clientX, 
+                y: e.clientY, 
+                width: parseInt(analysisModalSize.width), 
+                height: parseInt(analysisModalSize.height) 
+              })
+            }} />
           </div>
         </div>
       )}

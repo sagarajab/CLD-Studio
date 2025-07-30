@@ -17,6 +17,8 @@ function CLDNode({
   isFromNode = false, 
   isCreatingConnection = false, 
   isMultiSelected = false,
+  arrowDrawingMode = false,
+  isArrowSource = false,
 }) {
   const [isEditing, setIsEditing] = useState(false)
   const [label, setLabel] = useState(data.label || 'New Node')
@@ -178,6 +180,7 @@ function CLDNode({
           stroke={
             isInHighlightedLoop || isInHoveredLoop
               ? 'none'
+              : isArrowSource ? "#f97316" // Orange for arrow source node
               : isFromNode ? "#f97316" // Orange for FROM node
               : (selected || isMultiSelected) ? "#3b82f6" // Modern blue for selected (single or multi)
               : (isHovered || hoveredNode === id) ? "rgba(59, 130, 246, 0.6)" // Lighter shade of blue for hover
@@ -186,13 +189,14 @@ function CLDNode({
           strokeWidth={
             isInHighlightedLoop || isInHoveredLoop
               ? "0"
+              : isArrowSource ? "3"
               : isFromNode ? "3"
               : (selected || isMultiSelected) ? "3"
               : (isHovered || hoveredNode === id) ? "3"
               : "0"
           }
           className={`node-ellipse ${isInHoveredLoop && !isInHighlightedLoop ? 'hovered-loop' : ''}`}
-          cursor={isCreatingConnection ? "crosshair" : "pointer"}
+          cursor={isCreatingConnection || arrowDrawingMode ? "crosshair" : "pointer"}
           onClick={handleClick}
           onMouseDown={handleMouseDown}
           onDoubleClick={handleDoubleClick}
@@ -249,7 +253,7 @@ function CLDNode({
               fontWeight="600"
               fill={data.color || '#000000'}
               fontFamily={globalStyles.nodeFont}
-              cursor={isCreatingConnection ? "crosshair" : "pointer"}
+              cursor={isCreatingConnection || arrowDrawingMode ? "crosshair" : "pointer"}
               className="node-text"
               onClick={handleClick}
               onMouseDown={handleMouseDown}

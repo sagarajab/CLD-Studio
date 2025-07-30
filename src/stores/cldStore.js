@@ -56,6 +56,9 @@ const useCLDStore = create((set, get) => ({
   // Panning mode state
   panningMode: false,
   
+  // Arrow drawing mode state
+  arrowDrawingMode: false,
+  
   // Events log for status bar
   eventsLog: [],
   
@@ -89,6 +92,19 @@ const useCLDStore = create((set, get) => ({
     set((state) => ({ panningMode: !state.panningMode }))
   },
   
+  // Arrow drawing mode operations
+  toggleArrowDrawingMode: () => {
+    const { simulationMode } = get()
+    
+    // Prevent enabling arrow drawing mode when simulation mode is active
+    if (simulationMode) {
+      console.warn('Cannot enable arrow drawing mode while simulation mode is active')
+      return
+    }
+    
+    set((state) => ({ arrowDrawingMode: !state.arrowDrawingMode }))
+  },
+  
   // Grid operations
   toggleGrid: () => {
     set((state) => ({ showGrid: !state.showGrid }))
@@ -105,11 +121,17 @@ const useCLDStore = create((set, get) => ({
   
   // Node operations
   addNode: (position, label = 'New Node') => {
-    const { nodes, config, updateGraphAnalysis, simulationState, simulationMode, addEvent, recordStateChange } = get()
+    const { nodes, config, updateGraphAnalysis, simulationState, simulationMode, arrowDrawingMode, addEvent, recordStateChange } = get()
     
-    // Disable node addition during simulation mode
+    // Disable node addition during simulation mode or arrow drawing mode
     if (simulationMode || simulationState.isRunning) {
       console.warn('Cannot add nodes while simulation mode is enabled')
+      return false
+    }
+    
+    // Disable node addition during arrow drawing mode
+    if (arrowDrawingMode) {
+      console.warn('Cannot add nodes while arrow drawing mode is enabled')
       return false
     }
     
@@ -1660,6 +1682,8 @@ const useCLDStore = create((set, get) => ({
     
     set((state) => ({ 
       simulationMode: !state.simulationMode,
+      // Disable arrow drawing mode when simulation mode is enabled
+      arrowDrawingMode: !state.simulationMode ? false : state.arrowDrawingMode,
       simulationState: {
         ...state.simulationState,
         isRunning: false,

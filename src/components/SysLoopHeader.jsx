@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
-import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Play, Pause, RotateCcw as StepBack, RotateCw as StepForward, Square, Settings as SettingsIcon, BarChart3, Activity, Undo2, Redo2, Eraser, Grid3x3, BowArrow, Dices, SkipForward, SkipBack, TimerReset, ZoomIn, ZoomOut, Move, Trash, DraftingCompass, Laptop, Database } from 'lucide-react'
+import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Play, Pause, RotateCcw as StepBack, RotateCw as StepForward, Square, Settings as SettingsIcon, BarChart3, Activity, Undo2, Redo2, Eraser, Grid3x3, SplinePointer, Dices, SkipForward, SkipBack, TimerReset, ZoomIn, ZoomOut, Move, Trash, DraftingCompass, Laptop, Database, Gamepad2, Settings2 } from 'lucide-react'
 
 import SettingsModal from './SettingsModal'
 import StateVectorModal from './StateVectorModal'
@@ -49,6 +49,8 @@ function SysLoopHeader() {
     resetView,
     panningMode,
     togglePanningMode,
+    arrowDrawingMode,
+    toggleArrowDrawingMode,
     simulationState,
     simulationMode,
     initializeSimulation,
@@ -461,6 +463,13 @@ function SysLoopHeader() {
       action: toggleGrid, 
       icon: Grid3x3,
       title: showGrid ? 'Hide Grid' : 'Show Grid' 
+    },
+    { 
+      label: 'Arrow Mode', 
+      action: toggleArrowDrawingMode, 
+      icon: SplinePointer,
+      title: simulationMode ? 'Arrow Mode disabled during simulation' : (arrowDrawingMode ? 'Exit Arrow Drawing Mode' : 'Enter Arrow Drawing Mode'),
+      disabled: simulationMode
     },
     { 
       label: 'Clear Canvas', 
@@ -1212,13 +1221,14 @@ function SysLoopHeader() {
                 </div>
               ) : (
                 <button
-                  className="menu-icon-btn"
+                  className={`menu-icon-btn ${item.label === 'Arrow Mode' && arrowDrawingMode ? 'arrow-mode-active' : ''}`}
                   onClick={item.action}
                   disabled={item.disabled}
                   title={item.title}
                   style={{
                     opacity: item.disabled ? 0.4 : 1,
-                    cursor: item.disabled ? 'not-allowed' : 'pointer'
+                    cursor: item.disabled ? 'not-allowed' : 'pointer',
+                    padding: '6px'
                   }}
                 >
                   <item.icon className="menu-icon" />
@@ -1257,15 +1267,13 @@ function SysLoopHeader() {
             className={`menu-icon-btn ${simulationMode ? 'simulation-active' : ''}`}
             title={simulationMode ? 'Disable Simulation Mode' : 'Enable Simulation Mode'}
             style={{
-              background: simulationMode ? '#dc2626' : 'transparent',
               border: 'none',
-              borderRadius: '50%',
-              padding: '4px 6px',
-              color: simulationMode ? 'white' : '#9ca3af',
+              borderRadius: '4px',
+              padding: '6px',
               marginRight: '0'
             }}
           >
-            <BowArrow className="menu-icon" />
+            <Gamepad2 className="menu-icon" />
           </button>
           
           {/* Settings Dropdown - moved to second position */}
@@ -1276,10 +1284,12 @@ function SysLoopHeader() {
               disabled={!simulationMode}
               title="Simulation settings"
               style={{
-                opacity: !simulationMode ? 0.5 : 1
+                opacity: !simulationMode ? 0.5 : 1,
+                borderRadius: '4px',
+                padding: '6px'
               }}
             >
-              <Dices className="menu-icon" />
+              <Settings2 className="menu-icon" />
             </button>
                               {activeDropdown === 'simSettings' && (
               <div 
@@ -1436,8 +1446,9 @@ function SysLoopHeader() {
             style={{
               opacity: !simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1,
               animation: simulationState.isRunning ? 'blink 1s infinite' : 'none',
-              padding: '4px 6px',
-              marginRight: '0'
+              padding: '6px',
+              marginRight: '0',
+              borderRadius: '4px'
             }}
           >
             <Play className="menu-icon" />
@@ -1450,8 +1461,9 @@ function SysLoopHeader() {
             title="Pause simulation"
             style={{
               opacity: !simulationMode || !simulationState.isRunning ? 0.5 : 1,
-              padding: '4px 6px',
-              marginRight: '0'
+              padding: '6px',
+              marginRight: '0',
+              borderRadius: '4px'
             }}
           >
             <Pause className="menu-icon" />
@@ -1464,8 +1476,9 @@ function SysLoopHeader() {
             title="Step back"
             style={{
               opacity: !simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1,
-              padding: '4px 6px',
-              marginRight: '0'
+              padding: '6px',
+              marginRight: '0',
+              borderRadius: '4px'
             }}
           >
             <SkipBack className="menu-icon" />
@@ -1478,8 +1491,9 @@ function SysLoopHeader() {
             title="Step forward"
             style={{
               opacity: !simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 0.5 : 1,
-              padding: '4px 6px',
-              marginRight: '0'
+              padding: '6px',
+              marginRight: '0',
+              borderRadius: '4px'
             }}
           >
             <SkipForward className="menu-icon" />
@@ -1492,8 +1506,9 @@ function SysLoopHeader() {
             title="Reset simulation"
             style={{
               opacity: !simulationMode ? 0.5 : 1,
-              padding: '4px 6px',
-              marginRight: '0'
+              padding: '6px',
+              marginRight: '0',
+              borderRadius: '4px'
             }}
           >
             <TimerReset className="menu-icon" />
@@ -1557,7 +1572,9 @@ function SysLoopHeader() {
           className="menu-icon-btn"
           title="Show plots"
           style={{
-            opacity: !simulationMode ? 0.5 : 1
+            opacity: !simulationMode ? 0.5 : 1,
+            borderRadius: '4px',
+            padding: '6px'
           }}
         >
           <Activity className="menu-icon" />

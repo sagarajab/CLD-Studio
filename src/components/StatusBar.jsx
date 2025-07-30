@@ -23,8 +23,9 @@ function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge, allLoops = 
 
   return (
     <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-300">
-      {/* Left side - Diagram information */}
+      {/* Left side - Message console and stats */}
       <div className="flex items-center space-x-6">
+        {/* Message console (mode display) - extreme left */}
         <div className="flex items-center space-x-2">
           <span className="font-medium">Mode:</span>
           <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -36,8 +37,8 @@ function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge, allLoops = 
           </span>
         </div>
         
-        {/* Combined stats in pill-shaped holder */}
-        <div className="bg-gray-700 rounded-full px-4 py-2 flex items-center space-x-4">
+        {/* Normal text labels for stats */}
+        <div className="flex items-center space-x-4">
           <span>
             <span className="text-blue-400">Variables:</span> 
             <span className="font-medium text-blue-300 ml-1">{stats.totalNodes}</span>

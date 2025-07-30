@@ -36,6 +36,11 @@ function AnalysisTab() {
     adjMatrix: true
   })
 
+  // Check if all sections are collapsed
+  const allSectionsCollapsed = useMemo(() => {
+    return Object.values(collapsedSections).every(collapsed => collapsed)
+  }, [collapsedSections])
+
 
   // Handle ESC key to close modal and global mouse events
   useEffect(() => {
@@ -182,22 +187,26 @@ function AnalysisTab() {
     }))
   }
 
-  const collapseAllSections = () => {
-    setCollapsedSections({
-      nodes: true,
-      connections: true,
-      stats: true,
-      adjMatrix: true
-    })
-  }
 
-  const expandAllSections = () => {
-    setCollapsedSections({
-      nodes: false,
-      connections: false,
-      stats: false,
-      adjMatrix: false
-    })
+
+  const toggleAllSections = () => {
+    if (allSectionsCollapsed) {
+      // Expand all sections
+      setCollapsedSections({
+        nodes: false,
+        connections: false,
+        stats: false,
+        adjMatrix: false
+      })
+    } else {
+      // Collapse all sections
+      setCollapsedSections({
+        nodes: true,
+        connections: true,
+        stats: true,
+        adjMatrix: true
+      })
+    }
   }
 
   const startEditing = (type, id, currentValue) => {
@@ -569,20 +578,14 @@ function AnalysisTab() {
           <div className="control-group">
             <button 
               className="control-toggle"
-              onClick={collapseAllSections}
-              title="Collapse All Sections"
+              onClick={toggleAllSections}
+              title={allSectionsCollapsed ? "Expand All Sections" : "Collapse All Sections"}
             >
-              <ChevronsDownUp size={14} />
-            </button>
-          </div>
-
-          <div className="control-group">
-            <button 
-              className="control-toggle"
-              onClick={expandAllSections}
-              title="Expand All Sections"
-            >
-              <ChevronsUpDown size={14} />
+              {allSectionsCollapsed ? (
+                <ChevronsUpDown size={14} />
+              ) : (
+                <ChevronsDownUp size={14} />
+              )}
             </button>
           </div>
         </div>

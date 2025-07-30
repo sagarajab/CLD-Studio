@@ -44,6 +44,11 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   
   // Polarity circle hover state
   const [hoveredPolarityEdge, setHoveredPolarityEdge] = useState(null)
+  
+  // Arrow drawing mode state
+  const [arrowSourceNode, setArrowSourceNode] = useState(null)
+  const [arrowTargetNode, setArrowTargetNode] = useState(null)
+  const [isDrawingArrow, setIsDrawingArrow] = useState(false)
 
   const {
     nodes: storeNodes,
@@ -77,6 +82,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     setViewTransform,
     updateViewTransform,
     panningMode,
+    arrowDrawingMode,
     globalStyles,
     showGrid,
     simulationMode,
@@ -209,6 +215,14 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             updateNode(connectionSource, { borderColor: undefined })
           }
         }
+        // Cancel arrow drawing mode
+        if (arrowSourceNode) {
+          setArrowSourceNode(null)
+          setArrowTargetNode(null)
+          setIsDrawingArrow(false)
+          setMousePosition({ x: 0, y: 0 })
+          updateNode(arrowSourceNode, { borderColor: undefined })
+        }
         // Clear all selections
         clearAllSelections()
       } else if (event.ctrlKey && event.key === 'a') {
@@ -229,7 +243,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [selectedNode, selectedEdge, deleteNode, deleteEdge, setSelectedNode, setSelectedEdge, isCreatingConnection, connectionSource, updateNode, loopViewMode, exitLoopViewMode, highlightedLoop, clearHighlightedLoop])
+  }, [selectedNode, selectedEdge, deleteNode, deleteEdge, setSelectedNode, setSelectedEdge, isCreatingConnection, connectionSource, arrowSourceNode, updateNode, loopViewMode, exitLoopViewMode, highlightedLoop, clearHighlightedLoop])
 
   // Handle canvas interactions
   const handleCanvasMouseDown = useCallback((event) => {
@@ -554,6 +568,12 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       const x = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
       const y = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
       setMousePosition({ x, y })
+    } else if (arrowDrawingMode && arrowSourceNode) {
+      // Track mouse position for arrow drawing guide line
+      const rect = canvasRef.current.getBoundingClientRect()
+      const x = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
+      const y = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
+      setMousePosition({ x, y })
     }
     
     // Handle node dragging
@@ -615,7 +635,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         }
       }
     }
-     }, [isPanning, panStart, isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, hasRecordedDragStart, viewTransform, storeNodes, updateNode, recordDragStart, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId, selectedNodes])
+     }, [isPanning, panStart, isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, hasRecordedDragStart, viewTransform, storeNodes, updateNode, recordDragStart, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, arrowDrawingMode, arrowSourceNode, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId, selectedNodes])
 
   const handleCanvasMouseUp = useCallback(() => {
     setIsDragging(false)
@@ -659,6 +679,40 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
 
   // Handle node interactions
   const handleNodeClick = (nodeId, event) => {
+    // Handle arrow drawing mode
+    if (arrowDrawingMode && event.button === 0) { // Left click only in arrow mode
+      if (!arrowSourceNode) {
+        // First click - select source node
+        const rect = canvasRef.current.getBoundingClientRect()
+        const x = (event.clientX - rect.left - viewTransform.x) / viewTransform.scale
+        const y = (event.clientY - rect.top - viewTransform.y) / viewTransform.scale
+        
+        setArrowSourceNode(nodeId)
+        updateNode(nodeId, { borderColor: '#f97316' }) // Orange border for source
+        setIsDrawingArrow(true)
+        setMousePosition({ x, y }) // Initialize mouse position to current position
+      } else if (arrowSourceNode === nodeId) {
+        // Click on same node - cancel arrow drawing
+        setArrowSourceNode(null)
+        setArrowTargetNode(null)
+        setIsDrawingArrow(false)
+        setMousePosition({ x: 0, y: 0 }) // Clear mouse position
+        updateNode(nodeId, { borderColor: undefined })
+      } else {
+        // Second click - select target node and create arrow
+        if (!connectionExists(arrowSourceNode, nodeId)) {
+          addEdge(arrowSourceNode, nodeId, 'positive')
+        }
+        // Reset arrow drawing state
+        updateNode(arrowSourceNode, { borderColor: undefined })
+        setArrowSourceNode(null)
+        setArrowTargetNode(null)
+        setIsDrawingArrow(false)
+        setMousePosition({ x: 0, y: 0 }) // Clear mouse position
+      }
+      return
+    }
+    
     // Check if this is a right-click event
     if (event.button === 2) {
       // Right-click for connection creation
@@ -801,6 +855,16 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     setDraggedControlPoint(currentControlPoint)
   }
 
+  // Reset arrow drawing state when mode is toggled off
+  useEffect(() => {
+    if (!arrowDrawingMode && arrowSourceNode) {
+      updateNode(arrowSourceNode, { borderColor: undefined })
+      setArrowSourceNode(null)
+      setArrowTargetNode(null)
+      setIsDrawingArrow(false)
+    }
+  }, [arrowDrawingMode, arrowSourceNode, updateNode])
+
   // Handle canvas background click to exit loop view mode
   const handleCanvasClick = (event) => {
     // Only exit if clicking on the canvas background (not on nodes or edges)
@@ -808,6 +872,14 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       if (loopViewMode) {
         exitLoopViewMode()
         clearHighlightedLoop()
+      }
+      
+      // Reset arrow drawing mode if clicking on canvas background
+      if (arrowDrawingMode && arrowSourceNode) {
+        updateNode(arrowSourceNode, { borderColor: undefined })
+        setArrowSourceNode(null)
+        setArrowTargetNode(null)
+        setIsDrawingArrow(false)
       }
     }
   }
@@ -980,6 +1052,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             devMode={devMode}
             isFromNode={isCreatingConnection && connectionSource === node.id}
             isCreatingConnection={isCreatingConnection}
+            arrowDrawingMode={arrowDrawingMode}
+            isArrowSource={arrowDrawingMode && arrowSourceNode === node.id}
           />
         </g>
       )
@@ -1284,29 +1358,57 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
 
   // Render connection guide line
   const renderConnectionGuideLine = () => {
-    if (!isCreatingConnection || !connectionSource) return null
+    // Handle regular connection creation
+    if (isCreatingConnection && connectionSource) {
+      const sourceNode = storeNodes.find(n => n.id === connectionSource)
+      if (!sourceNode) return null
 
-    const sourceNode = storeNodes.find(n => n.id === connectionSource)
-    if (!sourceNode) return null
+      const sourceEllipse = getEllipseDimensions(sourceNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
+      const sourceCenterX = sourceNode.position.x + sourceEllipse.centerX
+      const sourceCenterY = sourceNode.position.y + sourceEllipse.centerY
 
-    const sourceEllipse = getEllipseDimensions(sourceNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
-    const sourceCenterX = sourceNode.position.x + sourceEllipse.centerX
-    const sourceCenterY = sourceNode.position.y + sourceEllipse.centerY
+      // Calculate a simple straight line from source node center to mouse position
+      const guideLinePath = `M ${sourceCenterX} ${sourceCenterY} L ${mousePosition.x} ${mousePosition.y}`
 
-    // Calculate a simple straight line from source node center to mouse position
-    const guideLinePath = `M ${sourceCenterX} ${sourceCenterY} L ${mousePosition.x} ${mousePosition.y}`
+      return (
+        <path
+          d={guideLinePath}
+          stroke="#f97316" // Orange color to match the FROM node border
+          strokeWidth="2"
+          strokeDasharray="5,5" // Dashed line
+          fill="none"
+          opacity="0.7"
+          style={{ pointerEvents: 'none' }}
+        />
+      )
+    }
 
-    return (
-      <path
-        d={guideLinePath}
-        stroke="#f97316" // Orange color to match the FROM node border
-        strokeWidth="2"
-        strokeDasharray="5,5" // Dashed line
-        fill="none"
-        opacity="0.7"
-        style={{ pointerEvents: 'none' }}
-      />
-    )
+    // Handle arrow drawing mode
+    if (arrowDrawingMode && arrowSourceNode) {
+      const sourceNode = storeNodes.find(n => n.id === arrowSourceNode)
+      if (!sourceNode) return null
+
+      const sourceEllipse = getEllipseDimensions(sourceNode.data?.label || 'New Node', { fontSize: globalStyles?.nodeFontSize || 16 })
+      const sourceCenterX = sourceNode.position.x + sourceEllipse.centerX
+      const sourceCenterY = sourceNode.position.y + sourceEllipse.centerY
+
+      // Calculate a simple straight line from source node center to mouse position
+      const guideLinePath = `M ${sourceCenterX} ${sourceCenterY} L ${mousePosition.x} ${mousePosition.y}`
+
+      return (
+        <path
+          d={guideLinePath}
+          stroke="#f97316" // Orange color to match the FROM node border
+          strokeWidth="2"
+          strokeDasharray="5,5" // Dashed line
+          fill="none"
+          opacity="0.7"
+          style={{ pointerEvents: 'none' }}
+        />
+      )
+    }
+
+    return null
   }
 
   return (
@@ -1324,7 +1426,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           cursor: isPanning ? 'move' : 
                  (isDragging ? 'grabbing' : 
                  (panningMode ? 'move' :
-                 (isDraggingArrow ? 'pointer' : 'default'))),
+                 (arrowDrawingMode ? 'crosshair' :
+                 (isDraggingArrow ? 'pointer' : 'default')))),
           userSelect: 'none'
         }}
       >
@@ -1385,6 +1488,48 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
       }}>
         SIMULATION MODE
+      </div>
+    )}
+
+    {/* Arrow Drawing Mode Indicator */}
+    {arrowDrawingMode && (
+      <div style={{
+        position: 'absolute',
+        top: simulationMode ? '40px' : '10px',
+        right: '10px',
+        background: 'rgba(217, 119, 6, 0.9)',
+        color: 'white',
+        padding: '4px 8px',
+        borderRadius: '4px',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        pointerEvents: 'none',
+        zIndex: 1000,
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+      }}>
+        ARROW MODE
+      </div>
+    )}
+
+    {/* Arrow Drawing Mode Instructions */}
+    {arrowDrawingMode && (
+      <div style={{
+        position: 'absolute',
+        top: simulationMode ? '70px' : '40px',
+        right: '10px',
+        background: 'rgba(0, 0, 0, 0.8)',
+        color: 'white',
+        padding: '8px 12px',
+        borderRadius: '4px',
+        fontSize: '11px',
+        fontWeight: 'normal',
+        pointerEvents: 'none',
+        zIndex: 1000,
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+        maxWidth: '200px',
+        lineHeight: '1.3'
+      }}>
+        Click first node (source), then second node (target) to create arrow
       </div>
     )}
 
