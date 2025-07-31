@@ -75,13 +75,13 @@ export function getEllipseDimensions(label, options = {}) {
   const {
     baseWidth = 40,
     baseHeight = 40,
-    padding = 25,
+    padding = 40,
     maxTextWidth = 170,
     maxEllipseWidth = 200,
     fontSize = 16,
     onConstraintViolation = null,
   } = options
-  const lineHeight = fontSize + 4
+  const lineHeight = fontSize + 5
   const wrappedLines = wrapText(label, maxTextWidth, fontSize, onConstraintViolation)
   const calculateLineWidth = (line) => line.length * fontSize * 0.6
   const lineWidths = wrappedLines.map(calculateLineWidth)

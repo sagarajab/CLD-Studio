@@ -19,13 +19,24 @@ function CLDNode({
   isMultiSelected = false,
   arrowDrawingMode = false,
   isArrowSource = false,
+  renderEditBox = true,
+  onSaveLabel,
 }) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [label, setLabel] = useState(data.label || 'New Node')
+  // Use data.label directly instead of local state to avoid sync issues
+  const label = data.label || 'New Node'
+  const [localLabel, setLocalLabel] = useState(label)
   const [isHovered, setIsHovered] = useState(false)
   const inputRef = useRef(null)
   const textRef = useRef(null)
-  const { updateNode, globalStyles, simulationMode, simulationState, nodes, addEvent, hoveredNode } = useCLDStore()
+  const { updateNode, globalStyles, simulationMode, simulationState, nodes, addEvent, hoveredNode, editingNodeId, setEditingNode, clearEditingNode } = useCLDStore()
+  
+  const isEditing = editingNodeId === id
+
+  // Debug: log current data structure and sync localLabel
+  useEffect(() => {
+    console.log('CLDNode data structure for node', id, ':', data)
+    setLocalLabel(data.label || 'New Node')
+  }, [data.label, id])
 
   // Calculate ellipse dimensions based on text content with wrapping
   const ellipseDimensions = useMemo(() => {
@@ -47,14 +58,12 @@ function CLDNode({
     
     // Check if adding this change would exceed 4 lines
     if (lines.length <= 4) {
-      setLabel(newValue)
-      
-      // Auto-resize textarea to fit content
-      if (inputRef.current) {
-        inputRef.current.style.height = 'auto'
-        const scrollHeight = inputRef.current.scrollHeight
-        const maxHeight = ellipseDimensions.height - ellipseDimensions.textPadding * 2
-        inputRef.current.style.height = Math.min(scrollHeight, maxHeight) + 'px'
+      console.log('CLDNode handleLabelChange: updating label to:', newValue)
+      setLocalLabel(newValue)
+      // Call the save callback to update the node data
+      if (onSaveLabel) {
+        console.log('CLDNode handleLabelChange: calling onSaveLabel with:', id, newValue)
+        onSaveLabel(id, newValue)
       }
     } else {
       addEvent('⚠️ Line limit exceeded (max 4 lines)')
@@ -62,21 +71,28 @@ function CLDNode({
   }
 
   const handleLabelBlur = () => {
-    setIsEditing(false)
-    updateNode(id, { label })
+    clearEditingNode()
+    updateNode(id, { label: localLabel })
+  }
+
+  // Function to save current label (called from parent when exiting edit mode)
+  const saveCurrentLabel = () => {
+    if (isEditing) {
+      updateNode(id, { label: localLabel })
+    }
   }
 
   const handleLabelKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       // Enter without Shift finishes editing
       e.preventDefault()
-      setIsEditing(false)
-      updateNode(id, { label })
+      clearEditingNode()
+      updateNode(id, { label: localLabel })
     } else if (e.key === 'Escape') {
       // Escape cancels editing and reverts to original label
       e.preventDefault()
-      setLabel(data.label || 'New Node')
-      setIsEditing(false)
+      setLocalLabel(data.label || 'New Node')
+      clearEditingNode()
     }
     // Enter with Shift creates a new line (default textarea behavior)
   }
@@ -84,7 +100,7 @@ function CLDNode({
   const handleDoubleClick = (e) => {
     e.stopPropagation()
     if (!simulationMode) {
-      setIsEditing(true)
+      setEditingNode(id)
       setTimeout(() => {
         inputRef.current?.focus()
         inputRef.current?.select()
@@ -125,16 +141,7 @@ function CLDNode({
     setIsHovered(false)
   }
 
-  // Auto-resize textarea when editing starts
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      // Set initial height to match content
-      inputRef.current.style.height = 'auto'
-      const scrollHeight = inputRef.current.scrollHeight
-      const maxHeight = ellipseDimensions.height - ellipseDimensions.textPadding * 2
-      inputRef.current.style.height = Math.min(scrollHeight, maxHeight) + 'px'
-    }
-  }, [isEditing, ellipseDimensions.height, ellipseDimensions.textPadding])
+
 
   // Get node values from simulation state
   const nodeIndex = simulationState.accumulatedValues.length > 0 ? 
@@ -145,7 +152,7 @@ function CLDNode({
   return (
     <g>
       {/* Only one ellipse is visible at a time and handles all pointer events */}
-      {devMode ? (
+      {!isEditing && (devMode ? (
         <ellipse
           cx={ellipseDimensions.centerX}
           cy={ellipseDimensions.centerY}
@@ -205,36 +212,10 @@ function CLDNode({
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         />
-      )}
+      ))}
 
-      {/* Node label */}
-      {isEditing ? (
-        <foreignObject
-          x={ellipseDimensions.textPadding}
-          y={ellipseDimensions.textPadding}
-          width={ellipseDimensions.width - ellipseDimensions.textPadding * 2}
-          height={ellipseDimensions.height - ellipseDimensions.textPadding * 2}
-          className="node-foreign-object"
-        >
-          <textarea
-            ref={inputRef}
-            value={label}
-            onChange={handleLabelChange}
-            onBlur={handleLabelBlur}
-            onKeyDown={handleLabelKeyDown}
-            onContextMenu={handleContextMenu}
-            className="node-textarea"
-            style={{
-              minHeight: `${ellipseDimensions.lineHeight}px`,
-              fontSize: `${globalStyles.nodeFontSize}px`,
-              color: data.color || '#000000',
-              fontFamily: globalStyles.nodeFont,
-              lineHeight: `${globalStyles.nodeFontSize + 4}px`
-            }}
-            placeholder="Enter label..."
-          />
-        </foreignObject>
-      ) : (
+      {/* Node label - only show when not editing */}
+      {!isEditing && (
         // Render wrapped text lines
         ellipseDimensions.wrappedLines.map((line, index) => {
           const totalLines = ellipseDimensions.wrappedLines.length
@@ -315,6 +296,49 @@ function CLDNode({
             stroke="rgba(255,255,255,0.5)"
             strokeWidth="1"
           />
+        </g>
+      )}
+
+            {/* Edit box - positioned at the very end to appear on top */}
+      {isEditing && renderEditBox && (
+        <g>
+          {/* Background rectangle for editing */}
+          <rect
+            x={ellipseDimensions.centerX - ellipseDimensions.width / 2}
+            y={ellipseDimensions.centerY - ellipseDimensions.height / 2}
+            width={ellipseDimensions.width}
+            height={ellipseDimensions.lineHeight * 4 + 10}
+            fill="#ffffff"
+            stroke="#d1d5db"
+            strokeWidth="1"
+            rx="6"
+            ry="6"
+            filter="drop-shadow(0 2px 8px rgba(0, 0, 0, 0.15))"
+          />
+          {/* Textarea positioned absolutely */}
+          <foreignObject
+            x={ellipseDimensions.centerX - ellipseDimensions.width / 2 + 10}
+            y={ellipseDimensions.centerY - ellipseDimensions.height / 2 + 5}
+            width={ellipseDimensions.width - 20}
+            height={ellipseDimensions.lineHeight * 4}
+          >
+            <textarea
+              ref={inputRef}
+              value={isEditing ? localLabel : label}
+              onChange={handleLabelChange}
+              onBlur={handleLabelBlur}
+              onKeyDown={handleLabelKeyDown}
+              onContextMenu={handleContextMenu}
+              className="node-textarea-simple"
+              style={{
+                fontSize: `${globalStyles.nodeFontSize}px`,
+                color: data.color || '#000000',
+                fontFamily: globalStyles.nodeFont,
+                lineHeight: `${globalStyles.nodeFontSize + 4}px`
+              }}
+              placeholder="Enter label..."
+            />
+          </foreignObject>
         </g>
       )}
 

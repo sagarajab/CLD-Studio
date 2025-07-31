@@ -19,6 +19,7 @@ const useCLDStore = create((set, get) => ({
   diagramName: 'Untitled', // Add diagram name state
   isLoading: false, // Loading state for user feedback
   config: loadConfig(), // Load config from localStorage
+  editingNodeId: null, // ID of the node currently being edited
   
   // Undo/Redo state
   undoStack: [], // Array of state snapshots for undo
@@ -119,9 +120,18 @@ const useCLDStore = create((set, get) => ({
     set({ activeDropdown: null })
   },
   
+  // Node editing operations
+  setEditingNode: (nodeId) => {
+    set({ editingNodeId: nodeId })
+  },
+  
+  clearEditingNode: () => {
+    set({ editingNodeId: null })
+  },
+  
   // Node operations
   addNode: (position, label = 'New Node') => {
-    const { nodes, config, updateGraphAnalysis, simulationState, simulationMode, arrowDrawingMode, addEvent, recordStateChange } = get()
+    const { nodes, config, updateGraphAnalysis, simulationState, simulationMode, arrowDrawingMode, editingNodeId, addEvent, recordStateChange } = get()
     
     // Disable node addition during simulation mode or arrow drawing mode
     if (simulationMode || simulationState.isRunning) {
@@ -132,6 +142,12 @@ const useCLDStore = create((set, get) => ({
     // Disable node addition during arrow drawing mode
     if (arrowDrawingMode) {
       console.warn('Cannot add nodes while arrow drawing mode is enabled')
+      return false
+    }
+    
+    // Disable node addition when a node is being edited
+    if (editingNodeId !== null) {
+      console.warn('Cannot add nodes while a node is being edited')
       return false
     }
     
@@ -681,6 +697,10 @@ const useCLDStore = create((set, get) => ({
   loadDiagramData: (diagramData) => {
     // Set loading state
     set({ isLoading: true })
+    
+    console.log('loadDiagramData called with:', diagramData);
+    console.log('Input nodes count:', diagramData.nodes?.length);
+    console.log('Input edges count:', diagramData.edges?.length);
     
     try {
       // Handle both new enhanced format (v2.0) and legacy format (v1.0)

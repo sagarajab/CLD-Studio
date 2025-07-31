@@ -14,10 +14,10 @@
   user-select: none;
 }
 
-/* Node Textarea */
-.node-textarea {
+/* Simple Node Textarea */
+.node-textarea-simple {
   width: 100%;
-  height: auto;
+  height: 100%;
   border: none;
   outline: none;
   background: transparent;
@@ -31,16 +31,11 @@
   overflow-wrap: break-word;
   white-space: pre-wrap;
   pointer-events: auto;
-  overflow: hidden;
-  box-sizing: border-box;
-  transform: translateY(-50%);
-  position: relative;
-  top: 50%;
-}
-
-/* Foreign Object */
-.node-foreign-object {
   overflow: visible;
+  box-sizing: border-box;
+  padding-top: 0%;
+  transform: translateY(0%);
+  position: relative;
 }
 
 /* Value Pill Group */

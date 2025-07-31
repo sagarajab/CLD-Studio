@@ -1,13 +1,11 @@
 import { list, downloadData, uploadData } from 'aws-amplify/storage';
-import { Amplify } from 'aws-amplify';
 
-// Helper function to get current bucket name
+// Helper function to get current bucket name from Amplify config
 const getCurrentBucketName = () => {
   try {
-    const config = Amplify.getConfig();
-    const bucketName = config.Storage?.S3?.bucket;
-    console.log('Current bucket name:', bucketName);
-    return bucketName;
+    // Import the config dynamically to avoid circular dependencies
+    const config = JSON.parse(localStorage.getItem('amplifyConfig') || '{}');
+    return config.Storage?.S3?.bucket || 'unknown';
   } catch (error) {
     console.error('Error getting bucket name:', error);
     return 'unknown';
@@ -17,15 +15,12 @@ const getCurrentBucketName = () => {
 // Simple function to list all files in the bucket
 export const listAllFilesInBucket = async () => {
   try {
-    const bucketName = getCurrentBucketName();
-    console.log(`Listing all files in bucket: ${bucketName}`);
     const result = await list({
       options: {
         validateObjectExistence: false
       }
     });
     
-    console.log(`All files in bucket ${bucketName}:`, result.items);
     return result.items;
   } catch (error) {
     console.error('Error listing all files:', error);
@@ -36,15 +31,47 @@ export const listAllFilesInBucket = async () => {
 // Simple function to get a file from S3
 export const getS3FileDirect = async (key) => {
   try {
-    const bucketName = getCurrentBucketName();
-    console.log(`Getting file: ${key} from bucket: ${bucketName}`);
     const result = await downloadData({
       key: key,
       options: {
-        validateObjectExistence: false
+        validateObjectExistence: false,
+        accessLevel: 'guest'
       }
     });
-    return result;
+    
+    // Standardize the return format
+    let content;
+    
+    if (typeof result === 'string') {
+      // If result is a URL string, fetch the content
+      const response = await fetch(result);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file content from URL: ${response.statusText}`);
+      }
+      content = await response.text();
+    } else if (result && typeof result === 'object' && result.result) {
+      // Handle DownloadDataResult object
+      const actualResult = result.result instanceof Promise ? await result.result : result.result;
+      
+      if (typeof actualResult === 'string') {
+        content = actualResult;
+      } else if (actualResult instanceof ArrayBuffer || actualResult instanceof Uint8Array) {
+        // Convert binary data to string
+        const decoder = new TextDecoder('utf-8');
+        content = decoder.decode(actualResult);
+      } else if (actualResult.body instanceof Blob) {
+        // Handle Blob body
+        content = await actualResult.body.text();
+      } else {
+        // Fallback: try to stringify
+        content = JSON.stringify(actualResult);
+      }
+    } else {
+      // Direct content
+      content = result;
+    }
+    
+    return { result: content };
   } catch (error) {
     console.error(`Failed to get S3 file ${key}:`, error);
     throw error;
@@ -54,8 +81,6 @@ export const getS3FileDirect = async (key) => {
 // Simple function to upload a file to S3
 export const uploadS3File = async (file, key) => {
   try {
-    const bucketName = getCurrentBucketName();
-    console.log(`Uploading file: ${key} to bucket: ${bucketName}`);
     const result = await uploadData({
       key: key,
       data: file,
@@ -63,7 +88,6 @@ export const uploadS3File = async (file, key) => {
         contentType: file.type
       }
     });
-    console.log(`Successfully uploaded: ${key} to bucket: ${bucketName}`);
     return result;
   } catch (error) {
     console.error(`Error uploading file ${key}:`, error);
@@ -71,42 +95,6 @@ export const uploadS3File = async (file, key) => {
   }
 };
 
-// Function to upload example files to S3
-export const uploadExampleFiles = async () => {
-  try {
-    const bucketName = getCurrentBucketName();
-    console.log(`Starting upload of example files to bucket: ${bucketName}`);
-    
-    const exampleFiles = [
-      'basic-feedback-loop.cld',
-      'market-growth.cld',
-      'supply-chain.cld',
-      'predator-prey.cld'
-    ];
-    
-    for (const filename of exampleFiles) {
-      try {
-        // Fetch the file from the local examples folder
-        const response = await fetch(`/examples/${filename}`);
-        if (!response.ok) {
-          console.warn(`Failed to fetch local file: ${filename}`);
-          continue;
-        }
-        
-        const fileContent = await response.text();
-        const file = new File([fileContent], filename, { type: 'application/json' });
-        
-        // Upload to S3
-        await uploadS3File(file, `examples/${filename}`);
-      } catch (error) {
-        console.error(`Failed to upload ${filename}:`, error);
-      }
-    }
-  } catch (error) {
-    console.error('Error uploading example files:', error);
-  }
-};
+// Note: uploadExampleFiles function removed as it was unused
 
-// Legacy functions for compatibility
-export const listS3Files = listAllFilesInBucket;
-export const getS3File = getS3FileDirect; 
+// Note: Legacy function aliases removed for clarity 

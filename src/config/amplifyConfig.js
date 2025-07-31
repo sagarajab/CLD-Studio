@@ -47,6 +47,10 @@ export const initializeAmplify = async () => {
   try {
     const config = await loadAmplifyConfig();
     Amplify.configure(config);
+    
+    // Store config in localStorage for easy access by other modules
+    localStorage.setItem('amplifyConfig', JSON.stringify(config));
+    
     console.log('Amplify configured successfully');
   } catch (error) {
     console.error('Failed to initialize Amplify:', error);

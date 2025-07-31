@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
-import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Play, Pause, RotateCcw as StepBack, RotateCw as StepForward, Square, Settings as SettingsIcon, BarChart3, Activity, Undo2, Redo2, Eraser, Grid3x3, SplinePointer, Dices, SkipForward, SkipBack, TimerReset, ZoomIn, ZoomOut, Move, Trash, DraftingCompass, Laptop, Database, Gamepad2, Settings2 } from 'lucide-react'
+import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Play, Pause, RotateCcw as StepBack, RotateCw as StepForward, Square, Settings as SettingsIcon, BarChart3, Activity, Undo2, Redo2, Eraser, Grid3x3, SplinePointer, Dices, SkipForward, SkipBack, TimerReset, ZoomIn, ZoomOut, Move, Trash, DraftingCompass, Laptop, Database, Gamepad2, Settings2, LogOut } from 'lucide-react'
 
 import SettingsModal from './SettingsModal'
 import StateVectorModal from './StateVectorModal'
@@ -11,7 +11,7 @@ import appIcon from '../assets/app_icon.png'
 import tbtIcon from '../assets/tbt_icon.png'
 import './SysLoopHeader.css'
 
-function SysLoopHeader() {
+function SysLoopHeader({ signOut }) {
   const { 
     saveDiagram, 
     loadDiagram, 
@@ -1657,281 +1657,257 @@ function SysLoopHeader() {
               )}
             </div>
           ))}
+          {/* Separator before Simulation Controls */}
+          <div className="menu-separator"></div>
+          {/* Simulation Controls Pill - moved here */}
+          <div className="simulation-controls-pill">
+            {/* Simulation Mode Toggle */}
+            <button
+              onClick={toggleSimulationMode}
+              className={`menu-icon-btn simulation-mode-btn ${simulationMode ? 'simulation-active' : ''} simulation-button-enabled`}
+              title={simulationMode ? 'Disable Simulation Mode' : 'Enable Simulation Mode'}
+            >
+              <Gamepad2 className="menu-icon" />
+            </button>
+            {/* Settings Dropdown - moved to second position */}
+            <div className="sim-settings-container sim-settings-container-relative">
+              <button
+                className={`menu-icon-btn ${!simulationMode ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+                onClick={toggleSimSettingsDropdown}
+                disabled={!simulationMode}
+                title="Simulation settings"
+              >
+                <Settings2 className="menu-icon" />
+              </button>
+              {activeDropdown === 'simSettings' && (
+                <div 
+                  className="sim-settings-dropdown" 
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="form-section">
+                    <h4 className="form-section-title">
+                      Simulation Settings
+                    </h4>
+                    
+                    {/* Node Selection */}
+                    <div className="form-group">
+                      <label className="form-label">
+                        Select Node
+                      </label>
+                      <select 
+                        value={selectedSimNode} 
+                        onChange={(e) => setSelectedSimNode(e.target.value)}
+                        disabled={simulationState.isRunning}
+                        className="form-select"
+                      >
+                        <option value="">Select node...</option>
+                        {nodes.map(node => (
+                          <option key={node.id} value={node.id}>
+                            {node.data.label || `Node ${node.id}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Perturbation Value */}
+                    <div className="form-group">
+                      <label className="form-label">
+                        Perturbation Value
+                      </label>
+                      <input
+                        type="number"
+                        min="-100"
+                        max="100"
+                        value={perturbationValue}
+                        onChange={(e) => handlePerturbationChange(parseInt(e.target.value))}
+                        disabled={simulationState.isRunning}
+                        className="form-input"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label className="form-label">
+                        Speed: {Math.round(2000 / simulationState.stepDelay * 10) / 10}x
+                      </label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="40"
+                        step="0.5"
+                        value={Math.round(2000 / simulationState.stepDelay * 10) / 10}
+                        onChange={(e) => updateSimulationSettings({ stepDelay: Math.round(2000 / parseFloat(e.target.value)) })}
+                        disabled={simulationState.isRunning}
+                        className="simulation-range"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label className="form-label">
+                        Max Steps: {simulationState.maxSteps}
+                      </label>
+                      <input
+                        type="range"
+                        min="10"
+                        max="200"
+                        step="10"
+                        value={simulationState.maxSteps}
+                        onChange={(e) => updateSimulationSettings({ maxSteps: parseInt(e.target.value) })}
+                        disabled={simulationState.isRunning}
+                        className="simulation-range"
+                      />
+                    </div>
+                    
+                    {/* Initialize Button */}
+                    <button
+                      onClick={handleStartSimulation}
+                      disabled={!selectedSimNode || simulationState.isRunning}
+                      className="initialize-button"
+                    >
+                      Initialize Simulation
+                    </button>
+                  </div>
+                </div>
+              )}
+            
+            
+            {/* Control Buttons */}
+            <button
+              onClick={handlePlayWithAutoInit}
+              disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
+              className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : simulationState.isRunning ? 'simulation-button-running' : 'simulation-button-enabled'}`}
+              title={
+                !simulationState.isInitialized ? "Initialize simulation first" :
+                simulationState.isRunning ? "Simulation is running" :
+                simulationState.isPaused ? "Resume simulation" :
+                simulationState.currentStep >= simulationState.maxSteps ? "Re-run simulation from beginning" :
+                "Start simulation"
+              }
+            >
+              <Play className="menu-icon" />
+            </button>
+            
+            <button
+              onClick={pauseSimulation}
+              disabled={!simulationMode || !simulationState.isRunning}
+              className={`menu-icon-btn ${!simulationMode || !simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+              title="Pause simulation"
+            >
+              <Pause className="menu-icon" />
+            </button>
+            
+            <button
+              onClick={stepBackSimulation}
+              disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
+              className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+              title="Step back"
+            >
+              <SkipBack className="menu-icon" />
+            </button>
+            
+            <button
+              onClick={stepSimulation}
+              disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
+              className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+              title="Step forward"
+            >
+              <SkipForward className="menu-icon" />
+            </button>
+            
+            <button
+              onClick={resetSimulation}
+              disabled={!simulationMode}
+              className={`menu-icon-btn ${!simulationMode ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+              title="Reset simulation"
+            >
+              <TimerReset className="menu-icon" />
+            </button>
+            {/* State Vector, Plot, and LED - moved inside pill */}
+            <button
+              onClick={() => setShowStateVectorModal(true)}
+              disabled={!simulationMode}
+              className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
+              title="Show state vectors"
+            >
+              <BarChart3 className="menu-icon" />
+            </button>
+            <button
+              onClick={() => setShowPlotsModal(true)}
+              disabled={!simulationMode}
+              className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
+              title="Show plots"
+            >
+              <Activity className="menu-icon" />
+            </button>
+            <div 
+              className={`simulation-led ${
+                !simulationMode ? 'inactive' :
+                !simulationState.isInitialized ? 'inactive' :
+                simulationState.isRunning ? 'running' :
+                simulationState.isPaused ? 'paused' :
+                simulationState.currentStep >= simulationState.maxSteps ? 'completed' : 'ready'
+              }`}
+              title={
+                !simulationMode ? 'Simulation mode disabled' :
+                !simulationState.isInitialized ? 'Simulation not initialized' :
+                simulationState.isRunning ? 'Simulation running' :
+                simulationState.isPaused ? 'Simulation paused' :
+                simulationState.currentStep >= simulationState.maxSteps ? 'Simulation completed' : 'Simulation ready'
+              }
+            />
+          </div>
         </div>
       </div>
       
 
     
       
-      {/* Simulation Controls */}
-      <div className="header-center header-center-simulation">
-        
-        {/* Simulation Controls Pill */}
-        <div className="simulation-controls-pill">
-          {/* Simulation Mode Toggle */}
-          <button
-            onClick={toggleSimulationMode}
-            className={`menu-icon-btn ${simulationMode ? 'simulation-active' : ''} simulation-button-enabled`}
-            title={simulationMode ? 'Disable Simulation Mode' : 'Enable Simulation Mode'}
-          >
-            <Gamepad2 className="menu-icon" />
-          </button>
-          
-          {/* Settings Dropdown - moved to second position */}
-          <div className="sim-settings-container sim-settings-container-relative">
-            <button
-              className={`menu-icon-btn ${!simulationMode ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
-              onClick={toggleSimSettingsDropdown}
-              disabled={!simulationMode}
-              title="Simulation settings"
-            >
-              <Settings2 className="menu-icon" />
-            </button>
-                              {activeDropdown === 'simSettings' && (
-              <div 
-                className="sim-settings-dropdown" 
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="form-section">
-                  <h4 className="form-section-title">
-                    Simulation Settings
-                  </h4>
-                  
-                  {/* Node Selection */}
-                  <div className="form-group">
-                    <label className="form-label">
-                      Select Node
-                    </label>
-                    <select 
-                      value={selectedSimNode} 
-                      onChange={(e) => setSelectedSimNode(e.target.value)}
-                      disabled={simulationState.isRunning}
-                      className="form-select"
-                    >
-                      <option value="">Select node...</option>
-                      {nodes.map(node => (
-                        <option key={node.id} value={node.id}>
-                          {node.data.label || `Node ${node.id}`}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  {/* Perturbation Value */}
-                  <div className="form-group">
-                    <label className="form-label">
-                      Perturbation Value
-                    </label>
-                    <input
-                      type="number"
-                      min="-100"
-                      max="100"
-                      value={perturbationValue}
-                      onChange={(e) => handlePerturbationChange(parseInt(e.target.value))}
-                      disabled={simulationState.isRunning}
-                      className="form-input"
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">
-                      Speed: {Math.round(2000 / simulationState.stepDelay * 10) / 10}x
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="40"
-                      step="0.5"
-                      value={Math.round(2000 / simulationState.stepDelay * 10) / 10}
-                      onChange={(e) => updateSimulationSettings({ stepDelay: Math.round(2000 / parseFloat(e.target.value)) })}
-                      disabled={simulationState.isRunning}
-                      className="simulation-range"
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">
-                      Max Steps: {simulationState.maxSteps}
-                    </label>
-                    <input
-                      type="range"
-                      min="10"
-                      max="200"
-                      step="10"
-                      value={simulationState.maxSteps}
-                      onChange={(e) => updateSimulationSettings({ maxSteps: parseInt(e.target.value) })}
-                      disabled={simulationState.isRunning}
-                      className="simulation-range"
-                    />
-                  </div>
-                  
-                  {/* Initialize Button */}
-                  <button
-                    onClick={handleStartSimulation}
-                    disabled={!selectedSimNode || simulationState.isRunning}
-                    className="initialize-button"
-                  >
-                    Initialize Simulation
-                  </button>
-                </div>
-              </div>
-            )}
-          
-          
-          {/* Control Buttons */}
-          <button
-            onClick={handlePlayWithAutoInit}
-            disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
-            className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : simulationState.isRunning ? 'simulation-button-running' : 'simulation-button-enabled'}`}
-            title={
-              !simulationState.isInitialized ? "Initialize simulation first" :
-              simulationState.isRunning ? "Simulation is running" :
-              simulationState.isPaused ? "Resume simulation" :
-              simulationState.currentStep >= simulationState.maxSteps ? "Re-run simulation from beginning" :
-              "Start simulation"
-            }
-          >
-            <Play className="menu-icon" />
-          </button>
-          
-          <button
-            onClick={pauseSimulation}
-            disabled={!simulationMode || !simulationState.isRunning}
-            className={`menu-icon-btn ${!simulationMode || !simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
-            title="Pause simulation"
-          >
-            <Pause className="menu-icon" />
-          </button>
-          
-          <button
-            onClick={stepBackSimulation}
-            disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
-            className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
-            title="Step back"
-          >
-            <SkipBack className="menu-icon" />
-          </button>
-          
-          <button
-            onClick={stepSimulation}
-            disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
-            className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
-            title="Step forward"
-          >
-            <SkipForward className="menu-icon" />
-          </button>
-          
-          <button
-            onClick={resetSimulation}
-            disabled={!simulationMode}
-            className={`menu-icon-btn ${!simulationMode ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
-            title="Reset simulation"
-          >
-            <TimerReset className="menu-icon" />
-          </button>
-        </div>
-        
-        {/* Progress Bar */}
-        {simulationMode && simulationState.isInitialized && (
-          <div className="progress-container">
-            <span className="progress-text">
-              {simulationState.currentStep}/{simulationState.maxSteps}
-            </span>
-            <div className="progress-bar">
-              <div 
-                className="progress-fill"
-                style={{
-                  width: `${Math.min(100, (simulationState.currentStep / simulationState.maxSteps) * 100)}%`
-                }} 
-              />
-            </div>
-          </div>
-        )}
-        
-        {/* Modal Buttons */}
-        <button
-          onClick={() => setShowStateVectorModal(true)}
-          disabled={!simulationMode}
-          className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
-          title="Show state vectors"
-        >
-          <BarChart3 className="menu-icon" />
-        </button>
-        
-        <button
-          onClick={() => setShowPlotsModal(true)}
-          disabled={!simulationMode}
-          className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
-          title="Show plots"
-        >
-          <Activity className="menu-icon" />
-        </button>
-        
-        {/* LED Status Indicator */}
-        <div 
-          className={`simulation-led ${
-            !simulationMode ? 'inactive' :
-            !simulationState.isInitialized ? 'inactive' :
-            simulationState.isRunning ? 'running' :
-            simulationState.isPaused ? 'paused' :
-            simulationState.currentStep >= simulationState.maxSteps ? 'completed' : 'ready'
-          }`}
-          title={
-            !simulationMode ? 'Simulation mode disabled' :
-            !simulationState.isInitialized ? 'Simulation not initialized' :
-            simulationState.isRunning ? 'Simulation running' :
-            simulationState.isPaused ? 'Simulation paused' :
-            simulationState.currentStep >= simulationState.maxSteps ? 'Simulation completed' : 'Simulation ready'
-          }
-        />
-
-
-        </div>
-      </div>
-
-      <div className="header-right header-right-custom">
-        {/* TBT Logo */}
-        <div className="logo">
-          <div className="logo-icon">
-            <img 
-              src={tbtIcon} 
-              alt="TBT" 
-              className="app-icon"
+      {/* Progress Bar */}
+      {simulationMode && simulationState.isInitialized && (
+        <div className="progress-container">
+          <span className="progress-text">
+            {simulationState.currentStep}/{simulationState.maxSteps}
+          </span>
+          <div className="progress-bar">
+            <div 
+              className="progress-fill"
+              style={{
+                width: `${Math.min(100, (simulationState.currentStep / simulationState.maxSteps) * 100)}%`
+              }} 
             />
           </div>
         </div>
-      </div>
-
-
-
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
-      )}
-
-      {/* State Vector Modal */}
-      {showStateVectorModal && (
-        <StateVectorModal 
-          isOpen={showStateVectorModal} 
-          onClose={() => setShowStateVectorModal(false)} 
-        />
       )}
       
-      {/* Plots Modal */}
-      {showPlotsModal && (
-        <PlotsModal 
-          isOpen={showPlotsModal} 
-          onClose={() => setShowPlotsModal(false)} 
-        />
-      )}
+      {/* Header Right - Sign Out and TBT Logo */}
+      <div className="header-right">
+        {/* Sign Out Button */}
+        <button
+          onClick={signOut}
+          className="header-signout-btn"
+          title="Sign Out"
+        >
+          <LogOut size={18} />
+        </button>
+        <div className="bodhi-logo">
+          <img 
+            src={tbtIcon} 
+            alt="TBT Logo" 
+          />
+        </div>
+      </div>
 
-      {/* Examples Modal */}
+      {/* Modal Buttons */}
+      
+
+
+      {/* Modals */}
       {showExamplesModal && (
         <ExamplesModal 
           isOpen={showExamplesModal} 
           onClose={() => setShowExamplesModal(false)} 
         />
       )}
+      </div>
     </header>
   )
 }

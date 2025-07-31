@@ -8,7 +8,7 @@ import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
 import S3FileManager from './components/S3FileManager'
 import { useCLDStore } from './stores/cldStore'
-import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2, LogOut, Database } from 'lucide-react'
+import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2, LogOut, Database, User, UserCheck } from 'lucide-react'
 import './components/StatusBar.css'
 
 function App({ user, signOut }) {
@@ -18,6 +18,7 @@ function App({ user, signOut }) {
   const [devMode, setDevMode] = useState(false) // Add dev mode state
   const [showSettingsModal, setShowSettingsModal] = useState(false) // Add settings modal state
   const [showS3FileManager, setShowS3FileManager] = useState(false) // Add S3 file manager state
+  const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 }) // Add mouse coordinates state
   
   const { 
     nodes, 
@@ -117,10 +118,15 @@ function App({ user, signOut }) {
     }
   }
 
+  // Handle mouse move to track coordinates
+  const handleMouseMove = (event) => {
+    setMouseCoords({ x: event.clientX, y: event.clientY })
+  }
+
   return (
-    <div className="sysloop-app" onClick={handleAppClick}>
-      {/* Header */}
-      <SysLoopHeader mode={mode} setMode={setMode} />
+    <div className="sysloop-app" onClick={handleAppClick} onMouseMove={handleMouseMove}>
+             {/* Header */}
+       <SysLoopHeader mode={mode} setMode={setMode} signOut={signOut} />
 
       {/* Main Content */}
       <div className="main-layout">
@@ -137,15 +143,17 @@ function App({ user, signOut }) {
         {/* Main Canvas */}
         <div className="canvas-area">
           <ReactFlowProvider>
-            <Canvas 
-              mode={mode} 
-              loops={loops} 
-              dimmingEnabled={dimmingEnabled}
-              hoveredLoop={hoveredLoop}
-              devMode={devMode}
-              setDevMode={setDevMode}
-            />
+                         <Canvas 
+               mode={mode} 
+               loops={loops} 
+               dimmingEnabled={dimmingEnabled}
+               hoveredLoop={hoveredLoop}
+               devMode={devMode}
+               setDevMode={setDevMode}
+             />
           </ReactFlowProvider>
+          
+
         </div>
         
         {/* Simulation Debug Panel - Removed */}
@@ -187,18 +195,11 @@ function App({ user, signOut }) {
         </div>
         <div className="status-right">
           <div className="status-user-session-auth">
-            <span>User: <b>{user?.username || user?.attributes?.email || 'Guest'}</b></span>
+            <span>User: <b>{user?.signInDetails?.loginId || user?.attributes?.email || 'Guest'}</b></span>
             <div className="status-separator"></div>
-            <span>Session: <b>{user?.signInDetails?.loginId || 'Active'}</b></span>
-            <div className="status-separator"></div>
-            <span>Auth: <b>Authenticated</b></span>
+            {user ? <UserCheck size={16} className="text-green-500" /> : <User size={16} className="text-gray-400" />}
           </div>
           <div className="status-controls">
-            {/* Zoom Level Indicator */}
-            <div className="status-item zoom-level zoom-level-container">
-              <span className="zoom-level-label">Zoom:</span>
-              <span className="zoom-level-value">{Math.round(viewTransform.scale * 100)}%</span>
-            </div>
             
             {/* Dev Mode Toggle */}
             <button
@@ -207,14 +208,6 @@ function App({ user, signOut }) {
               title="Toggle Dev Mode"
             >
               <Wrench size={18} />
-            </button>
-            {/* S3 File Manager Button */}
-            <button
-              onClick={() => setShowS3FileManager(true)}
-              className="statusbar-icon-btn s3-btn"
-              title="S3 File Manager"
-            >
-              <Database size={18} />
             </button>
             {/* Settings Button */}
             <button
@@ -239,14 +232,6 @@ function App({ user, signOut }) {
               title="Help"
             >
               <HelpCircle size={18} />
-            </button>
-            {/* Sign Out Button */}
-            <button
-              onClick={signOut}
-              className="statusbar-icon-btn signout-btn"
-              title="Sign Out"
-            >
-              <LogOut size={18} />
             </button>
           </div>
         </div>

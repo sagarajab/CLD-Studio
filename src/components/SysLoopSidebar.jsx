@@ -340,15 +340,27 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
 
     if (isEditing) {
       return (
-        <div
+        <textarea
           className="description-cell editing"
-          contentEditable
-          suppressContentEditableWarning={true}
-          onInput={(e) => setEditValue(e.currentTarget.textContent)}
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
           onKeyDown={handleEditKeyDown}
           onBlur={saveEdit}
           autoFocus
-          dangerouslySetInnerHTML={{ __html: editValue }}
+          rows={1}
+          style={{
+            resize: 'none',
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            fontFamily: 'inherit',
+            fontSize: 'inherit',
+            width: '100%',
+            minHeight: '20px',
+            padding: '4px 6px',
+            boxSizing: 'border-box',
+            verticalAlign: 'middle'
+          }}
         />
       )
     }

@@ -1,6 +1,6 @@
 import React from 'react'
 
-function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge, allLoops = [] }) {
+function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge, allLoops = [], isAuthenticated = false }) {
   const getCurrentTime = () => {
     return new Date().toLocaleTimeString()
   }
@@ -75,6 +75,12 @@ function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge, allLoops = 
         <div className="flex items-center space-x-2">
           <div className="w-2 h-2 bg-green-500 rounded-full status-indicator"></div>
           <span>Ready</span>
+        </div>
+        
+        {/* Auth LED Indicator */}
+        <div className="flex items-center space-x-2">
+          <span>Auth:</span>
+          <div className={`w-3 h-3 rounded-full ${isAuthenticated ? 'bg-green-500' : 'bg-red-500'} shadow-lg`}></div>
         </div>
         
         <div className="flex items-center space-x-2">

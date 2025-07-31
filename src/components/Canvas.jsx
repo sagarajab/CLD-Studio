@@ -16,6 +16,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   const [isCreatingConnection, setIsCreatingConnection] = useState(false)
   const [connectionSource, setConnectionSource] = useState(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 })
 
 
   const [isDragging, setIsDragging] = useState(false)
@@ -88,7 +89,9 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     simulationMode,
     hoveredEdge,
     recordDragStart,
-    recordDragEnd
+    recordDragEnd,
+    editingNodeId,
+    clearEditingNode
   } = useCLDStore();
 
   // Helper functions for loop highlighting
@@ -415,6 +418,9 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   }, [storeEdges, storeNodes, updateEdge, getEllipseDimensions, globalStyles])
 
   const handleCanvasMouseMove = useCallback((event) => {
+    // Update mouse coordinates for overlay
+    setMouseCoords({ x: event.clientX, y: event.clientY })
+    
     if (isPanning) {
       const deltaX = event.clientX - panStart.x
       const deltaY = event.clientY - panStart.y
@@ -635,7 +641,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         }
       }
     }
-     }, [isPanning, panStart, isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, hasRecordedDragStart, viewTransform, storeNodes, updateNode, recordDragStart, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, arrowDrawingMode, arrowSourceNode, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId, selectedNodes])
+     }, [isPanning, panStart, isDragging, dragStart, isDraggingNode, draggedNodeId, dragOffset, hasRecordedDragStart, viewTransform, storeNodes, updateNode, recordDragStart, isDraggingControlPoint, draggedEdgeId, updateEdge, isCreatingConnection, connectionSource, arrowDrawingMode, arrowSourceNode, updateControlPointsForNodeMove, globalStyles, isDraggingArrow, draggedArrowId, selectedNodes, setMouseCoords])
 
   const handleCanvasMouseUp = useCallback(() => {
     setIsDragging(false)
@@ -874,6 +880,11 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         clearHighlightedLoop()
       }
       
+      // Exit node edit mode if clicking on canvas background
+      if (editingNodeId) {
+        clearEditingNode()
+      }
+      
       // Reset arrow drawing mode if clicking on canvas background
       if (arrowDrawingMode && arrowSourceNode) {
         updateNode(arrowSourceNode, { borderColor: undefined })
@@ -1028,7 +1039,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     })
   }
 
-  // Render nodes
+  // Render nodes (excluding editing nodes)
   const renderNodes = () => {
     return storeNodes.map(node => {
       const isInLoop = isNodeInHighlightedLoop(node.id)
@@ -1054,10 +1065,49 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             isCreatingConnection={isCreatingConnection}
             arrowDrawingMode={arrowDrawingMode}
             isArrowSource={arrowDrawingMode && arrowSourceNode === node.id}
+            renderEditBox={false}
           />
         </g>
       )
     })
+  }
+
+  // Render editing nodes separately (after edges)
+  const renderEditingNodes = () => {
+    const editingNode = storeNodes.find(node => node.id === editingNodeId)
+    if (!editingNode) return null
+    
+    const isInLoop = isNodeInHighlightedLoop(editingNode.id)
+    const isInHoveredLoop = isNodeInHoveredLoop(editingNode.id)
+    const shouldHighlight = isInLoop || isInHoveredLoop
+    const opacity = getElementOpacity(shouldHighlight)
+    
+    return (
+      <g key={`editing-${editingNode.id}`} transform={`translate(${editingNode.position.x}, ${editingNode.position.y})`} data-node-id={editingNode.id} style={{ opacity }}>
+        <CLDNode 
+          id={editingNode.id}
+          data={editingNode.data}
+          selected={selectedNode === editingNode.id}
+          isMultiSelected={selectedNodes.includes(editingNode.id)}
+          isInHighlightedLoop={isInLoop}
+          isInHoveredLoop={isInHoveredLoop}
+          highlightedLoopType={highlightedLoop !== null && loops[highlightedLoop] ? loops[highlightedLoop].type : null}
+          hoveredLoopType={hoveredLoop !== null && loops[hoveredLoop] ? loops[hoveredLoop].type : null}
+          onClick={(e) => handleNodeClick(editingNode.id, e)}
+          onMouseDown={(e) => handleNodeMouseDown(e, editingNode)}
+          devMode={devMode}
+          isFromNode={isCreatingConnection && connectionSource === editingNode.id}
+          isCreatingConnection={isCreatingConnection}
+          arrowDrawingMode={arrowDrawingMode}
+          isArrowSource={arrowDrawingMode && arrowSourceNode === editingNode.id}
+          renderEditBox={true}
+          onSaveLabel={(nodeId, label) => {
+            console.log('Canvas onSaveLabel: updating node', nodeId, 'with label:', label)
+            updateNode(nodeId, { label })
+          }}
+        />
+      </g>
+    )
   }
 
   // Render edges
@@ -1466,8 +1516,11 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           {/* Edges */}
           {renderEdges()}
           
-                  {/* Connection guide line */}
-        {renderConnectionGuideLine()}
+          {/* Connection guide line */}
+          {renderConnectionGuideLine()}
+          
+          {/* Editing nodes - rendered after edges to appear on top */}
+          {renderEditingNodes()}
       </g>
     </svg>
     
@@ -1476,7 +1529,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       <div style={{
         position: 'absolute',
         top: '10px',
-        right: '10px',
+        left: '50%',
+        transform: 'translateX(-50%)',
         background: 'rgba(220, 38, 38, 0.9)',
         color: 'white',
         padding: '4px 8px',
@@ -1491,47 +1545,26 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       </div>
     )}
 
-    {/* Arrow Drawing Mode Indicator */}
-    {arrowDrawingMode && (
-      <div style={{
-        position: 'absolute',
-        top: simulationMode ? '40px' : '10px',
-        right: '10px',
-        background: 'rgba(217, 119, 6, 0.9)',
-        color: 'white',
-        padding: '4px 8px',
-        borderRadius: '4px',
-        fontSize: '12px',
-        fontWeight: 'bold',
-        pointerEvents: 'none',
-        zIndex: 1000,
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
-      }}>
-        ARROW MODE
-      </div>
-    )}
 
-    {/* Arrow Drawing Mode Instructions */}
-    {arrowDrawingMode && (
-      <div style={{
-        position: 'absolute',
-        top: simulationMode ? '70px' : '40px',
-        right: '10px',
-        background: 'rgba(0, 0, 0, 0.8)',
-        color: 'white',
-        padding: '8px 12px',
-        borderRadius: '4px',
-        fontSize: '11px',
-        fontWeight: 'normal',
-        pointerEvents: 'none',
-        zIndex: 1000,
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-        maxWidth: '200px',
-        lineHeight: '1.3'
-      }}>
-        Click first node (source), then second node (target) to create arrow
-      </div>
-    )}
+
+    {/* Zoom Percentage Overlay */}
+    <div style={{
+      position: 'absolute',
+      top: '10px',
+      right: '10px',
+      background: '#f3f4f6',
+      color: '#374151',
+      fontSize: '12px',
+      fontWeight: '500',
+      pointerEvents: 'none',
+      zIndex: 1000,
+      padding: '4px 8px',
+      borderRadius: '12px',
+      border: '1px solid #d1d5db',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+    }}>
+      {Math.round(viewTransform.scale * 100)}%
+    </div>
 
     {/* Watermark */}
     <div style={{

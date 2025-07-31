@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import { Database, Download, Eye, FileText, Filter, X, RefreshCw } from 'lucide-react'
 import './ExamplesModal.css'
-import { listS3Files, getS3File, getS3FileDirect, listAllFilesInBucket } from '../utils/storage';
+import { getS3FileDirect, listAllFilesInBucket } from '../utils/storage';
 
 function ExamplesModal({ isOpen, onClose }) {
   const { loadDiagramData } = useCLDStore()
@@ -68,12 +68,12 @@ function ExamplesModal({ isOpen, onClose }) {
       
       const examples = [];
       
-             for (const file of cldFiles) {
-         try {
-           // Try to get the file content to verify it's accessible
-           const fileBlob = await getS3FileDirect(file.key);
-           // Just verify the file is accessible, we don't need to parse it here
-           const fileName = file.key.split('/').pop().replace('.cld', '');
+                     for (const file of cldFiles) {
+          try {
+            // Try to get the file content to verify it's accessible
+            const downloadResult = await getS3FileDirect(file.key);
+            // Just verify the file is accessible, we don't need to parse it here
+            const fileName = file.key.split('/').pop().replace('.cld', '');
            
            examples.push({
              id: file.key,
@@ -172,9 +172,30 @@ function ExamplesModal({ isOpen, onClose }) {
       
       if (example.key) {
         // Load from S3 using direct HTTP request
-        const fileBlob = await getS3FileDirect(example.key);
-        const fileContent = await fileBlob.text();
-        diagramData = JSON.parse(fileContent);
+        const downloadResult = await getS3FileDirect(example.key);
+        const fileContent = downloadResult.result;
+        
+        // Ensure we have a string to parse
+        if (typeof fileContent !== 'string') {
+          throw new Error(`Expected string content, got ${typeof fileContent}`);
+        }
+        
+        // Try to clean the content if it has BOM or other encoding issues
+        let cleanContent = fileContent.trim();
+        if (cleanContent.charCodeAt(0) === 0xFEFF) {
+          // Remove BOM if present
+          cleanContent = cleanContent.slice(1);
+        }
+        
+        try {
+          diagramData = JSON.parse(cleanContent);
+          console.log('S3 loaded diagram data:', diagramData);
+          console.log('S3 nodes count:', diagramData.nodes?.length);
+          console.log('S3 edges count:', diagramData.edges?.length);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error(`Invalid JSON in file: ${parseError.message}`);
+        }
       } else {
         // Load from local examples
         const response = await fetch(`/examples/${example.filename}`)
@@ -182,9 +203,20 @@ function ExamplesModal({ isOpen, onClose }) {
           throw new Error(`Failed to load example file: ${example.filename}`)
         }
         diagramData = await response.json()
+        console.log('Local loaded diagram data:', diagramData);
+        console.log('Local nodes count:', diagramData.nodes?.length);
+        console.log('Local edges count:', diagramData.edges?.length);
       }
       
       // Load the example into the store
+      console.log('About to call loadDiagramData with:', {
+        diagramName: diagramData.diagramName,
+        nodesCount: diagramData.nodes?.length,
+        edgesCount: diagramData.edges?.length,
+        version: diagramData.version,
+        hasProblemStatement: !!diagramData.problemStatement
+      });
+      
       loadDiagramData(diagramData)
       console.log(`Successfully loaded example: ${example.name}`)
       onClose()

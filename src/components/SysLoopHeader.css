@@ -6,7 +6,7 @@
   height: 24px;
   background-color: #666666;
   opacity: 0.7;
-  margin: 0 8px;
+  margin: 0 18px;
   border-radius: 0.5px;
 }
 
@@ -303,11 +303,13 @@
 .simulation-controls-pill {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  padding: 4px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 6px 12px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
 }
 
 /* Simulation Settings Container */
@@ -436,3 +438,51 @@
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0.3; }
 } 
+
+.menu-icon-btn.simulation-mode-btn {
+  background: #334155; /* distinct blue-gray for default state */
+  border-radius: 50%;
+  color: #fff;
+  transition: background 0.15s, color 0.15s;
+}
+.menu-icon-btn.simulation-mode-btn:hover,
+.menu-icon-btn.simulation-mode-btn:focus {
+  background: #3b4252;
+  color: #fff;
+  border-radius: 50%;
+}
+.menu-icon-btn.simulation-mode-btn.simulation-active {
+  background: #2563eb;
+  color: #fff;
+  border-radius: 50%;
+} 
+
+/* Header Sign Out Button */
+.header-signout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: #465868;
+  border: none;
+  border-radius: 6px;
+  color: #eff1f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: absolute;
+  right: 70px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 101;
+}
+
+.header-signout-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.header-signout-btn:active {
+  background: #e5e7eb;
+  transform: translateY(-50%) scale(0.95);
+}
