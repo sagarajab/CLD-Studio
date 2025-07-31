@@ -1,0 +1,438 @@
+/* Clean, Modern Authentication Styling for CLD Studio */
+
+/* Ensure the entire page has dark background */
+html, body, #root {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Reset and base styles */
+.amplify-authenticator {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: transparent !important;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Main container styling */
+.amplify-authenticator [data-amplify-router] {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  max-width: 420px;
+  width: 100%;
+  backdrop-filter: blur(10px);
+}
+
+/* Clean header - Dark background with light text */
+.amplify-authenticator [data-amplify-header] {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
+  padding: 2.5rem 2rem 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid #4b5563;
+  position: relative;
+}
+
+.amplify-authenticator [data-amplify-header]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+}
+
+.amplify-authenticator [data-amplify-header] h2 {
+  color: #f9fafb !important;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.amplify-authenticator [data-amplify-header] p {
+  color: #d1d5db !important;
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* Make app icon larger and add subtle glow */
+.amplify-authenticator [data-amplify-header] img {
+  width: 72px !important;
+  height: 72px !important;
+  margin: 0 auto 20px !important;
+  filter: drop-shadow(0 4px 8px rgba(249, 115, 22, 0.2));
+}
+
+/* Form container */
+.amplify-authenticator [data-amplify-form] {
+  padding: 2.5rem 2rem;
+  background: white;
+}
+
+/* Field styling */
+.amplify-authenticator [data-amplify-field] {
+  margin-bottom: 1.5rem;
+}
+
+.amplify-authenticator [data-amplify-field] label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.025em;
+}
+
+/* Input styling */
+.amplify-authenticator [data-amplify-input] {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-weight: 500;
+}
+
+.amplify-authenticator [data-amplify-input]:focus {
+  outline: none;
+  border-color: #f97316;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
+  transform: translateY(-1px);
+}
+
+.amplify-authenticator [data-amplify-input]:hover {
+  border-color: #d1d5db;
+  background: white;
+}
+
+/* Button styling - Enhanced Orange theme */
+.amplify-authenticator [data-amplify-button] {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.75rem;
+  letter-spacing: 0.025em;
+  position: relative;
+  overflow: hidden;
+}
+
+.amplify-authenticator [data-amplify-button]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.amplify-authenticator [data-amplify-button]:hover::before {
+  left: 100%;
+}
+
+.amplify-authenticator [data-amplify-button]:hover {
+  background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(249, 115, 22, 0.4);
+}
+
+.amplify-authenticator [data-amplify-button]:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+}
+
+.amplify-authenticator [data-amplify-button]:disabled {
+  background: #9ca3af !important;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Link buttons - Enhanced Orange theme */
+.amplify-authenticator [data-amplify-button][data-variation="link"] {
+  background: none !important;
+  color: #f97316 !important;
+  text-decoration: none;
+  padding: 0.5rem 0;
+  width: auto;
+  margin: 0;
+  font-weight: 600;
+  border-radius: 0;
+  position: relative;
+}
+
+.amplify-authenticator [data-amplify-button][data-variation="link"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #f97316;
+  transition: width 0.2s ease;
+}
+
+.amplify-authenticator [data-amplify-button][data-variation="link"]:hover {
+  background: none !important;
+  color: #ea580c !important;
+  text-decoration: none;
+  transform: none;
+  box-shadow: none;
+}
+
+.amplify-authenticator [data-amplify-button][data-variation="link"]:hover::after {
+  width: 100%;
+}
+
+/* Tab styling - Enhanced Orange theme */
+.amplify-authenticator [data-amplify-tabs] {
+  border-bottom: 2px solid #f3f4f6;
+  margin-bottom: 2rem;
+  background: #f9fafb;
+  border-radius: 12px 12px 0 0;
+  padding: 0.5rem 0.5rem 0;
+}
+
+.amplify-authenticator [data-amplify-tab] {
+  background: none;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px 8px 0 0;
+  margin-right: 0.25rem;
+  position: relative;
+}
+
+.amplify-authenticator [data-amplify-tab][data-state="active"] {
+  color: #f97316 !important;
+  background: white !important;
+  border-bottom: 2px solid #f97316 !important;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.amplify-authenticator [data-amplify-tab]:hover {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.05);
+}
+
+/* Footer styling - Enhanced Dark background */
+.amplify-authenticator [data-amplify-footer] {
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
+  padding: 1.5rem 2rem;
+  text-align: center;
+  border-top: 1px solid #4b5563;
+  position: relative;
+}
+
+.amplify-authenticator [data-amplify-footer]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #f97316 0%, #ea580c 100%);
+}
+
+.amplify-authenticator [data-amplify-footer] p {
+  color: #9ca3af !important;
+  font-size: 0.75rem;
+  margin: 0.25rem 0;
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+/* Loading states */
+.amplify-authenticator [data-amplify-loading] {
+  color: #f97316;
+}
+
+.amplify-authenticator .loading-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #f3f4f6;
+  border-top: 3px solid #f97316;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Alert styling */
+.amplify-authenticator [data-amplify-alert] {
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  border: 1px solid;
+  font-weight: 500;
+}
+
+.amplify-authenticator [data-amplify-alert][data-variation="error"] {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.amplify-authenticator [data-amplify-alert][data-variation="success"] {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+.amplify-authenticator [data-amplify-alert][data-variation="info"] {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+
+/* Divider styling */
+.amplify-authenticator [data-amplify-divider] {
+  margin: 2rem 0;
+  text-align: center;
+  position: relative;
+}
+
+.amplify-authenticator [data-amplify-divider]::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+}
+
+.amplify-authenticator [data-amplify-divider] span {
+  background: white;
+  padding: 0 1.5rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Override Amplify CSS Variables to force orange theme */
+[data-amplify-authenticator] {
+  --amplify-components-authenticator-router-box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
+  --amplify-components-authenticator-router-border-width: 0 !important;
+  --amplify-components-authenticator-form-padding: var(--amplify-space-medium) var(--amplify-space-xl) var(--amplify-space-xl) !important;
+  --amplify-components-button-primary-background-color: #f97316 !important;
+  --amplify-components-fieldcontrol-focus-box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1) !important;
+  --amplify-components-tabs-item-active-border-color: #f97316 !important;
+  --amplify-components-tabs-item-color: #6b7280 !important;
+  --amplify-components-tabs-item-active-color: #f97316 !important;
+  --amplify-components-button-link-color: #f97316 !important;
+}
+
+/* Override purple colors with orange */
+[data-amplify-authenticator] {
+  --amplify-colors-purple-60: #f97316 !important;
+  --amplify-colors-purple-80: #f97316 !important;
+  --amplify-colors-purple-100: #f97316 !important;
+  --amplify-colors-teal-60: #f97316 !important;
+  --amplify-colors-teal-80: #f97316 !important;
+  --amplify-colors-teal-100: #f97316 !important;
+}
+
+/* Force override any remaining teal/purple colors with orange */
+.amplify-authenticator [data-amplify-button][data-variation="primary"],
+.amplify-authenticator [data-amplify-button]:not([data-variation="link"]) {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: white !important;
+}
+
+.amplify-authenticator [data-amplify-button][data-variation="primary"]:hover,
+.amplify-authenticator [data-amplify-button]:not([data-variation="link"]):hover {
+  background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%) !important;
+}
+
+/* Override any teal/purple focus states */
+.amplify-authenticator [data-amplify-input]:focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1) !important;
+}
+
+/* Override any teal/purple accent colors */
+.amplify-authenticator [data-amplify-tab][data-state="active"] {
+  color: #f97316 !important;
+  border-bottom-color: #f97316 !important;
+}
+
+/* Override any teal/purple loading states */
+.amplify-authenticator [data-amplify-loading] {
+  color: #f97316 !important;
+}
+
+.amplify-authenticator .loading-spinner {
+  border-top-color: #f97316 !important;
+}
+
+/* Additional overrides for any remaining purple/teal elements */
+.amplify-authenticator [data-amplify-fieldcontrol]:focus {
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1) !important;
+}
+
+.amplify-authenticator [data-amplify-tabs-item][data-state="active"] {
+  color: #f97316 !important;
+  border-bottom-color: #f97316 !important;
+}
+
+.amplify-authenticator [data-amplify-button][data-variation="link"] {
+  color: #f97316 !important;
+}
+
+.amplify-authenticator [data-amplify-button][data-variation="link"]:hover {
+  color: #ea580c !important;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .amplify-authenticator [data-amplify-router] {
+    margin: 1rem;
+    border-radius: 16px;
+    max-width: calc(100vw - 2rem);
+  }
+  
+  .amplify-authenticator [data-amplify-header],
+  .amplify-authenticator [data-amplify-form],
+  .amplify-authenticator [data-amplify-footer] {
+    padding: 1.5rem;
+  }
+  
+  .amplify-authenticator [data-amplify-header] h2 {
+    font-size: 1.5rem;
+  }
+} 
