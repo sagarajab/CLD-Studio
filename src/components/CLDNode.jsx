@@ -38,6 +38,13 @@ function CLDNode({
     setLocalLabel(data.label || 'New Node')
   }, [data.label, id])
 
+  // Clear hover state when exiting edit mode
+  useEffect(() => {
+    if (!isEditing && isHovered) {
+      setIsHovered(false)
+    }
+  }, [isEditing, isHovered])
+
   // Calculate ellipse dimensions based on text content with wrapping
   const ellipseDimensions = useMemo(() => {
     return getEllipseDimensions(label, {

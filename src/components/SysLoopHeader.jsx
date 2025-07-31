@@ -467,7 +467,8 @@ function SysLoopHeader({ signOut }) {
       action: toggleGrid, 
       icon: Grid3x3,
       title: showGrid ? 'Hide Grid' : 'Show Grid' 
-    }
+    },
+
   ]
 
 
@@ -1659,22 +1660,22 @@ function SysLoopHeader({ signOut }) {
           ))}
           {/* Separator before Simulation Controls */}
           <div className="menu-separator"></div>
-          {/* Simulation Controls Pill - moved here */}
-          <div className="simulation-controls-pill">
-            {/* Simulation Mode Toggle */}
-            <button
-              onClick={toggleSimulationMode}
-              className={`menu-icon-btn simulation-mode-btn ${simulationMode ? 'simulation-active' : ''} simulation-button-enabled`}
-              title={simulationMode ? 'Disable Simulation Mode' : 'Enable Simulation Mode'}
-            >
-              <Gamepad2 className="menu-icon" />
-            </button>
-            {/* Settings Dropdown - moved to second position */}
+          
+          {/* Simulation Mode Toggle */}
+          <button
+            onClick={toggleSimulationMode}
+            className={`menu-icon-btn simulation-mode-btn ${simulationMode ? 'simulation-active' : ''} simulation-button-enabled`}
+            title={simulationMode ? 'Disable Simulation Mode' : 'Enable Simulation Mode'}
+          >
+            <Gamepad2 className="menu-icon" />
+          </button>
+          
+          {/* Simulation Settings */}
+          <div className="menu-item menu-item-relative">
             <div className="sim-settings-container sim-settings-container-relative">
               <button
-                className={`menu-icon-btn ${!simulationMode ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+                className="menu-icon-btn simulation-button-enabled"
                 onClick={toggleSimSettingsDropdown}
-                disabled={!simulationMode}
                 title="Simulation settings"
               >
                 <Settings2 className="menu-icon" />
@@ -1768,115 +1769,115 @@ function SysLoopHeader({ signOut }) {
                   </div>
                 </div>
               )}
-            
-            
-            {/* Control Buttons */}
-            <button
-              onClick={handlePlayWithAutoInit}
-              disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
-              className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : simulationState.isRunning ? 'simulation-button-running' : 'simulation-button-enabled'}`}
-              title={
-                !simulationState.isInitialized ? "Initialize simulation first" :
-                simulationState.isRunning ? "Simulation is running" :
-                simulationState.isPaused ? "Resume simulation" :
-                simulationState.currentStep >= simulationState.maxSteps ? "Re-run simulation from beginning" :
-                "Start simulation"
-              }
-            >
-              <Play className="menu-icon" />
-            </button>
-            
-            <button
-              onClick={pauseSimulation}
-              disabled={!simulationMode || !simulationState.isRunning}
-              className={`menu-icon-btn ${!simulationMode || !simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
-              title="Pause simulation"
-            >
-              <Pause className="menu-icon" />
-            </button>
-            
-            <button
-              onClick={stepBackSimulation}
-              disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
-              className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
-              title="Step back"
-            >
-              <SkipBack className="menu-icon" />
-            </button>
-            
-            <button
-              onClick={stepSimulation}
-              disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
-              className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
-              title="Step forward"
-            >
-              <SkipForward className="menu-icon" />
-            </button>
-            
-            <button
-              onClick={resetSimulation}
-              disabled={!simulationMode}
-              className={`menu-icon-btn ${!simulationMode ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
-              title="Reset simulation"
-            >
-              <TimerReset className="menu-icon" />
-            </button>
-            {/* State Vector, Plot, and LED - moved inside pill */}
-            <button
-              onClick={() => setShowStateVectorModal(true)}
-              disabled={!simulationMode}
-              className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
-              title="Show state vectors"
-            >
-              <BarChart3 className="menu-icon" />
-            </button>
-            <button
-              onClick={() => setShowPlotsModal(true)}
-              disabled={!simulationMode}
-              className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
-              title="Show plots"
-            >
-              <Activity className="menu-icon" />
-            </button>
-            <div 
-              className={`simulation-led ${
-                !simulationMode ? 'inactive' :
-                !simulationState.isInitialized ? 'inactive' :
-                simulationState.isRunning ? 'running' :
-                simulationState.isPaused ? 'paused' :
-                simulationState.currentStep >= simulationState.maxSteps ? 'completed' : 'ready'
-              }`}
-              title={
-                !simulationMode ? 'Simulation mode disabled' :
-                !simulationState.isInitialized ? 'Simulation not initialized' :
-                simulationState.isRunning ? 'Simulation running' :
-                simulationState.isPaused ? 'Simulation paused' :
-                simulationState.currentStep >= simulationState.maxSteps ? 'Simulation completed' : 'Simulation ready'
-              }
-            />
+            </div>
           </div>
+          
+          {/* Control Buttons */}
+          <button
+            onClick={handlePlayWithAutoInit}
+            disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
+            className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : simulationState.isRunning ? 'simulation-button-running' : 'simulation-button-enabled'}`}
+            title={
+              !simulationState.isInitialized ? "Initialize simulation first" :
+              simulationState.isRunning ? "Simulation is running" :
+              simulationState.isPaused ? "Resume simulation" :
+              simulationState.currentStep >= simulationState.maxSteps ? "Re-run simulation from beginning" :
+              "Start simulation"
+            }
+          >
+            <Play className="menu-icon" />
+          </button>
+          
+          <button
+            onClick={pauseSimulation}
+            disabled={!simulationMode || !simulationState.isRunning}
+            className={`menu-icon-btn ${!simulationMode || !simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+            title="Pause simulation"
+          >
+            <Pause className="menu-icon" />
+          </button>
+          
+          <button
+            onClick={stepBackSimulation}
+            disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
+            className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+            title="Step back"
+          >
+            <SkipBack className="menu-icon" />
+          </button>
+          
+          <button
+            onClick={stepSimulation}
+            disabled={!simulationMode || !simulationState.isInitialized || simulationState.isRunning}
+            className={`menu-icon-btn ${!simulationMode || !simulationState.isInitialized || simulationState.isRunning ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+            title="Step forward"
+          >
+            <SkipForward className="menu-icon" />
+          </button>
+          
+          <button
+            onClick={resetSimulation}
+            disabled={!simulationMode}
+            className={`menu-icon-btn ${!simulationMode ? 'simulation-button-disabled' : 'simulation-button-enabled'}`}
+            title="Reset simulation"
+          >
+            <TimerReset className="menu-icon" />
+          </button>
+          
+          {/* State Vector, Plot, and LED */}
+          <button
+            onClick={() => setShowStateVectorModal(true)}
+            disabled={!simulationMode}
+            className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
+            title="Show state vectors"
+          >
+            <BarChart3 className="menu-icon" />
+          </button>
+          
+          <button
+            onClick={() => setShowPlotsModal(true)}
+            disabled={!simulationMode}
+            className={`menu-icon-btn ${!simulationMode ? 'modal-button-disabled' : 'modal-button-enabled'}`}
+            title="Show plots"
+          >
+            <Activity className="menu-icon" />
+          </button>
+          
+          <div 
+            className={`simulation-led ${
+              !simulationMode ? 'inactive' :
+              !simulationState.isInitialized ? 'inactive' :
+              simulationState.isRunning ? 'running' :
+              simulationState.isPaused ? 'paused' :
+              simulationState.currentStep >= simulationState.maxSteps ? 'completed' : 'ready'
+            }`}
+            title={
+              !simulationMode ? 'Simulation mode disabled' :
+              !simulationState.isInitialized ? 'Simulation not initialized' :
+              simulationState.isRunning ? 'Simulation running' :
+              simulationState.isPaused ? 'Simulation paused' :
+              simulationState.currentStep >= simulationState.maxSteps ? 'Simulation completed' : 'Simulation ready'
+            }
+          />
+          
+          {/* Progress Bar */}
+          {simulationMode && simulationState.isInitialized && (
+            <div className="progress-container">
+              <span className="progress-text">
+                {simulationState.currentStep}/{simulationState.maxSteps}
+              </span>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill"
+                  style={{
+                    width: `${Math.min(100, (simulationState.currentStep / simulationState.maxSteps) * 100)}%`
+                  }} 
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
-      
-
-    
-      
-      {/* Progress Bar */}
-      {simulationMode && simulationState.isInitialized && (
-        <div className="progress-container">
-          <span className="progress-text">
-            {simulationState.currentStep}/{simulationState.maxSteps}
-          </span>
-          <div className="progress-bar">
-            <div 
-              className="progress-fill"
-              style={{
-                width: `${Math.min(100, (simulationState.currentStep / simulationState.maxSteps) * 100)}%`
-              }} 
-            />
-          </div>
-        </div>
-      )}
       
       {/* Header Right - Sign Out and TBT Logo */}
       <div className="header-right">
@@ -1907,7 +1908,6 @@ function SysLoopHeader({ signOut }) {
           onClose={() => setShowExamplesModal(false)} 
         />
       )}
-      </div>
     </header>
   )
 }

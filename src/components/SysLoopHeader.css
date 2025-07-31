@@ -312,6 +312,20 @@
   transition: all 0.2s ease;
 }
 
+/* Collapsed state - only show simulation mode toggle */
+.simulation-controls-pill.collapsed {
+  padding: 6px;
+}
+
+.simulation-controls-pill.collapsed > *:not(:first-child) {
+  display: none;
+}
+
+/* Expanded state - show all controls */
+.simulation-controls-pill.expanded {
+  padding: 6px 12px;
+}
+
 /* Simulation Settings Container */
 .sim-settings-container-relative {
   position: relative;
@@ -327,7 +341,7 @@
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 16px;
-  z-index: 1000;
+  z-index: 10000;
   min-width: 280px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
