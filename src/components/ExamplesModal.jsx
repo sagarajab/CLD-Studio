@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useCLDStore } from '../stores/cldStore'
-import { Database, Download, Eye, FileText, Filter, X } from 'lucide-react'
+import { Database, Download, Eye, FileText, Filter, X, RefreshCw, Upload } from 'lucide-react'
 import './ExamplesModal.css'
+import { listS3Files, getS3File, getS3FileDirect, uploadExampleFiles, listAllFilesInBucket } from '../utils/storage';
 
 function ExamplesModal({ isOpen, onClose }) {
   const { loadDiagramData } = useCLDStore()
@@ -31,6 +32,11 @@ function ExamplesModal({ isOpen, onClose }) {
   const [availableTags, setAvailableTags] = useState([])
   const [availableCategories, setAvailableCategories] = useState([])
 
+  // Cloud examples state
+  const [cloudExamples, setCloudExamples] = useState([]);
+  const [cloudLoading, setCloudLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
   // Load examples index when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -38,6 +44,75 @@ function ExamplesModal({ isOpen, onClose }) {
       setSelectedExample(null)
     }
   }, [isOpen])
+
+  // Load cloud examples when cloud tab is selected
+  useEffect(() => {
+    if (isOpen && activeTab === 'cloud') {
+      loadCloudExamples();
+    }
+  }, [isOpen, activeTab]);
+
+  const loadCloudExamples = async () => {
+    setCloudLoading(true);
+    try {
+      console.log('Loading cloud examples...');
+      
+      // First, let's see what's actually in the bucket
+      const allFiles = await listAllFilesInBucket();
+      console.log('All files found in bucket:', allFiles);
+      
+      // Filter for .cld files
+      const cldFiles = allFiles.filter(file => file.key && file.key.endsWith('.cld'));
+      console.log('CLD files found:', cldFiles);
+      
+      const examples = [];
+      
+      for (const file of cldFiles) {
+        try {
+          // Try to get the file content to verify it's accessible
+          const fileContent = await getS3FileDirect(file.key);
+          const fileName = file.key.split('/').pop().replace('.cld', '');
+          
+          examples.push({
+            id: file.key,
+            name: fileName.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+            description: `Cloud example: ${fileName}`,
+            category: 'Cloud',
+            difficulty: 'Intermediate',
+            tags: ['cloud', 's3'],
+            key: file.key
+          });
+          
+          console.log(`Successfully loaded: ${file.key}`);
+        } catch (error) {
+          console.log(`File ${file.key} not accessible:`, error.message);
+        }
+      }
+      
+      console.log('Found accessible cloud examples:', examples);
+      setCloudExamples(examples);
+    } catch (error) {
+      console.error('Error loading cloud examples:', error);
+      setCloudExamples([]); // Set empty array on error
+    } finally {
+      setCloudLoading(false);
+    }
+  };
+
+  const handleUploadExamples = async () => {
+    setUploading(true);
+    try {
+      await uploadExampleFiles();
+      // Refresh the cloud examples after upload
+      await loadCloudExamples();
+      alert('Example files uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading examples:', error);
+      alert('Failed to upload example files. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const loadExamplesIndex = async () => {
     setExamplesLoading(true)
@@ -101,16 +176,23 @@ function ExamplesModal({ isOpen, onClose }) {
   const handleLoadExample = async (example) => {
     setLoading(true)
     try {
-      // Load the .cld file from the examples directory
-      const response = await fetch(`/examples/${example.filename}`)
-      if (!response.ok) {
-        throw new Error(`Failed to load example file: ${example.filename}`)
+      let diagramData;
+      
+      if (example.key) {
+        // Load from S3 using direct HTTP request
+        const fileContent = await getS3FileDirect(example.key);
+        diagramData = JSON.parse(fileContent);
+      } else {
+        // Load from local examples
+        const response = await fetch(`/examples/${example.filename}`)
+        if (!response.ok) {
+          throw new Error(`Failed to load example file: ${example.filename}`)
+        }
+        diagramData = await response.json()
       }
       
-      const exampleData = await response.json()
-      
       // Load the example into the store
-      loadDiagramData(exampleData)
+      loadDiagramData(diagramData)
       console.log(`Successfully loaded example: ${example.name}`)
       onClose()
     } catch (error) {
@@ -460,13 +542,75 @@ function ExamplesModal({ isOpen, onClose }) {
               </div>
             )
           ) : (
-            <div className="cloud-tab">
-              <div className="cloud-placeholder">
-                <Database size={48} />
-                <h3>Cloud Examples</h3>
-                <p>Browse examples from S3 bucket (coming soon)</p>
-                <p className="cloud-note">This feature will allow you to access and load examples stored in the cloud.</p>
-              </div>
+                          <div className="cloud-tab">
+                <div className="cloud-header">
+                  <h3>Cloud Examples</h3>
+                  <div className="cloud-actions">
+                    <button 
+                      className="upload-examples-btn"
+                      onClick={handleUploadExamples}
+                      disabled={uploading}
+                    >
+                      {uploading ? (
+                        <>
+                          <div className="loading-spinner"></div>
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={16} />
+                          Upload Examples
+                        </>
+                      )}
+                    </button>
+                    <button 
+                      className="refresh-cloud-btn"
+                      onClick={loadCloudExamples}
+                      disabled={cloudLoading}
+                    >
+                      <RefreshCw size={16} />
+                      Refresh
+                    </button>
+                  </div>
+                </div>
+                {cloudLoading ? (
+                  <div className="cloud-loading">
+                    <div className="loading-spinner"></div>
+                    <span>Loading cloud examples...</span>
+                  </div>
+                ) : cloudExamples.length > 0 ? (
+                <div className="examples-grid">
+                  {cloudExamples.map((example) => (
+                    <div
+                      key={example.id}
+                      className="example-card"
+                      onClick={() => handlePreviewExample(example)}
+                    >
+                      <div className="example-header">
+                        <h4>{example.name}</h4>
+                        <span className="cloud-badge">Cloud</span>
+                      </div>
+                      <p>{example.description}</p>
+                      <div className="example-meta">
+                        <span className="example-category">{example.category}</span>
+                        <span 
+                          className="example-difficulty"
+                          style={{ backgroundColor: getDifficultyColor(example.difficulty) }}
+                        >
+                          {example.difficulty}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="cloud-placeholder">
+                  <Database size={48} />
+                  <h3>No Cloud Examples Found</h3>
+                  <p>Click "Upload Examples" to upload local example files to your S3 bucket</p>
+                  <p className="cloud-note">This feature allows you to access and load examples stored in the cloud.</p>
+                </div>
+              )}
             </div>
           )}
         </div>

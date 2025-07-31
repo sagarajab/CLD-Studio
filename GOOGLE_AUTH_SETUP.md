@@ -4,7 +4,7 @@
 This guide explains how to set up Google authentication with AWS Cognito for CLD-Studio.
 
 ## Current Implementation
-The current implementation uses a development mode that simulates Google authentication. To implement real Google authentication, follow the steps below.
+**Note: Google authentication has been removed from the current implementation.** The application now only supports email-based authentication for simplicity. If you need to add Google authentication back, follow the steps below.
 
 ## Setup Steps
 
@@ -55,7 +55,7 @@ export const auth = defineAuth({
 
 ### 4. Update Frontend Code
 
-Replace the mock Google authentication in `src/components/SimpleLogin.jsx`:
+Add Google authentication to `src/components/SimpleLogin.jsx`:
 
 ```javascript
 import { signInWithRedirect } from 'aws-amplify/auth';
@@ -98,7 +98,7 @@ useEffect(() => {
 ## Development vs Production
 
 ### Development Mode (Current)
-- Uses mock authentication
+- Uses email-based authentication only
 - No external dependencies
 - Fast development and testing
 - Users can sign in with any email
@@ -136,11 +136,4 @@ useEffect(() => {
 1. Set up Google OAuth credentials
 2. Configure AWS Cognito
 3. Update the frontend code
-4. Test authentication flow
-5. Deploy to production
-
-## Resources
-
-- [Google OAuth 2.0 Documentation](https://developers.google.com/identity/protocols/oauth2)
-- [AWS Cognito Documentation](https://docs.aws.amazon.com/cognito/)
-- [Amplify Authentication Guide](https://docs.amplify.aws/lib/auth/getting-started/q/platform/js/) 
+4. Test authentication flow 

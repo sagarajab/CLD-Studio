@@ -6,8 +6,9 @@ import Canvas from './components/Canvas'
 import SysLoopHeader from './components/SysLoopHeader'
 import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
+import S3FileManager from './components/S3FileManager'
 import { useCLDStore } from './stores/cldStore'
-import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2, LogOut } from 'lucide-react'
+import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2, LogOut, Database } from 'lucide-react'
 import './components/StatusBar.css'
 
 function App({ user, signOut }) {
@@ -16,6 +17,7 @@ function App({ user, signOut }) {
   const [hoveredLoop, setHoveredLoop] = useState(null) // Add hovered loop state
   const [devMode, setDevMode] = useState(false) // Add dev mode state
   const [showSettingsModal, setShowSettingsModal] = useState(false) // Add settings modal state
+  const [showS3FileManager, setShowS3FileManager] = useState(false) // Add S3 file manager state
   
   const { 
     nodes, 
@@ -206,6 +208,14 @@ function App({ user, signOut }) {
             >
               <Wrench size={18} />
             </button>
+            {/* S3 File Manager Button */}
+            <button
+              onClick={() => setShowS3FileManager(true)}
+              className="statusbar-icon-btn s3-btn"
+              title="S3 File Manager"
+            >
+              <Database size={18} />
+            </button>
             {/* Settings Button */}
             <button
               onClick={() => setShowSettingsModal(true)}
@@ -245,6 +255,11 @@ function App({ user, signOut }) {
       {/* Settings Modal */}
       {showSettingsModal && (
         <SettingsModal isOpen={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+      )}
+
+      {/* S3 File Manager Modal */}
+      {showS3FileManager && (
+        <S3FileManager isOpen={showS3FileManager} onClose={() => setShowS3FileManager(false)} />
       )}
     </div>
   )

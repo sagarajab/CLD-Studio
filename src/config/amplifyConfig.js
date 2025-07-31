@@ -1,39 +1,58 @@
 // Amplify configuration for CLD-Studio
-// This file will be updated with actual values after running 'npx ampx sandbox'
+// This file automatically loads configuration from amplify_outputs.json
 
-export const amplifyConfig = {
-  Auth: {
-    Cognito: {
-      userPoolId: 'your-user-pool-id',
-      userPoolClientId: 'your-user-pool-client-id',
-      loginWith: {
-        email: true,
-      },
-    },
-  },
-  // Add other services as needed
-  Storage: {
-    S3: {
-      bucket: 'your-s3-bucket-name',
-      region: 'your-region',
-    },
-  },
-  // Add Data API configuration when needed
-  API: {
-    GraphQL: {
-      endpoint: 'your-graphql-endpoint',
-      region: 'your-region',
-    },
-  },
-};
+import { Amplify } from 'aws-amplify';
 
-// Helper function to load config from amplify_outputs.json if available
-export const loadAmplifyConfig = async () => {
+// Load configuration from amplify_outputs.json
+const loadAmplifyConfig = async () => {
   try {
     const outputs = await import('../../amplify_outputs.json');
-    return outputs.default;
+    const config = outputs.default;
+    
+    return {
+      Auth: {
+        Cognito: {
+          userPoolId: config.auth.user_pool_id,
+          userPoolClientId: config.auth.user_pool_client_id,
+          identityPoolId: config.auth.identity_pool_id,
+          loginWith: {
+            email: true,
+          },
+        },
+      },
+      Storage: {
+        S3: {
+          // Use the bucket name from amplify_outputs.json
+          bucket: config.storage.bucket_name,
+          region: config.storage.aws_region,
+        },
+      },
+      API: {
+        GraphQL: {
+          endpoint: config.data.url,
+          region: config.data.aws_region,
+          defaultAuthMode: config.data.default_authorization_type === 'AWS_IAM' ? 'iam' : 'userPool',
+        },
+      },
+      ssr: false,
+    };
   } catch (error) {
-    console.warn('amplify_outputs.json not found. Using default config.');
-    return amplifyConfig;
+    console.error('Failed to load amplify_outputs.json:', error);
+    throw new Error('Amplify configuration not found. Please run "npx ampx sandbox" first.');
   }
-}; 
+};
+
+// Initialize Amplify with the configuration
+export const initializeAmplify = async () => {
+  try {
+    const config = await loadAmplifyConfig();
+    Amplify.configure(config);
+    console.log('Amplify configured successfully');
+  } catch (error) {
+    console.error('Failed to initialize Amplify:', error);
+    throw error;
+  }
+};
+
+// Export the configuration loading function for manual use if needed
+export { loadAmplifyConfig }; 

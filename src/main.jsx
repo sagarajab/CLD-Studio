@@ -1,54 +1,69 @@
-import { StrictMode, useState } from 'react'
+import { StrictMode, useState, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Amplify } from 'aws-amplify'
+import { Authenticator } from '@aws-amplify/ui-react'
+import '@aws-amplify/ui-react/styles.css'
 import './index.css'
 import App from './App.jsx'
-import SimpleLogin from './components/SimpleLogin.jsx'
-import './components/SimpleLogin.css'
-
-// Configure Amplify with the deployed backend values
-const amplifyConfig = {
-  Auth: {
-    Cognito: {
-      userPoolId: 'us-east-1_nlqe8BeEH',
-      userPoolClientId: '1ndq7r327tgjg2br4uj5ql16hr',
-      identityPoolId: 'us-east-1:61171153-c771-4738-a12d-1383896c97a5',
-      loginWith: {
-        email: true,
-      },
-    },
-  },
-  // Add Storage configuration
-  Storage: {
-    S3: {
-      bucket: 'amplify-cldstudio-kritika-cldstudiostoragebucketb4-td29m2clj3vg',
-      region: 'us-east-1',
-    },
-  },
-};
-
-// Configure Amplify
-Amplify.configure(amplifyConfig)
+import { initializeAmplify } from './config/amplifyConfig.js'
 
 function AppWrapper() {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-    setIsAuthenticated(true);
-  };
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await initializeAmplify();
+        setIsInitialized(true);
+      } catch (err) {
+        console.error('Failed to initialize Amplify:', err);
+        setError(err.message);
+      }
+    };
+    
+    init();
+  }, []);
 
-  const handleSignOut = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-  };
-
-  if (!isAuthenticated) {
-    return <SimpleLogin onLogin={handleLogin} />;
+  if (error) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <h2>Failed to initialize app</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    );
   }
 
-  return <App user={user} signOut={handleSignOut} />;
+  if (!isInitialized) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        flexDirection: 'column',
+        gap: '1rem'
+      }}>
+        <div className="loading-spinner"></div>
+        <p>Initializing app...</p>
+      </div>
+    );
+  }
+
+  return (
+    <Authenticator>
+      {({ signOut, user }) => (
+        <App user={user} signOut={signOut} />
+      )}
+    </Authenticator>
+  );
 }
 
 createRoot(document.getElementById('root')).render(
@@ -56,3 +71,4 @@ createRoot(document.getElementById('root')).render(
     <AppWrapper />
   </StrictMode>,
 )
+

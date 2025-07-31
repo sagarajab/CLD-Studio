@@ -107,57 +107,6 @@
   transform: none;
 }
 
-.login-divider {
-  position: relative;
-  text-align: center;
-  margin: 20px 0;
-}
-
-
-
-.login-divider span {
-  background-color: white;
-  padding: 0 15px;
-  color: #475569;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.google-login-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  background: white;
-  color: #1e3a8a;
-  border: 2px solid #e1e5e9;
-  padding: 14px 24px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: 100%;
-}
-
-.google-login-button:hover:not(:disabled) {
-  border-color: #4285F4;
-  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
-  transform: translateY(-1px);
-}
-
-.google-login-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.google-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-}
-
 .error-message {
   color: #e74c3c;
   background-color: #fdf2f2;
