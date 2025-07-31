@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useCLDStore } from '../stores/cldStore'
-import { Database, Download, Eye, FileText, Filter, X, RefreshCw, Upload } from 'lucide-react'
+import { Database, Download, Eye, FileText, Filter, X, RefreshCw } from 'lucide-react'
 import './ExamplesModal.css'
-import { listS3Files, getS3File, getS3FileDirect, uploadExampleFiles, listAllFilesInBucket } from '../utils/storage';
+import { listS3Files, getS3File, getS3FileDirect, listAllFilesInBucket } from '../utils/storage';
 
 function ExamplesModal({ isOpen, onClose }) {
   const { loadDiagramData } = useCLDStore()
@@ -35,7 +35,8 @@ function ExamplesModal({ isOpen, onClose }) {
   // Cloud examples state
   const [cloudExamples, setCloudExamples] = useState([]);
   const [cloudLoading, setCloudLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [cloudSearchTerm, setCloudSearchTerm] = useState('');
+  const [cloudSortBy, setCloudSortBy] = useState('name');
 
   // Load examples index when modal opens
   useEffect(() => {
@@ -67,27 +68,31 @@ function ExamplesModal({ isOpen, onClose }) {
       
       const examples = [];
       
-      for (const file of cldFiles) {
-        try {
-          // Try to get the file content to verify it's accessible
-          const fileContent = await getS3FileDirect(file.key);
-          const fileName = file.key.split('/').pop().replace('.cld', '');
-          
-          examples.push({
-            id: file.key,
-            name: fileName.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-            description: `Cloud example: ${fileName}`,
-            category: 'Cloud',
-            difficulty: 'Intermediate',
-            tags: ['cloud', 's3'],
-            key: file.key
-          });
-          
-          console.log(`Successfully loaded: ${file.key}`);
-        } catch (error) {
-          console.log(`File ${file.key} not accessible:`, error.message);
-        }
-      }
+             for (const file of cldFiles) {
+         try {
+           // Try to get the file content to verify it's accessible
+           const fileBlob = await getS3FileDirect(file.key);
+           // Just verify the file is accessible, we don't need to parse it here
+           const fileName = file.key.split('/').pop().replace('.cld', '');
+           
+           examples.push({
+             id: file.key,
+             name: fileName.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+             filename: fileName,
+             description: `Cloud example: ${fileName}`,
+             category: 'Cloud',
+             difficulty: 'Intermediate',
+             tags: ['cloud', 's3'],
+             key: file.key,
+             lastModified: file.lastModified || new Date().toISOString(),
+             size: file.size || 0
+           });
+           
+           console.log(`Successfully loaded: ${file.key}`);
+         } catch (error) {
+           console.log(`File ${file.key} not accessible:`, error.message);
+         }
+       }
       
       console.log('Found accessible cloud examples:', examples);
       setCloudExamples(examples);
@@ -99,20 +104,7 @@ function ExamplesModal({ isOpen, onClose }) {
     }
   };
 
-  const handleUploadExamples = async () => {
-    setUploading(true);
-    try {
-      await uploadExampleFiles();
-      // Refresh the cloud examples after upload
-      await loadCloudExamples();
-      alert('Example files uploaded successfully!');
-    } catch (error) {
-      console.error('Error uploading examples:', error);
-      alert('Failed to upload example files. Please try again.');
-    } finally {
-      setUploading(false);
-    }
-  };
+
 
   const loadExamplesIndex = async () => {
     setExamplesLoading(true)
@@ -180,7 +172,8 @@ function ExamplesModal({ isOpen, onClose }) {
       
       if (example.key) {
         // Load from S3 using direct HTTP request
-        const fileContent = await getS3FileDirect(example.key);
+        const fileBlob = await getS3FileDirect(example.key);
+        const fileContent = await fileBlob.text();
         diagramData = JSON.parse(fileContent);
       } else {
         // Load from local examples
@@ -263,6 +256,38 @@ function ExamplesModal({ isOpen, onClose }) {
     if (filters.tags.length > 0) count += filters.tags.length
     return count
   }
+
+  // Filter and sort cloud examples
+  const filteredCloudExamples = cloudExamples
+    .filter(example => 
+      example.name.toLowerCase().includes(cloudSearchTerm.toLowerCase()) ||
+      example.filename.toLowerCase().includes(cloudSearchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      switch (cloudSortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'date':
+          return new Date(b.lastModified) - new Date(a.lastModified);
+        case 'size':
+          return b.size - a.size;
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   if (!isOpen) return null
 
@@ -542,73 +567,114 @@ function ExamplesModal({ isOpen, onClose }) {
               </div>
             )
           ) : (
-                          <div className="cloud-tab">
-                <div className="cloud-header">
+            <div className="cloud-tab">
+              <div className="cloud-header">
+                <div className="cloud-header-left">
                   <h3>Cloud Examples</h3>
-                  <div className="cloud-actions">
-                    <button 
-                      className="upload-examples-btn"
-                      onClick={handleUploadExamples}
-                      disabled={uploading}
+                  <span className="cloud-count">{filteredCloudExamples.length} files</span>
+                </div>
+                <div className="cloud-actions">
+                  <div className="cloud-search">
+                    <input
+                      type="text"
+                      placeholder="Search files..."
+                      value={cloudSearchTerm}
+                      onChange={(e) => setCloudSearchTerm(e.target.value)}
+                      className="cloud-search-input"
+                    />
+                  </div>
+                  <div className="cloud-sort">
+                    <select
+                      value={cloudSortBy}
+                      onChange={(e) => setCloudSortBy(e.target.value)}
+                      className="cloud-sort-select"
                     >
-                      {uploading ? (
-                        <>
-                          <div className="loading-spinner"></div>
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload size={16} />
-                          Upload Examples
-                        </>
-                      )}
-                    </button>
-                    <button 
-                      className="refresh-cloud-btn"
-                      onClick={loadCloudExamples}
-                      disabled={cloudLoading}
-                    >
-                      <RefreshCw size={16} />
-                      Refresh
-                    </button>
+                      <option value="name">Sort by Name</option>
+                      <option value="date">Sort by Date</option>
+                      <option value="size">Sort by Size</option>
+                    </select>
+                  </div>
+                  <button 
+                    className="refresh-cloud-btn"
+                    onClick={loadCloudExamples}
+                    disabled={cloudLoading}
+                    title="Refresh"
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                </div>
+              </div>
+              
+              {cloudLoading ? (
+                <div className="cloud-loading">
+                  <div className="loading-spinner"></div>
+                  <span>Loading cloud examples...</span>
+                </div>
+              ) : filteredCloudExamples.length > 0 ? (
+                <div className="cloud-file-browser">
+                  <div className="cloud-file-header">
+                    <div className="cloud-file-name">Name</div>
+                    <div className="cloud-file-size">Size</div>
+                    <div className="cloud-file-date">Modified</div>
+                    <div className="cloud-file-actions">Actions</div>
+                  </div>
+                  
+                  <div className="cloud-file-list">
+                    {filteredCloudExamples.map((example) => (
+                      <div
+                        key={example.id}
+                        className={`cloud-file-item ${selectedExample?.id === example.id ? 'selected' : ''}`}
+                        onClick={() => handlePreviewExample(example)}
+                      >
+                        <div className="cloud-file-name">
+                          <div className="cloud-file-icon">
+                            <FileText size={16} />
+                          </div>
+                          <div className="cloud-file-details">
+                            <div className="cloud-file-title">{example.name}</div>
+                            <div className="cloud-file-path">{example.filename}.cld</div>
+                          </div>
+                        </div>
+                        <div className="cloud-file-size">
+                          {formatFileSize(example.size)}
+                        </div>
+                        <div className="cloud-file-date">
+                          {formatDate(example.lastModified)}
+                        </div>
+                        <div className="cloud-file-actions">
+                          <button
+                            className="cloud-file-load-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLoadExample(example);
+                            }}
+                            disabled={loading}
+                            title="Load Example"
+                          >
+                            {loading ? (
+                              <div className="loading-spinner-small"></div>
+                            ) : (
+                              <Download size={14} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                {cloudLoading ? (
-                  <div className="cloud-loading">
-                    <div className="loading-spinner"></div>
-                    <span>Loading cloud examples...</span>
-                  </div>
-                ) : cloudExamples.length > 0 ? (
-                <div className="examples-grid">
-                  {cloudExamples.map((example) => (
-                    <div
-                      key={example.id}
-                      className="example-card"
-                      onClick={() => handlePreviewExample(example)}
-                    >
-                      <div className="example-header">
-                        <h4>{example.name}</h4>
-                        <span className="cloud-badge">Cloud</span>
-                      </div>
-                      <p>{example.description}</p>
-                      <div className="example-meta">
-                        <span className="example-category">{example.category}</span>
-                        <span 
-                          className="example-difficulty"
-                          style={{ backgroundColor: getDifficultyColor(example.difficulty) }}
-                        >
-                          {example.difficulty}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+              ) : cloudSearchTerm ? (
+                <div className="cloud-no-results">
+                  <FileText size={48} />
+                  <h3>No files found</h3>
+                  <p>No files match your search "{cloudSearchTerm}"</p>
+                  <button onClick={() => setCloudSearchTerm('')}>Clear search</button>
                 </div>
               ) : (
                 <div className="cloud-placeholder">
                   <Database size={48} />
                   <h3>No Cloud Examples Found</h3>
-                  <p>Click "Upload Examples" to upload local example files to your S3 bucket</p>
-                  <p className="cloud-note">This feature allows you to access and load examples stored in the cloud.</p>
+                  <p>No example files are currently stored in your cloud storage.</p>
+                  <p className="cloud-note">Cloud examples will appear here once they are uploaded to your S3 bucket.</p>
                 </div>
               )}
             </div>
