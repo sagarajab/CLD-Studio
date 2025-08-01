@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { dataClient } from '../config/dataClientConfig';
+import { getDataClient } from '../config/dataClientConfig';
 
 const DataClientTest = () => {
   const [status, setStatus] = useState('Testing...');
@@ -13,6 +13,8 @@ const DataClientTest = () => {
   const testDataClient = async () => {
     try {
       setStatus('Initializing Data client...');
+      
+      const dataClient = getDataClient();
       
       if (!dataClient) {
         throw new Error('Data client is null');

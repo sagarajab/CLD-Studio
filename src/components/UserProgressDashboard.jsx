@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTBTAuthStore } from '../stores/tbtAuthStore';
 import { useUserProgressStore } from '../stores/userProgressStore';
-import { generateClient } from 'aws-amplify/api';
-import { listTBTUsers, listUserAssignments } from '../../queries';
+import { getDataClient } from '../config/dataClientConfig';
 
 export default function UserProgressDashboard() {
   const { user } = useTBTAuthStore();
@@ -20,30 +19,24 @@ export default function UserProgressDashboard() {
   const loadUserProgress = async () => {
     setLoading(true);
     try {
-      const client = generateClient();
+      const dataClient = getDataClient();
       
       // Load user stats
-      const { data: userData } = await client.graphql({
-        query: listTBTUsers,
-        variables: {
-          filter: { id: { eq: user.id } }
-        }
+      const { data: userData } = await dataClient.models.TBTUser.list({
+        filter: { id: { eq: user.id } }
       });
 
-      const users = userData.listTBTUsers?.items || [];
+      const users = userData || [];
       if (users.length > 0) {
         setUserStats(users[0]);
       }
 
       // Load user assignments
-      const { data: assignmentData } = await client.graphql({
-        query: listUserAssignments,
-        variables: {
-          filter: { userId: { eq: user.id } }
-        }
+      const { data: assignmentData } = await dataClient.models.UserAssignment.list({
+        filter: { userId: { eq: user.id } }
       });
       
-      const assignments = assignmentData.listUserAssignments?.items || [];
+      const assignments = assignmentData || [];
       setUserAssignments(assignments);
     } catch (error) {
       console.error('Error loading user progress:', error);
@@ -98,15 +91,15 @@ export default function UserProgressDashboard() {
         <h3>Login Statistics</h3>
         <div className="stats-grid">
           <div className="stat-item">
-            <span className="stat-value">{userStats.totalLogins}</span>
+            <span className="stat-value">{userStats.totalLogins || 0}</span>
             <span className="stat-label">Total Logins</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{userStats.consecutiveLogins}</span>
+            <span className="stat-value">{userStats.consecutiveLogins || 0}</span>
             <span className="stat-label">Consecutive Days</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{formatTime(userStats.totalActiveTime)}</span>
+            <span className="stat-value">{formatTime(userStats.totalActiveTime || 0)}</span>
             <span className="stat-label">Total Active Time</span>
           </div>
         </div>
@@ -116,9 +109,9 @@ export default function UserProgressDashboard() {
       <div className="progress-section">
         <h3>Current Session</h3>
         <div className="session-info">
-          <p>Session Start: {new Date(userStats.currentSessionStart).toLocaleString()}</p>
-          <p>Active Time: {formatTime(currentSession.activeTime)}</p>
-          <p>Actions: {currentSession.actions.length}</p>
+          <p>Session Start: {userStats.currentSessionStart ? new Date(userStats.currentSessionStart).toLocaleString() : 'N/A'}</p>
+          <p>Active Time: {formatTime(currentSession?.activeTime || 0)}</p>
+          <p>Actions: {currentSession?.actions?.length || 0}</p>
         </div>
       </div>
 
@@ -127,19 +120,19 @@ export default function UserProgressDashboard() {
         <h3>Assignment Progress</h3>
         <div className="stats-grid">
           <div className="stat-item">
-            <span className="stat-value">{userStats.assignmentsCompleted}</span>
+            <span className="stat-value">{userStats.assignmentsCompleted || 0}</span>
             <span className="stat-label">Completed</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{userStats.assignmentsInProgress}</span>
+            <span className="stat-value">{userStats.assignmentsInProgress || 0}</span>
             <span className="stat-label">In Progress</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{userStats.averageAssignmentScore.toFixed(1)}</span>
+            <span className="stat-value">{(userStats.averageAssignmentScore || 0).toFixed(1)}</span>
             <span className="stat-label">Avg Score</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{userStats.highestAssignmentScore}</span>
+            <span className="stat-value">{userStats.highestAssignmentScore || 0}</span>
             <span className="stat-label">Best Score</span>
           </div>
         </div>
@@ -150,19 +143,19 @@ export default function UserProgressDashboard() {
         <h3>Learning Progress</h3>
         <div className="stats-grid">
           <div className="stat-item">
-            <span className="stat-value">{userStats.diagramsCreated}</span>
+            <span className="stat-value">{userStats.diagramsCreated || 0}</span>
             <span className="stat-label">Diagrams Created</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{userStats.simulationsRun}</span>
+            <span className="stat-value">{userStats.simulationsRun || 0}</span>
             <span className="stat-label">Simulations Run</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{userStats.loopsIdentified}</span>
+            <span className="stat-value">{userStats.loopsIdentified || 0}</span>
             <span className="stat-label">Loops Identified</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{userStats.learningLevel}</span>
+            <span className="stat-value">{userStats.learningLevel || 'beginner'}</span>
             <span className="stat-label">Learning Level</span>
           </div>
         </div>

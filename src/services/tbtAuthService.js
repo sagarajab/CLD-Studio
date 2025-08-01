@@ -1,5 +1,5 @@
 import { getCurrentUser } from 'aws-amplify/auth';
-import { dataClient } from '../config/dataClientConfig';
+import { getDataClient } from '../config/dataClientConfig';
 
 export class TBTAuthService {
   /**
@@ -24,6 +24,9 @@ export class TBTAuthService {
         this._authAttempted = true;
       }
 
+      // Get Data client (lazy initialization)
+      const dataClient = getDataClient();
+      
       // Debug: Check if client and models are available
       if (!dataClient) {
         throw new Error('Data client is not available');
@@ -149,6 +152,7 @@ export class TBTAuthService {
   static async createGuestTBTUser(amplifyUser) {
     try {
       const now = new Date().toISOString();
+      const dataClient = getDataClient();
       console.log('🆕 Creating guest TBT user for:', amplifyUser.signInDetails?.loginId);
       
       const { data } = await dataClient.models.TBTUser.create({
@@ -203,6 +207,7 @@ export class TBTAuthService {
   static async createTBTUser(amplifyUser) {
     try {
       const now = new Date().toISOString();
+      const dataClient = getDataClient();
       console.log('🆕 Creating TBT user for:', amplifyUser.signInDetails?.loginId);
       
       const { data } = await dataClient.models.TBTUser.create({
@@ -269,6 +274,7 @@ export class TBTAuthService {
         consecutiveLogins = 1;
       }
 
+      const dataClient = getDataClient();
       const { data } = await dataClient.models.TBTUser.update({
         input: {
           id: tbtUser.id,
@@ -292,6 +298,7 @@ export class TBTAuthService {
   static async updateUserActivity(userId, isActive = true, actionType = null) {
     try {
       const now = new Date().toISOString();
+      const dataClient = getDataClient();
       
       // Get user by ID
       const { data: userData } = await dataClient.models.TBTUser.list({

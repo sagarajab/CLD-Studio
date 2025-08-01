@@ -49,7 +49,7 @@ export async function initializeAmplify() {
 
   const { default: cfg } = await import('../../amplify_outputs.json');
 
-  // Gen 2 v6 Configuration - Much simpler
+  // Gen 2 v6 Configuration - Including GraphQL for Data client
   Amplify.configure({
     Auth: {
       Cognito: {
@@ -73,12 +73,19 @@ export async function initializeAmplify() {
         region: cfg.storage.aws_region
       }
     },
-    // Gen 2 Data configuration - automatically handled by the Data client
+    // GraphQL configuration required for Gen 2 Data client
+    API: {
+      GraphQL: {
+        endpoint: cfg.data.url,
+        region: cfg.data.aws_region,
+        defaultAuthMode: cfg.data.default_authorization_type === 'AWS_IAM' ? 'iam' : 'userPool'
+      }
+    },
     ssr: false
   });
 
   // Ensure both token and identity use session-only storage
   cognitoUserPoolsTokenProvider.setKeyValueStorage(customSessionStorage);
 
-  console.log('Amplify Gen 2 v6 configured successfully.');
+  console.log('Amplify Gen 2 v6 configured successfully with GraphQL support.');
 }

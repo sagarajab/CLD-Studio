@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { generateClient } from 'aws-amplify/api';
-import { listTBTUsers } from '../../queries';
-import { createTBTUser, updateTBTUser } from '../../mutations';
+import { getDataClient } from '../config/dataClientConfig';
 
 const TBTUserAdmin = () => {
   const [users, setUsers] = useState([]);
@@ -14,8 +12,6 @@ const TBTUserAdmin = () => {
   });
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  const client = generateClient();
-
   useEffect(() => {
     loadUsers();
   }, []);
@@ -23,11 +19,11 @@ const TBTUserAdmin = () => {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const { data } = await client.graphql({
-        query: listTBTUsers,
-        variables: { limit: 100 }
+      const dataClient = getDataClient();
+      const { data } = await dataClient.models.TBTUser.list({
+        limit: 100
       });
-      setUsers(data.listTBTUsers?.items || []);
+      setUsers(data || []);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -39,36 +35,46 @@ const TBTUserAdmin = () => {
     e.preventDefault();
     try {
       const now = new Date().toISOString();
-      const { data } = await client.graphql({
-        query: createTBTUser,
-        variables: {
-          input: {
-            ...newUser,
-            amplifyAuthVerified: true,
-            createdAt: now,
-            totalLogins: 0,
-            consecutiveLogins: 0,
-            totalActiveTime: 0,
-            totalIdleTime: 0,
-            assignmentsCompleted: 0,
-            assignmentsInProgress: 0,
-            totalAssignmentScore: 0,
-            averageAssignmentScore: 0,
-            highestAssignmentScore: 0,
-            diagramsCreated: 0,
-            diagramsShared: 0,
-            simulationsRun: 0,
-            loopsIdentified: 0,
-            learningLevel: 'beginner',
-            skillsUnlocked: '[]',
-            achievements: '[]',
-            preferences: '{}',
-            metadata: '{}'
-          }
+      const dataClient = getDataClient();
+      const { data } = await dataClient.models.TBTUser.create({
+        input: {
+          ...newUser,
+          amplifyAuthVerified: true,
+          createdAt: now,
+          lastLoginAt: now,
+          lastActiveAt: now,
+          currentSessionStart: now,
+          totalLogins: 0,
+          consecutiveLogins: 0,
+          lastLoginStreak: 0,
+          totalActiveTime: 0,
+          totalIdleTime: 0,
+          currentSessionActiveTime: 0,
+          assignmentsCompleted: 0,
+          assignmentsInProgress: 0,
+          totalAssignmentScore: 0.0,
+          averageAssignmentScore: 0.0,
+          highestAssignmentScore: 0.0,
+          diagramsCreated: 0,
+          diagramsShared: 0,
+          simulationsRun: 0,
+          loopsIdentified: 0,
+          learningLevel: 'beginner',
+          skillsUnlocked: JSON.stringify([]),
+          achievements: JSON.stringify([]),
+          preferences: JSON.stringify({
+            theme: 'light',
+            autoSave: true,
+            showGrid: true
+          }),
+          metadata: JSON.stringify({
+            createdVia: 'admin_interface',
+            source: 'manual_creation'
+          })
         }
       });
       
-      setUsers([...users, data.createTBTUser]);
+      setUsers([...users, data]);
       setNewUser({ email: '', cognitoUserId: '', tbtAuthStatus: 'guest', accessLevel: 'guest' });
       setShowCreateForm(false);
     } catch (error) {
@@ -81,18 +87,16 @@ const TBTUserAdmin = () => {
       const user = users.find(u => u.id === userId);
       if (!user) return;
 
-      const { data } = await client.graphql({
-        query: updateTBTUser,
-        variables: {
-          input: {
-            id: userId,
-            accessLevel: newAccessLevel,
-            tbtAuthStatus: newAuthStatus
-          }
+      const dataClient = getDataClient();
+      const { data } = await dataClient.models.TBTUser.update({
+        input: {
+          id: userId,
+          accessLevel: newAccessLevel,
+          tbtAuthStatus: newAuthStatus
         }
       });
 
-      setUsers(users.map(u => u.id === userId ? data.updateTBTUser : u));
+      setUsers(users.map(u => u.id === userId ? data : u));
     } catch (error) {
       console.error('Error updating user:', error);
     }
