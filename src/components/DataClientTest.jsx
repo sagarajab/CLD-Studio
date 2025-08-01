@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getDataClient } from '../config/dataClientConfig';
+import { getDataClient, resetDataClient } from '../config/dataClientConfig';
 
 const DataClientTest = () => {
   const [status, setStatus] = useState('Testing...');
   const [error, setError] = useState(null);
   const [models, setModels] = useState([]);
+  const [clientInfo, setClientInfo] = useState(null);
 
   useEffect(() => {
     testDataClient();
@@ -13,6 +14,9 @@ const DataClientTest = () => {
   const testDataClient = async () => {
     try {
       setStatus('Initializing Data client...');
+      
+      // Force reset to ensure fresh connection
+      resetDataClient();
       
       const dataClient = getDataClient();
       
@@ -28,6 +32,25 @@ const DataClientTest = () => {
       
       const availableModels = Object.keys(dataClient.models);
       setModels(availableModels);
+      setClientInfo({
+        clientType: typeof dataClient,
+        modelsType: typeof dataClient.models,
+        modelsCount: availableModels.length,
+        hasTBTRegisteredStudents: !!dataClient.models.TBTRegisteredStudents,
+        hasTBTUser: !!dataClient.models.TBTUser
+      });
+      
+      setStatus(`✅ Data client working! Found ${availableModels.length} models: ${availableModels.join(', ')}`);
+      
+      if (availableModels.length === 0) {
+        setError('No models found. This indicates a schema deployment issue.');
+        return;
+      }
+      
+      if (!dataClient.models.TBTRegisteredStudents) {
+        setError('TBTRegisteredStudents model not found in available models');
+        return;
+      }
       
       setStatus('Testing TBTRegisteredStudents list...');
       
@@ -55,6 +78,19 @@ const DataClientTest = () => {
       {error && (
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
           <strong>Error:</strong> {error}
+        </div>
+      )}
+      
+      {clientInfo && (
+        <div className="mb-4 p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+          <strong>Client Info:</strong>
+          <ul className="mt-2 list-disc list-inside">
+            <li>Client Type: {clientInfo.clientType}</li>
+            <li>Models Type: {clientInfo.modelsType}</li>
+            <li>Models Count: {clientInfo.modelsCount}</li>
+            <li>Has TBTRegisteredStudents: {clientInfo.hasTBTRegisteredStudents ? '✅' : '❌'}</li>
+            <li>Has TBTUser: {clientInfo.hasTBTUser ? '✅' : '❌'}</li>
+          </ul>
         </div>
       )}
       

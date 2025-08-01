@@ -1,5 +1,5 @@
 import { getCurrentUser } from 'aws-amplify/auth';
-import { getDataClient } from '../config/dataClientConfig';
+import { getDataClient, resetDataClient } from '../config/dataClientConfig';
 
 export class TBTAuthService {
   /**
@@ -24,8 +24,24 @@ export class TBTAuthService {
         this._authAttempted = true;
       }
 
+      // Wait a moment to ensure Amplify is fully configured
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Force reset Data client to ensure fresh connection
+      resetDataClient();
+
       // Get Data client (lazy initialization)
-      const dataClient = getDataClient();
+      let dataClient;
+      try {
+        dataClient = getDataClient();
+        console.log('✅ Data client retrieved successfully');
+      } catch (clientError) {
+        console.error('❌ Failed to get Data client:', clientError);
+        // Try resetting and getting again
+        resetDataClient();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        dataClient = getDataClient();
+      }
       
       // Debug: Check if client and models are available
       if (!dataClient) {
@@ -37,6 +53,15 @@ export class TBTAuthService {
       }
       
       console.log('🔍 Available models:', Object.keys(dataClient.models));
+      console.log('🔍 Data client object:', dataClient);
+      console.log('🔍 Models object:', dataClient.models);
+
+      // Check if TBTRegisteredStudents model exists
+      if (!dataClient.models.TBTRegisteredStudents) {
+        console.error('❌ TBTRegisteredStudents model not found in available models');
+        console.log('🔍 All available models:', Object.keys(dataClient.models));
+        throw new Error('TBTRegisteredStudents model not available. Schema may not be deployed correctly.');
+      }
 
       // Step 2: Check if user is registered in TBTRegisteredStudents
       try {

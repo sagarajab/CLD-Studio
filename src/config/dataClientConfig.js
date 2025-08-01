@@ -7,10 +7,18 @@ let _dataClient = null;
 // Create and export the Data client
 export const getDataClient = () => {
   if (!_dataClient) {
-    _dataClient = generateClient();
+    try {
+      _dataClient = generateClient();
+      console.log('✅ Data client created successfully');
+    } catch (error) {
+      console.error('❌ Failed to create Data client:', error);
+      throw error;
+    }
   }
   return _dataClient;
 };
 
-// Export the client directly for backward compatibility
-export const dataClient = getDataClient(); 
+// Export a function to reset the client (for testing)
+export const resetDataClient = () => {
+  _dataClient = null;
+}; 
