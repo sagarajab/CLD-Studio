@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
-import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Undo2, Redo2, Eraser, Grid3x3, SplinePointer, Trash, DraftingCompass, Laptop, Database, Gamepad2, LogOut, Info, HelpCircle, Wrench, Users, TestTube } from 'lucide-react'
+import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Undo2, Redo2, Eraser, Grid3x3, SplinePointer, Trash, DraftingCompass, Laptop, Database, Gamepad2, LogOut, Info, HelpCircle, Wrench, Users, TestTube, FileText } from 'lucide-react'
 
 import SettingsModal from './SettingsModal'
 import ExamplesModal from './ExamplesModal'
@@ -214,6 +214,13 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
     }
   }
 
+  const handleNewDiagram = () => {
+    if (window.confirm('Are you sure you want to start a new diagram? This will clear the current diagram and reset the name to "Untitled". This action cannot be undone.')) {
+      clearDiagram()
+      setDiagramName('Untitled')
+    }
+  }
+
   const handleOpenExamples = () => {
     setShowExamplesModal(true)
     closeAllDropdowns()
@@ -281,6 +288,12 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
   }, [diagramName])
 
   const menuItems = [
+    { 
+      label: 'New', 
+      action: handleNewDiagram, 
+      icon: FileText,
+      title: 'New Diagram' 
+    },
     { 
       label: 'Open', 
       type: 'open', 
@@ -740,19 +753,19 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
       <div className="header-center">
         <div className="menu-bar">
           {/* Group 1: File Operations */}
-          {menuItems.slice(0, 3).map((item, index) => renderMenuItem(item, index))}
+          {menuItems.slice(0, 4).map((item, index) => renderMenuItem(item, index))}
           
           {/* Separator between File Operations and Edit Actions */}
           <div className="menu-separator"></div>
           
           {/* Group 2: Edit Actions */}
-          {menuItems.slice(3, 7).map((item, index) => renderMenuItem(item, index + 3))}
+          {menuItems.slice(4, 8).map((item, index) => renderMenuItem(item, index + 4))}
           
           {/* Separator between Edit Actions and Drawing Tools */}
           <div className="menu-separator"></div>
           
           {/* Group 3: Drawing Tools */}
-          {menuItems.slice(7, 12).map((item, index) => renderMenuItem(item, index + 7))}
+          {menuItems.slice(8, 13).map((item, index) => renderMenuItem(item, index + 8))}
           
           {/* Separator before Simulation Mode Toggle */}
           <div className="menu-separator"></div>

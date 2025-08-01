@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { loadConfig, saveConfig } from '../config/appConfig'
+import { generateUniqueNodeId, generateUniqueEdgeId } from '../utils/idGenerator'
 
 const useCLDStore = create((set, get) => ({
   // State
@@ -174,7 +175,7 @@ const useCLDStore = create((set, get) => ({
     recordStateChange()
     
     const newNode = {
-      id: nodes.length + 1, // Using integer IDs as per user preference
+      id: generateUniqueNodeId(nodes), // Generate unique ID to avoid duplicates after deletions
       type: 'cldNode',
       position,
       data: { 
@@ -305,12 +306,8 @@ const useCLDStore = create((set, get) => ({
     // Record state BEFORE adding the edge
     recordStateChange()
     
-    // Find the next available integer ID
-    const existingIds = edges.map(edge => edge.id)
-    let nextId = 1
-    while (existingIds.includes(nextId)) {
-      nextId++
-    }
+    // Generate unique edge ID to avoid duplicates after deletions
+    const nextId = generateUniqueEdgeId(edges)
     
     const sourceNode = nodes.find(n => n.id === source)
     const targetNode = nodes.find(n => n.id === target)
