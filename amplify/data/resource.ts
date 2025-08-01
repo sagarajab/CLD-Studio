@@ -15,7 +15,6 @@ const schema = a.schema({
       email: a.string().required(),
     })
     .authorization(allow => [
-      allow.publicApiKey(),
       allow.authenticated().to(['read'])
     ]),
   
