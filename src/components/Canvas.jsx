@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
+import { useUserProgressStore } from '../stores/userProgressStore'
 import CLDNode from './CLDNode'
 import './Canvas.css'
 import { getEllipseDimensions } from '../utils/text'
@@ -11,6 +12,9 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   const lastClickTimeRef = useRef(0)
   const lastClickPositionRef = useRef({ x: 0, y: 0 })
   const nodeIdCounterRef = useRef(1)
+  
+  // Progress tracking
+  const { trackDiagramCreation } = useUserProgressStore()
   
   // Connection creation state
   const [isCreatingConnection, setIsCreatingConnection] = useState(false)
@@ -284,6 +288,11 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           
           addNode({ x: adjustedX, y: adjustedY }, nodeName)
           
+          // Track diagram creation when first node is added
+          if (storeNodes.length === 0) {
+            trackDiagramCreation()
+          }
+          
           // Reset click tracking
           lastClickTimeRef.current = 0
           lastClickPositionRef.current = { x: 0, y: 0 }
@@ -335,7 +344,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         setMousePosition({ x: 0, y: 0 })
       }
     }
-  }, [mode, addNode, setSelectedNode, setSelectedEdge, viewTransform, isCreatingConnection, connectionSource, updateNode, highlightedLoop, clearHighlightedLoop, panningMode, clearNodeSelection, clearEdgeSelection])
+  }, [mode, addNode, setSelectedNode, setSelectedEdge, viewTransform, isCreatingConnection, connectionSource, updateNode, highlightedLoop, clearHighlightedLoop, panningMode, clearNodeSelection, clearEdgeSelection, storeNodes.length, trackDiagramCreation])
 
   // Update cursor based on interaction state
   useEffect(() => {

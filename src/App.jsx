@@ -7,8 +7,12 @@ import SysLoopHeader from './components/SysLoopHeader'
 import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
 import S3FileManager from './components/S3FileManager'
+import TBTAuthTest from './components/TBTAuthTest'
+import TBTUserAdmin from './components/TBTUserAdmin'
 import { useCLDStore } from './stores/cldStore'
-import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2, LogOut, Database, User, UserCheck } from 'lucide-react'
+import { useTBTAuthStore } from './stores/tbtAuthStore'
+import { useUserProgressStore } from './stores/userProgressStore'
+import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2, LogOut, Database, User, UserCheck, TestTube, Users } from 'lucide-react'
 import './components/StatusBar.css'
 
 function App({ user, signOut }) {
@@ -18,7 +22,23 @@ function App({ user, signOut }) {
   const [devMode, setDevMode] = useState(false) // Add dev mode state
   const [showSettingsModal, setShowSettingsModal] = useState(false) // Add settings modal state
   const [showS3FileManager, setShowS3FileManager] = useState(false) // Add S3 file manager state
+  const [showTBTAuthTest, setShowTBTAuthTest] = useState(false) // Add TBT auth test modal state
+  const [showTBTUserAdmin, setShowTBTUserAdmin] = useState(false) // Add TBT user admin modal state
   const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 }) // Add mouse coordinates state
+  
+  // TBT Authentication state
+  const { 
+    performTBTAuth, 
+    amplifyAuthVerified,
+    tbtAuthStatus, 
+    accessLevel, 
+    isNewUser,
+    isLoading: tbtAuthLoading,
+    error: tbtAuthError
+  } = useTBTAuthStore()
+  
+  // User progress tracking
+  const { startActivityTracking, stopActivityTracking } = useUserProgressStore()
   
   const { 
     nodes, 
@@ -56,6 +76,24 @@ function App({ user, signOut }) {
   const loops = useMemo(() => {
     return allLoops
   }, [allLoops])
+
+  // Perform tbt_auth when amplify_Auth user is available
+  useEffect(() => {
+    if (user && !amplifyAuthVerified) {
+      console.log('🔄 Starting tbt_auth process...');
+      performTBTAuth();
+    }
+  }, [user, amplifyAuthVerified, performTBTAuth]);
+
+  // Start activity tracking when user is authenticated
+  useEffect(() => {
+    if (user && amplifyAuthVerified) {
+      startActivityTracking();
+      return () => {
+        stopActivityTracking();
+      };
+    }
+  }, [user, amplifyAuthVerified, startActivityTracking, stopActivityTracking]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -121,6 +159,47 @@ function App({ user, signOut }) {
   // Handle mouse move to track coordinates
   const handleMouseMove = (event) => {
     setMouseCoords({ x: event.clientX, y: event.clientY })
+  }
+
+  // Show loading state during tbt_auth
+  if (tbtAuthLoading) {
+    return (
+      <div className="auth-loading-container">
+        <div className="loading-spinner"></div>
+        <p>✅ amplify_Auth completed</p>
+        <p>🔄 Performing tbt_auth verification...</p>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (tbtAuthError) {
+    return (
+      <div className="auth-error-container">
+        <h2>Authentication Error</h2>
+        <p>amplify_Auth: ✅ Passed</p>
+        <p>tbt_auth: ❌ Failed</p>
+        <p>Error: {tbtAuthError}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    );
+  }
+
+  // Show welcome message for new users
+  if (isNewUser) {
+    return (
+      <div className="welcome-container">
+        <h2>Welcome to CLD Studio!</h2>
+        <div className="auth-status">
+          <p>✅ amplify_Auth: Passed</p>
+          <p>✅ tbt_auth: Guest Access Granted</p>
+        </div>
+        <p>You're currently using guest access. Some features may be limited.</p>
+        <button onClick={() => window.location.reload()}>
+          Continue with Guest Access
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -197,7 +276,18 @@ function App({ user, signOut }) {
           <div className="status-user-session-auth">
             <span>User: <b>{user?.signInDetails?.loginId || user?.attributes?.email || 'Guest'}</b></span>
             <div className="status-separator"></div>
-            {user ? <UserCheck size={16} className="text-green-500" /> : <User size={16} className="text-gray-400" />}
+            <div className="auth-status-indicators">
+              <span className={`auth-indicator amplify ${amplifyAuthVerified ? 'passed' : 'failed'}`}>
+                amplify_Auth: {amplifyAuthVerified ? '✅' : '❌'}
+              </span>
+              <span className={`auth-indicator tbt ${tbtAuthStatus}`}>
+                tbt_auth: {tbtAuthStatus === 'tbt' ? '✅' : tbtAuthStatus === 'guest' ? '👤' : '⏳'}
+              </span>
+            </div>
+            <div className="status-separator"></div>
+            <span className={`access-level ${accessLevel}`}>
+              {accessLevel.toUpperCase()}
+            </span>
           </div>
           <div className="status-controls">
             
@@ -233,6 +323,22 @@ function App({ user, signOut }) {
             >
               <HelpCircle size={18} />
             </button>
+            {/* TBT Auth Test Button */}
+            <button
+              onClick={() => setShowTBTAuthTest(true)}
+              className="statusbar-icon-btn test-btn"
+              title="TBT Auth Test"
+            >
+              <TestTube size={18} />
+            </button>
+            {/* TBT User Admin Button */}
+            <button
+              onClick={() => setShowTBTUserAdmin(true)}
+              className="statusbar-icon-btn admin-btn"
+              title="TBT User Management"
+            >
+              <Users size={18} />
+            </button>
           </div>
         </div>
       </div>
@@ -245,6 +351,46 @@ function App({ user, signOut }) {
       {/* S3 File Manager Modal */}
       {showS3FileManager && (
         <S3FileManager isOpen={showS3FileManager} onClose={() => setShowS3FileManager(false)} />
+      )}
+
+      {/* TBT Auth Test Modal */}
+      {showTBTAuthTest && (
+        <div className="modal-overlay" onClick={() => setShowTBTAuthTest(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>TBT Authentication Test</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowTBTAuthTest(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <TBTAuthTest />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TBT User Admin Modal */}
+      {showTBTUserAdmin && (
+        <div className="modal-overlay" onClick={() => setShowTBTUserAdmin(false)}>
+          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>TBT User Management</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowTBTUserAdmin(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <TBTUserAdmin />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

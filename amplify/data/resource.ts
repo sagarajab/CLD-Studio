@@ -1,15 +1,5 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
-/*== STEP 1 ===============================================================
-The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any unauthenticated user can "create", "read", "update", 
-and "delete" any "Todo" records.
-=========================================================================*/
-
-
-
-
 const schema = a.schema({
   Todo: a
     .model({
@@ -17,6 +7,111 @@ const schema = a.schema({
     })
     .authorization((allow) => [
       allow.guest().to(['read']),
+    ]),
+  
+  // Enhanced TBT User model with progress tracking
+  TBTUser: a
+    .model({
+      // Authentication fields
+      email: a.string().required(),
+      cognitoUserId: a.string().required(),
+      tbtAuthStatus: a.enum(['guest', 'tbt', 'pending']),
+      accessLevel: a.enum(['guest', 'tbt', 'admin']),
+      amplifyAuthVerified: a.boolean(),
+      
+      // Timestamps
+      createdAt: a.datetime(),
+      lastLoginAt: a.datetime(),
+      lastActiveAt: a.datetime(),
+      
+      // Login tracking
+      totalLogins: a.integer(),
+      consecutiveLogins: a.integer(),
+      lastLoginStreak: a.integer(),
+      
+      // Activity tracking
+      totalActiveTime: a.integer(), // in seconds
+      totalIdleTime: a.integer(), // in seconds
+      currentSessionStart: a.datetime(),
+      currentSessionActiveTime: a.integer(),
+      
+      // Assignment tracking
+      assignmentsCompleted: a.integer(),
+      assignmentsInProgress: a.integer(),
+      totalAssignmentScore: a.float(),
+      averageAssignmentScore: a.float(),
+      highestAssignmentScore: a.float(),
+      
+      // Progress tracking
+      diagramsCreated: a.integer(),
+      diagramsShared: a.integer(),
+      simulationsRun: a.integer(),
+      loopsIdentified: a.integer(),
+      
+      // Learning milestones
+      learningLevel: a.enum(['beginner', 'intermediate', 'advanced', 'expert']),
+      skillsUnlocked: a.string(), // JSON string for array
+      achievements: a.string(), // JSON string for array
+      
+      // User preferences and settings
+      preferences: a.string(), // JSON string for user preferences
+      metadata: a.string(), // JSON string for additional data
+    })
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update']),
+    ]),
+    
+  // Assignment model for tracking user assignments
+  Assignment: a
+    .model({
+      title: a.string().required(),
+      description: a.string(),
+      difficulty: a.enum(['beginner', 'intermediate', 'advanced']),
+      maxScore: a.integer().required(),
+      instructions: a.string(),
+      diagramTemplate: a.string(), // JSON string for initial diagram state
+      createdAt: a.datetime(),
+      isActive: a.boolean(),
+    })
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update', 'delete']),
+    ]),
+    
+  // User Assignment Progress model
+  UserAssignment: a
+    .model({
+      userId: a.string().required(),
+      assignmentId: a.string().required(),
+      status: a.enum(['not_started', 'in_progress', 'completed', 'submitted']),
+      score: a.float(),
+      maxScore: a.integer().required(),
+      startedAt: a.datetime(),
+      completedAt: a.datetime(),
+      timeSpent: a.integer(), // in seconds
+      attempts: a.integer(),
+      feedback: a.string(),
+      diagramData: a.string(), // JSON string for user's diagram
+    })
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update']),
+    ]),
+    
+  // User Activity Session model for detailed tracking
+  UserActivitySession: a
+    .model({
+      userId: a.string().required(),
+      sessionId: a.string().required(),
+      startTime: a.datetime().required(),
+      endTime: a.datetime(),
+      totalActiveTime: a.integer(), // in seconds
+      totalIdleTime: a.integer(), // in seconds
+      actions: a.string(), // JSON string for array of action types performed
+      diagramsWorkedOn: a.string(), // JSON string for array of diagram IDs
+      simulationsRun: a.integer(),
+      loopsIdentified: a.integer(),
+    })
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update']),
     ]),
 });
 

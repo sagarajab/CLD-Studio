@@ -5,20 +5,20 @@ import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
 // Custom session-only key/value storage
 const customSessionStorage = {
   setItem: async (key, value) => {
-    console.log('[Storage] setItem', key, value);
+    // console.log('[Storage] setItem', key, value);
     sessionStorage.setItem(key, value);
   },
   getItem: async (key) => {
     const value = sessionStorage.getItem(key);
-    console.log('[Storage] getItem', key, value);
+    // console.log('[Storage] getItem', key, value);
     return value;
   },
   removeItem: async (key) => {
-    console.log('[Storage] removeItem', key);
+    // console.log('[Storage] removeItem', key);
     sessionStorage.removeItem(key);
   },
   clear: async () => {
-    console.log('[Storage] clear');
+    // console.log('[Storage] clear');
     sessionStorage.clear();
   }
 };
