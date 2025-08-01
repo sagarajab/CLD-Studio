@@ -219,8 +219,10 @@ function CLDNode({
         // Render wrapped text lines
         ellipseDimensions.wrappedLines.map((line, index) => {
           const totalLines = ellipseDimensions.wrappedLines.length
-          const startY = ellipseDimensions.centerY - ((totalLines - 1) * ellipseDimensions.lineHeight) / 2
-          const y = startY + index * ellipseDimensions.lineHeight
+          const lineHeight = ellipseDimensions.lineHeight
+          const totalTextHeight = totalLines * lineHeight
+          const startY = ellipseDimensions.centerY - totalTextHeight / 2 + lineHeight / 2
+          const y = startY + index * lineHeight
           
           return (
             <text

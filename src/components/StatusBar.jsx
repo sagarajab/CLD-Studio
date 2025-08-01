@@ -1,99 +1,73 @@
-import React from 'react'
+import React, { memo } from 'react'
+import { MailCheck, TreeDeciduous } from 'lucide-react'
 
-function StatusBar({ nodes, edges, mode, selectedNode, selectedEdge, allLoops = [], isAuthenticated = false }) {
-  const getCurrentTime = () => {
-    return new Date().toLocaleTimeString()
-  }
-
-  const getDiagramStats = () => {
-    const totalNodes = nodes.length
-    const totalEdges = edges.length
-    const positiveEdges = edges.filter(edge => edge.data?.polarity === 'positive').length
-    const negativeEdges = edges.filter(edge => edge.data?.polarity === 'negative').length
-    
-    return {
-      totalNodes,
-      totalEdges,
-      positiveEdges,
-      negativeEdges
-    }
-  }
-
-  const stats = getDiagramStats()
-
+const StatusBar = memo(({ 
+  nodes, 
+  edges, 
+  loops, 
+  eventsLog, 
+  user, 
+  amplifyAuthVerified, 
+  tbtAuthStatus
+}) => {
   return (
-    <div className="px-4 py-2 flex items-center justify-between text-sm text-gray-300">
-      {/* Left side - Message console and stats */}
-      <div className="flex items-center space-x-6">
-        {/* Message console (mode display) - extreme left */}
-        <div className="flex items-center space-x-2">
-          <span className="font-medium">Mode:</span>
-          <span className={`px-2 py-1 rounded text-xs font-medium ${
-            mode === 'sandbox' 
-              ? 'bg-orange-500 text-white' 
-              : 'bg-green-500 text-white'
-          }`}>
-            {mode === 'sandbox' ? 'Sandbox' : 'Assessment'}
-          </span>
+    <div className="status-bar">
+      <div className="status-left">
+        {/* Events Log - Message console at extreme left */}
+        <div className="status-item events">
+          <div className="events-log">
+            {eventsLog.length > 0 ? (
+              <span className="event-item" title={eventsLog[0].timestamp}>
+                {eventsLog[0].message}
+              </span>
+            ) : (
+              <span className="status-text">No recent events</span>
+            )}
+          </div>
         </div>
         
         {/* Normal text labels for stats */}
-        <div className="flex items-center space-x-4">
+        <div className="status-stats-container">
           <span>
-            <span className="text-blue-400">Variables:</span> 
-            <span className="font-medium text-blue-300 ml-1">{stats.totalNodes}</span>
+            <span className="status-stat-label">Variables</span> 
+            <span className="status-stat-value">{nodes.length}</span>
           </span>
+          <div className="status-separator"></div>
           <span>
-            <span className="text-green-400">Connections:</span> 
-            <span className="font-medium text-green-300 ml-1">{stats.totalEdges}</span>
+            <span className="status-stat-label">Connections</span> 
+            <span className="status-stat-value">{edges.length}</span>
           </span>
+          <div className="status-separator"></div>
           <span>
-            <span className="text-purple-400">Loops:</span> 
-            <span className="font-medium text-purple-300 ml-1">{allLoops.length}</span>
-          </span>
-          {stats.totalEdges > 0 && (
-            <>
-              <span className="text-green-600">+{stats.positiveEdges}</span>
-              <span className="text-red-600">−{stats.negativeEdges}</span>
-            </>
-          )}
-        </div>
-
-        {/* Selected item information */}
-        <div className="flex items-center space-x-2">
-          <span className="font-medium">Selected:</span>
-          <span className="text-gray-400">
-            {selectedNode ? `Node ${selectedNode}` : 
-             selectedEdge ? `Arrow ${selectedEdge}` : 
-             'None'}
+            <span className="status-stat-label">Loops</span> 
+            <span className="status-stat-value">{loops.length}</span>
           </span>
         </div>
       </div>
+      <div className="status-right">
+        <div className="status-user-session-auth">
+          <span>User: <b>{user?.signInDetails?.loginId || user?.attributes?.email || 'Guest'}</b></span>
+          <div className="status-separator"></div>
+          <div className="auth-status-indicators">
+            <div className={`auth-icon amplify ${amplifyAuthVerified ? 'authenticated' : 'not-authenticated'}`}>
+              <MailCheck size={16} />
+            </div>
+            <div className={`auth-icon tbt ${tbtAuthStatus === 'tbt' ? 'authenticated' : 'not-authenticated'}`}>
+              <TreeDeciduous size={16} />
+            </div>
+          </div>
+          <div className="status-separator"></div>
+          <span className="access-level-text">
+            {amplifyAuthVerified && tbtAuthStatus === 'tbt' ? 'TBTuser' : 'Guest'}
+          </span>
+        </div>
+        
 
-      {/* Right side - Status information */}
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full status-indicator"></div>
-          <span>Ready</span>
-        </div>
-        
-        {/* Auth LED Indicator */}
-        <div className="flex items-center space-x-2">
-          <span>Auth:</span>
-          <div className={`w-3 h-3 rounded-full ${isAuthenticated ? 'bg-green-500' : 'bg-red-500'} shadow-lg`}></div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <span>Last saved:</span>
-          <span className="font-medium">Never</span>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <span>{getCurrentTime()}</span>
-        </div>
       </div>
     </div>
   )
-}
+})
+
+StatusBar.displayName = 'StatusBar'
 
 export default StatusBar 

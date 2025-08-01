@@ -1,8 +1,7 @@
 .sim-controls-overlay {
   position: absolute;
-  top: 50px; /* Position just below the SIMULATION MODE indicator */
-  left: 50%;
-  transform: translateX(-50%);
+  top: 10px; /* Position at the top, next to the SIMULATION MODE indicator */
+  left: 200px; /* Position to the right of the SIMULATION MODE indicator */
   z-index: 1000;
   pointer-events: auto;
 }

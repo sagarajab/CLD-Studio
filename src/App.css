@@ -1124,6 +1124,132 @@ body {
   gap: 12px;
 }
 
+.status-center {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 0 0 auto;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.edit-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.zoom-btn, .reset-btn, .undo-btn, .redo-btn {
+  background: transparent;
+  border: none;
+  color: #b0b0b0;
+  padding: 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-btn:hover, .reset-btn:hover, .undo-btn:hover, .redo-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.zoom-level {
+  font-size: 11px;
+  font-weight: 500;
+  color: #b0b0b0;
+  min-width: 40px;
+  text-align: center;
+}
+
+.status-user-session-auth {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-status-indicators {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.auth-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.auth-icon.amplify.authenticated {
+  color: #10B981;
+}
+
+.auth-icon.amplify.not-authenticated {
+  color: #EF4444;
+}
+
+.auth-icon.tbt.authenticated {
+  color: #10B981;
+}
+
+.auth-icon.tbt.not-authenticated {
+  color: #EF4444;
+}
+
+.access-level-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: #b0b0b0;
+}
+
+.status-separator {
+  width: 1px;
+  height: 16px;
+  background: #404040;
+}
+
+.events-log {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-item {
+  color: #b0b0b0;
+  font-style: italic;
+  cursor: help;
+}
+
+.status-stats-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-stat-label {
+  font-size: 11px;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+.status-stat-value {
+  font-size: 12px;
+  color: #ffffff;
+  font-weight: 600;
+}
+
 .status-text {
   color: #b0b0b0;
   font-style: italic;

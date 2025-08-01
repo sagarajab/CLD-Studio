@@ -96,7 +96,8 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     recordDragStart,
     recordDragEnd,
     editingNodeId,
-    clearEditingNode
+    clearEditingNode,
+    clearHoveredNode
   } = useCLDStore();
 
   // Helper functions for loop highlighting
@@ -902,6 +903,9 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         setArrowTargetNode(null)
         setIsDrawingArrow(false)
       }
+      
+      // Clear hovered node state when clicking on canvas background
+      clearHoveredNode()
     }
   }
 
@@ -1539,8 +1543,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       <div style={{
         position: 'absolute',
         top: '10px',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        left: '10px',
         background: 'rgba(220, 38, 38, 0.9)',
         color: 'white',
         padding: '4px 8px',

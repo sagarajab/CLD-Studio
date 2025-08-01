@@ -74,22 +74,42 @@ export function wrapText(text, maxWidth, fontSize = 16, onConstraintViolation = 
 export function getEllipseDimensions(label, options = {}) {
   const {
     baseWidth = 40,
-    baseHeight = 40,
-    padding = 40,
+    baseHeight = 32,
+    padding = 10,
+ 
     maxTextWidth = 170,
     maxEllipseWidth = 200,
     fontSize = 16,
     onConstraintViolation = null,
   } = options
-  const lineHeight = fontSize + 5
+  
+  const lineHeight = fontSize + 3
+  
+  // Calculate text wrapping based on maximum available width
   const wrappedLines = wrapText(label, maxTextWidth, fontSize, onConstraintViolation)
   const calculateLineWidth = (line) => line.length * fontSize * 0.6
   const lineWidths = wrappedLines.map(calculateLineWidth)
   const maxLineWidth = Math.max(...lineWidths, 0)
   const textWidth = Math.min(maxLineWidth, maxTextWidth)
-  const calculatedWidth = Math.max(baseWidth, textWidth + padding)
-  const width = Math.min(calculatedWidth, maxEllipseWidth)
-  const height = Math.max(baseHeight, wrappedLines.length * lineHeight + padding)
+  
+  // Calculate ellipse dimensions based on text content
+  let width = Math.max(baseWidth, textWidth + padding)
+  let height = Math.max(baseHeight, wrappedLines.length * lineHeight + padding)
+  
+  // Apply maximum width constraint if needed
+  if (width > maxEllipseWidth) {
+    width = maxEllipseWidth
+  }
+  
+  // Apply minimum aspect ratio constraint: height must be at least 30% of width
+  const minAspectRatio = 0.35 // height/width ratio
+  const currentAspectRatio = height / width
+  
+  if (currentAspectRatio < minAspectRatio) {
+    // If height is too small relative to width, increase height
+    height = width * minAspectRatio
+  }
+  
   return {
     width,
     height,
