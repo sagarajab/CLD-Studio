@@ -5,8 +5,7 @@ export class TBTAuthService {
   /**
    * Step 1: Verify amplify_Auth passed
    * Step 2: Check if user is registered in TBTRegisteredStudents
-   * Step 3: Check/create user in TBTUser table for progress tracking
-   * Step 4: Grant appropriate access level
+   * Step 3: Grant appropriate access level (guest or tbt)
    */
   static async performTBTAuth() {
     try {
@@ -114,102 +113,34 @@ export class TBTAuthService {
           console.log('⚠️ STEP 3 RESULT: User is NOT registered for TBT (will be guest)');
         }
 
-        // Step 3: Check existing TBTUser record
-        console.log('📋 STEP 4: Checking User Record in TBTUser Table...');
-        console.log('🔍 Checking TBTUser for:', userEmail);
-        const { data: tbtUsers } = await dataClient.models.TBTUser.list({
-          filter: { email: { eq: userEmail } }
-        });
-
-        const existingTBTUser = tbtUsers[0];
-        console.log('👤 TBT user check:', { userEmail, exists: !!existingTBTUser });
+        // Step 3: Determine access level
+        console.log('📋 STEP 4: Determining Access Level...');
         
-        if (existingTBTUser) {
-          console.log('✅ STEP 4 PASSED: Existing user record found');
-        } else {
-          console.log('⚠️ STEP 4 RESULT: No existing user record (will create new)');
-        }
-
-        // Step 5: Determine access level and create/update user
-        console.log('📋 STEP 5: Determining Access Level and Managing User Record...');
-        
-        if (!isRegistered) {
-          // User not in registered students list - create or update to guest user
-          if (!existingTBTUser) {
-            if (!this._userCreated) {
-              console.log('🆕 Creating new TBT user with guest access (not registered)');
-              this._userCreated = true;
-            }
-            const guestUser = await this.createGuestTBTUser(amplifyUser);
-            console.log('✅ STEP 5 COMPLETE: New guest user created');
-            console.log('🎉 ===== TBT AUTHENTICATION PROCESS COMPLETED SUCCESSFULLY =====');
-            console.log('📊 FINAL RESULT: Guest User (Amplify: ✅, TBT: ❌)');
-            return { 
-              tbtAuthStatus: 'guest', 
-              accessLevel: 'guest', 
-              user: guestUser,
-              isNewUser: true,
-              amplifyAuthVerified: true
-            };
-          } else {
-            // User exists but not registered - ensure guest status
-            if (!this._authCompleted) {
-              console.log('👤 User exists but not registered - guest access');
-              this._authCompleted = true;
-            }
-            console.log('✅ STEP 5 COMPLETE: Existing user confirmed as guest');
-            console.log('🎉 ===== TBT AUTHENTICATION PROCESS COMPLETED SUCCESSFULLY =====');
-            console.log('📊 FINAL RESULT: Guest User (Amplify: ✅, TBT: ❌)');
-            return { 
-              tbtAuthStatus: 'guest', 
-              accessLevel: 'guest', 
-              user: existingTBTUser,
-              isNewUser: false,
-              amplifyAuthVerified: true
-            };
-          }
-        }
-
-        // User is registered for TBT
-        if (!existingTBTUser) {
-          // Create new TBT user with full access
-          if (!this._userCreated) {
-            console.log('🆕 Creating new TBT user with full access (registered)');
-            this._userCreated = true;
-          }
-          const tbtUser = await this.createTBTUser(amplifyUser);
-          console.log('✅ STEP 5 COMPLETE: New TBT user created with full access');
+        if (isRegistered) {
+          console.log('✅ STEP 4 COMPLETE: User has TBT access');
           console.log('🎉 ===== TBT AUTHENTICATION PROCESS COMPLETED SUCCESSFULLY =====');
           console.log('📊 FINAL RESULT: TBT User (Amplify: ✅, TBT: ✅)');
           return { 
             tbtAuthStatus: 'tbt', 
             accessLevel: 'tbt', 
-            user: tbtUser,
-            isNewUser: true,
+            user: null,
+            isNewUser: false,
             amplifyAuthVerified: true
           };
         } else {
-          // Update existing user to TBT status and update login stats
-          const updatedUser = await this.updateUserLoginStats(existingTBTUser);
-          
-          if (!this._authCompleted) {
-            console.log('✅ STEP 5 COMPLETE: Existing TBT user updated');
-            this._authCompleted = true;
-          }
-
-          console.log('✅ STEP 5 COMPLETE: Existing TBT user login stats updated');
+          console.log('✅ STEP 4 COMPLETE: User has guest access');
           console.log('🎉 ===== TBT AUTHENTICATION PROCESS COMPLETED SUCCESSFULLY =====');
-          console.log('📊 FINAL RESULT: TBT User (Amplify: ✅, TBT: ✅)');
+          console.log('📊 FINAL RESULT: Guest User (Amplify: ✅, TBT: ❌)');
           return { 
-            tbtAuthStatus: 'tbt', 
-            accessLevel: updatedUser.accessLevel, 
-            user: updatedUser,
+            tbtAuthStatus: 'guest', 
+            accessLevel: 'guest', 
+            user: null,
             isNewUser: false,
             amplifyAuthVerified: true
           };
         }
       } catch (dataError) {
-        console.error('❌ STEP 3-5 FAILED: Data client error:', dataError);
+        console.error('❌ STEP 3-4 FAILED: Data client error:', dataError);
         console.error('❌ Error details:', {
           message: dataError.message,
           stack: dataError.stack,
@@ -267,107 +198,28 @@ export class TBTAuthService {
         console.log('⚠️ STEP 3 RESULT (GraphQL): User is NOT registered for TBT (will be guest)');
       }
 
-      // Check TBTUser
-      console.log('📋 STEP 4 (GraphQL): Checking User Record in TBTUser Table...');
-      const { data: tbtUsersResult } = await dataClient.graphql({
-        query: `query ListTBTUsers($email: String) {
-          listTBTUsers(filter: { email: { eq: $email } }) {
-            items {
-              id
-              email
-              tbtAuthStatus
-              accessLevel
-              totalLogins
-              lastLoginAt
-            }
-          }
-        }`,
-        variables: { email: userEmail }
-      });
+      // Step 3: Determine access level
+      console.log('📋 STEP 4 (GraphQL): Determining Access Level...');
 
-      const existingTBTUser = tbtUsersResult.listTBTUsers.items[0];
-      console.log('👤 TBT user check (GraphQL):', { userEmail, exists: !!existingTBTUser });
-      
-      if (existingTBTUser) {
-        console.log('✅ STEP 4 PASSED (GraphQL): Existing user record found');
-      } else {
-        console.log('⚠️ STEP 4 RESULT (GraphQL): No existing user record (will create new)');
-      }
-
-      // Step 5: Determine access level and create/update user
-      console.log('📋 STEP 5 (GraphQL): Determining Access Level and Managing User Record...');
-
-      if (!isRegistered) {
-        // User not in registered students list - create or update to guest user
-        if (!existingTBTUser) {
-          if (!this._userCreated) {
-            console.log('🆕 Creating new TBT user with guest access (not registered) - GraphQL');
-            this._userCreated = true;
-          }
-          const guestUser = await this.createGuestTBTUserWithGraphQL(dataClient, amplifyUser);
-          console.log('✅ STEP 5 COMPLETE (GraphQL): New guest user created');
-          console.log('🎉 ===== TBT AUTHENTICATION PROCESS COMPLETED SUCCESSFULLY (GraphQL) =====');
-          console.log('📊 FINAL RESULT: Guest User (Amplify: ✅, TBT: ❌)');
-          return { 
-            tbtAuthStatus: 'guest', 
-            accessLevel: 'guest', 
-            user: guestUser,
-            isNewUser: true,
-            amplifyAuthVerified: true
-          };
-        } else {
-          // User exists but not registered - ensure guest status
-          if (!this._authCompleted) {
-            console.log('👤 User exists but not registered - guest access');
-            this._authCompleted = true;
-          }
-          console.log('✅ STEP 5 COMPLETE (GraphQL): Existing user confirmed as guest');
-          console.log('🎉 ===== TBT AUTHENTICATION PROCESS COMPLETED SUCCESSFULLY (GraphQL) =====');
-          console.log('📊 FINAL RESULT: Guest User (Amplify: ✅, TBT: ❌)');
-          return { 
-            tbtAuthStatus: 'guest', 
-            accessLevel: 'guest', 
-            user: existingTBTUser,
-            isNewUser: false,
-            amplifyAuthVerified: true
-          };
-        }
-      }
-
-      // User is registered for TBT
-      if (!existingTBTUser) {
-        // Create new TBT user with full access
-        if (!this._userCreated) {
-          console.log('🆕 Creating new TBT user with full access (registered) - GraphQL');
-          this._userCreated = true;
-        }
-        const tbtUser = await this.createTBTUserWithGraphQL(dataClient, amplifyUser);
-        console.log('✅ STEP 5 COMPLETE (GraphQL): New TBT user created with full access');
+      if (isRegistered) {
+        console.log('✅ STEP 4 COMPLETE (GraphQL): User has TBT access');
         console.log('🎉 ===== TBT AUTHENTICATION PROCESS COMPLETED SUCCESSFULLY (GraphQL) =====');
         console.log('📊 FINAL RESULT: TBT User (Amplify: ✅, TBT: ✅)');
         return { 
           tbtAuthStatus: 'tbt', 
           accessLevel: 'tbt', 
-          user: tbtUser,
-          isNewUser: true,
+          user: null,
+          isNewUser: false,
           amplifyAuthVerified: true
         };
       } else {
-        // Update existing user to TBT status and update login stats
-        const updatedUser = await this.updateUserLoginStatsWithGraphQL(dataClient, existingTBTUser);
-        
-        if (!this._authCompleted) {
-          console.log('✅ STEP 5 COMPLETE (GraphQL): Existing TBT user updated');
-          this._authCompleted = true;
-        }
-
-        console.log('✅ STEP 5 COMPLETE (GraphQL): Existing TBT user login stats updated');
+        console.log('✅ STEP 4 COMPLETE (GraphQL): User has guest access');
         console.log('🎉 ===== TBT AUTHENTICATION PROCESS COMPLETED SUCCESSFULLY (GraphQL) =====');
-        console.log('📊 FINAL RESULT: TBT User (Amplify: ✅, TBT: ✅)');
+        console.log('📊 FINAL RESULT: Guest User (Amplify: ✅, TBT: ❌)');
         return { 
-          tbtAuthStatus: 'tbt', 
-          accessLevel: updatedUser.accessLevel, 
-          user: updatedUser,
+          tbtAuthStatus: 'guest', 
+          accessLevel: 'guest', 
+          user: null,
           isNewUser: false,
           amplifyAuthVerified: true
         };
