@@ -24,88 +24,122 @@ export class TBTAuthService {
         this._authAttempted = true;
       }
 
+      // Initialize Data client
       const client = generateClient();
+      
+      // Debug: Check if client and models are available
+      if (!client) {
+        throw new Error('Data client is not available');
+      }
+      
+      // Wait a moment for the client to be fully initialized
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (!client.models) {
+        throw new Error('Data client models are not available. Make sure the schema is deployed.');
+      }
+      
+      console.log('🔍 Available models:', Object.keys(client.models));
 
       // Step 2: Check if user is registered in TBTRegisteredStudents
-      const { data: registeredStudents } = await client.models.TBTRegisteredStudents.list({
-        filter: { email: { eq: userEmail } }
-      });
+      try {
+        console.log('🔍 Checking TBTRegisteredStudents for:', userEmail);
+        const { data: registeredStudents } = await client.models.TBTRegisteredStudents.list({
+          filter: { email: { eq: userEmail } }
+        });
 
-      const isRegistered = registeredStudents.length > 0;
+        const isRegistered = registeredStudents.length > 0;
+        console.log('📋 TBT registration check:', { userEmail, isRegistered, count: registeredStudents.length });
 
-      // Step 3: Check existing TBTUser record
-      const { data: tbtUsers } = await client.models.TBTUser.list({
-        filter: { email: { eq: userEmail } }
-      });
+        // Step 3: Check existing TBTUser record
+        console.log('🔍 Checking TBTUser for:', userEmail);
+        const { data: tbtUsers } = await client.models.TBTUser.list({
+          filter: { email: { eq: userEmail } }
+        });
 
-      const existingTBTUser = tbtUsers[0];
+        const existingTBTUser = tbtUsers[0];
+        console.log('👤 TBT user check:', { userEmail, exists: !!existingTBTUser });
 
-      if (!isRegistered) {
-        // User not in registered students list - create or update to guest user
+        if (!isRegistered) {
+          // User not in registered students list - create or update to guest user
+          if (!existingTBTUser) {
+            if (!this._userCreated) {
+              console.log('🆕 Creating new TBT user with guest access (not registered)');
+              this._userCreated = true;
+            }
+            const guestUser = await this.createGuestTBTUser(amplifyUser);
+            return { 
+              tbtAuthStatus: 'guest', 
+              accessLevel: 'guest', 
+              user: guestUser,
+              isNewUser: true,
+              amplifyAuthVerified: true
+            };
+          } else {
+            // User exists but not registered - ensure guest status
+            if (!this._authCompleted) {
+              console.log('👤 User exists but not registered - guest access');
+              this._authCompleted = true;
+            }
+            return { 
+              tbtAuthStatus: 'guest', 
+              accessLevel: 'guest', 
+              user: existingTBTUser,
+              isNewUser: false,
+              amplifyAuthVerified: true
+            };
+          }
+        }
+
+        // User is registered for TBT
         if (!existingTBTUser) {
+          // Create new TBT user with full access
           if (!this._userCreated) {
-            console.log('🆕 Creating new TBT user with guest access (not registered)');
+            console.log('🆕 Creating new TBT user with full access (registered)');
             this._userCreated = true;
           }
-          const guestUser = await this.createGuestTBTUser(amplifyUser);
+          const tbtUser = await this.createTBTUser(amplifyUser);
           return { 
-            tbtAuthStatus: 'guest', 
-            accessLevel: 'guest', 
-            user: guestUser,
+            tbtAuthStatus: 'tbt', 
+            accessLevel: 'tbt', 
+            user: tbtUser,
             isNewUser: true,
             amplifyAuthVerified: true
           };
         } else {
-          // User exists but not registered - ensure guest status
+          // Update existing user to TBT status and update login stats
+          const updatedUser = await this.updateUserLoginStats(existingTBTUser);
+          
           if (!this._authCompleted) {
-            console.log('👤 User exists but not registered - guest access');
+            console.log('✅ tbt_auth completed - Status: tbt, Level:', updatedUser.accessLevel);
             this._authCompleted = true;
           }
+
           return { 
-            tbtAuthStatus: 'guest', 
-            accessLevel: 'guest', 
-            user: existingTBTUser,
+            tbtAuthStatus: 'tbt', 
+            accessLevel: updatedUser.accessLevel, 
+            user: updatedUser,
             isNewUser: false,
             amplifyAuthVerified: true
           };
         }
-      }
-
-      // User is registered for TBT
-      if (!existingTBTUser) {
-        // Create new TBT user with full access
-        if (!this._userCreated) {
-          console.log('🆕 Creating new TBT user with full access (registered)');
-          this._userCreated = true;
-        }
-        const tbtUser = await this.createTBTUser(amplifyUser);
-        return { 
-          tbtAuthStatus: 'tbt', 
-          accessLevel: 'tbt', 
-          user: tbtUser,
-          isNewUser: true,
-          amplifyAuthVerified: true
-        };
-      } else {
-        // Update existing user to TBT status and update login stats
-        const updatedUser = await this.updateUserLoginStats(existingTBTUser);
-        
-        if (!this._authCompleted) {
-          console.log('✅ tbt_auth completed - Status: tbt, Level:', updatedUser.accessLevel);
-          this._authCompleted = true;
-        }
-
-        return { 
-          tbtAuthStatus: 'tbt', 
-          accessLevel: updatedUser.accessLevel, 
-          user: updatedUser,
-          isNewUser: false,
-          amplifyAuthVerified: true
-        };
+      } catch (dataError) {
+        console.error('❌ Data client error:', dataError);
+        console.error('❌ Error details:', {
+          message: dataError.message,
+          stack: dataError.stack,
+          name: dataError.name
+        });
+        throw new Error(`Data client error: ${dataError.message}`);
       }
     } catch (error) {
       if (!this._authErrorLogged) {
         console.error('❌ tbt_auth failed:', error);
+        console.error('❌ Error details:', {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
         this._authErrorLogged = true;
       }
       return { 
@@ -122,6 +156,8 @@ export class TBTAuthService {
     try {
       const now = new Date().toISOString();
       const client = generateClient();
+      console.log('🆕 Creating guest TBT user for:', amplifyUser.signInDetails?.loginId);
+      
       const { data } = await client.models.TBTUser.create({
         input: {
           email: amplifyUser.signInDetails?.loginId,
@@ -163,6 +199,7 @@ export class TBTAuthService {
           })
         }
       });
+      console.log('✅ Guest TBT user created successfully');
       return data;
     } catch (error) {
       console.error('Error creating guest TBT user:', error);
@@ -174,6 +211,8 @@ export class TBTAuthService {
     try {
       const now = new Date().toISOString();
       const client = generateClient();
+      console.log('🆕 Creating TBT user for:', amplifyUser.signInDetails?.loginId);
+      
       const { data } = await client.models.TBTUser.create({
         input: {
           email: amplifyUser.signInDetails?.loginId,
@@ -215,6 +254,7 @@ export class TBTAuthService {
           })
         }
       });
+      console.log('✅ TBT user created successfully');
       return data;
     } catch (error) {
       console.error('Error creating TBT user:', error);
