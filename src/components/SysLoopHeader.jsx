@@ -301,6 +301,9 @@ function SysLoopHeader({ signOut }) {
     closeAllDropdowns()
   }
 
+  // Test function for development - clears session storage to simulate session end
+
+
   const toggleSimSettingsDropdown = () => {
     if (activeDropdown === 'simSettings') {
       closeAllDropdowns()

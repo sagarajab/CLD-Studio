@@ -1,62 +1,96 @@
-// Amplify configuration for CLD-Studio
-// This file automatically loads configuration from amplify_outputs.json
-
+// amplifyConfig.js
 import { Amplify } from 'aws-amplify';
+import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
 
-// Load configuration from amplify_outputs.json
-const loadAmplifyConfig = async () => {
-  try {
-    const outputs = await import('../../amplify_outputs.json');
-    const config = outputs.default;
-    
-    return {
-      Auth: {
-        Cognito: {
-          userPoolId: config.auth.user_pool_id,
-          userPoolClientId: config.auth.user_pool_client_id,
-          identityPoolId: config.auth.identity_pool_id,
-          loginWith: {
-            email: true,
-          },
-        },
-      },
-      Storage: {
-        S3: {
-          // Use the bucket name from amplify_outputs.json
-          bucket: config.storage.bucket_name,
-          region: config.storage.aws_region,
-        },
-      },
-      API: {
-        GraphQL: {
-          endpoint: config.data.url,
-          region: config.data.aws_region,
-          defaultAuthMode: config.data.default_authorization_type === 'AWS_IAM' ? 'iam' : 'userPool',
-        },
-      },
-      ssr: false,
-    };
-  } catch (error) {
-    console.error('Failed to load amplify_outputs.json:', error);
-    throw new Error('Amplify configuration not found. Please run "npx ampx sandbox" first.');
+// Custom session-only key/value storage
+const customSessionStorage = {
+  setItem: async (key, value) => {
+    console.log('[Storage] setItem', key, value);
+    sessionStorage.setItem(key, value);
+  },
+  getItem: async (key) => {
+    const value = sessionStorage.getItem(key);
+    console.log('[Storage] getItem', key, value);
+    return value;
+  },
+  removeItem: async (key) => {
+    console.log('[Storage] removeItem', key);
+    sessionStorage.removeItem(key);
+  },
+  clear: async () => {
+    console.log('[Storage] clear');
+    sessionStorage.clear();
   }
 };
 
-// Initialize Amplify with the configuration
-export const initializeAmplify = async () => {
-  try {
-    const config = await loadAmplifyConfig();
-    Amplify.configure(config);
-    
-    // Store config in localStorage for easy access by other modules
-    localStorage.setItem('amplifyConfig', JSON.stringify(config));
-    
-    console.log('Amplify configured successfully');
-  } catch (error) {
-    console.error('Failed to initialize Amplify:', error);
-    throw error;
-  }
-};
+// Remove any existing Amplify/Cognito auth data
+async function clearExistingAuthData() {
+  console.log('=== Clearing Auth Data ===');
+  localStorage.clear();
+  sessionStorage.clear();
 
-// Export the configuration loading function for manual use if needed
-export { loadAmplifyConfig }; 
+  document.cookie
+    .split(';')
+    .map(c => c.trim().split('=')[0])
+    .filter(name => /(amplify|auth|cognito)/i.test(name))
+    .forEach(name => {
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 UTC;path=/;domain=${window.location.hostname};`;
+      document.cookie = `${name}=;expires=Thu, 01 Jan 1970 UTC;path=/;`;
+    });
+
+  if (indexedDB?.databases) {
+    (await indexedDB.databases())
+      .filter(db => db.name && /(amplify|cognito)/i.test(db.name))
+      .forEach(db => indexedDB.deleteDatabase(db.name));
+  }
+
+  console.log('=== Auth Data Cleared ===');
+}
+
+// Main setup function
+export async function initializeAmplify() {
+  await clearExistingAuthData();
+
+  const { default: cfg } = await import('../../amplify_outputs.json');
+
+  Amplify.configure({
+    Auth: {
+      Cognito: {
+        userPoolId: cfg.auth.user_pool_id,
+        userPoolClientId: cfg.auth.user_pool_client_id,
+        identityPoolId: cfg.auth.identity_pool_id,
+        loginWith: { email: true },
+      },
+      storage: customSessionStorage,
+      cookieStorage: {
+        domain: null,
+        path: '/',
+        expires: 0,
+        secure: false,
+        sameSite: 'lax'
+      }
+    },
+    Storage: {
+      S3: {
+        bucket: cfg.storage.bucket_name,
+        region: cfg.storage.aws_region
+      }
+    },
+    API: {
+      GraphQL: {
+        endpoint: cfg.data.url,
+        region: cfg.data.aws_region,
+        defaultAuthMode:
+          cfg.data.default_authorization_type === 'AWS_IAM'
+            ? 'iam'
+            : 'userPool'
+      }
+    },
+    ssr: false
+  });
+
+  // Ensure both token and identity use session-only storage
+  cognitoUserPoolsTokenProvider.setKeyValueStorage(customSessionStorage);
+
+  console.log('Amplify configured with session-only custom storage.');
+}

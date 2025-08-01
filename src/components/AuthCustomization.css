@@ -1,22 +1,25 @@
 /* Clean, Modern Authentication Styling for CLD Studio */
 
-/* Ensure the entire page has dark background */
+/* Apply gradient background to root elements during authentication */
 html, body, #root {
   background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
 }
 
-/* Reset and base styles */
+/* Apply gradient background only during authentication phase */
 .amplify-authenticator {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: transparent !important;
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%) !important;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
 }
 
 /* Main container styling */

@@ -6,7 +6,7 @@ import './index.css'
 import './components/AuthCustomization.css'
 import App from './App.jsx'
 import { initializeAmplify } from './config/amplifyConfig.js'
-import appIcon from './assets/app_icon.png'
+import appIcon from './assets/app_n_tbt_icon.png'
 
 // Custom components for the Authenticator
 const components = {
@@ -16,11 +16,11 @@ const components = {
         <Image
           alt="CLD Studio"
           src={appIcon}
-          style={{ width: '280px', height: '64px', margin: '0 auto 0px' }}
+          style={{ width: '480px', height: '80px', margin: '0 auto 0px' }}
         />
 
-        <Text fontSize="0.875rem" color="white" fontWeight="600">
-          Causal Loop Diagram Modeling & Simulation
+        <Text fontSize="sm" color="white" fontWeight="semibold" lineHeight="1.2">
+          A canvas for systems thinking — draw, analyze, and simulate causal loops
         </Text>
       </View>
     );
@@ -29,8 +29,8 @@ const components = {
   Footer() {
     return (
       <View textAlign="center" padding="1.5rem 2rem">
-        <Text fontSize="0.75rem" color="white">
-          © 2025 CLD Studio. All Rights Reserved.
+        <Text fontSize="0.75rem" color="gray">
+          © 2025 TBT | CLD Studio. All Rights Reserved.
         </Text>
       </View>
     );
@@ -234,7 +234,8 @@ function AppWrapper() {
         alignItems: 'center', 
         height: '100vh',
         flexDirection: 'column',
-        gap: '1rem'
+        gap: '1rem',
+        background: '#ffffff'
       }}>
         <h2>Failed to initialize app</h2>
         <p>{error}</p>
@@ -251,7 +252,8 @@ function AppWrapper() {
         alignItems: 'center', 
         height: '100vh',
         flexDirection: 'column',
-        gap: '1rem'
+        gap: '1rem',
+        background: '#ffffff'
       }}>
         <div className="loading-spinner"></div>
         <p>Initializing CLD Studio...</p>
