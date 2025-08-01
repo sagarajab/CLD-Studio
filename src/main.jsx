@@ -10,6 +10,7 @@ import appIcon from './assets/app_n_tbt_icon.png'
 
 // Custom components for the Authenticator
 const components = {
+  
   Header() {
     return (
       <View textAlign="center" padding="2rem 2rem 2rem">
