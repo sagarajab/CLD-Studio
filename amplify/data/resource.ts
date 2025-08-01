@@ -9,6 +9,15 @@ const schema = a.schema({
       allow.guest().to(['read']),
     ]),
   
+  // TBT Registered Students - Simple table for authentication
+  TBTRegisteredStudents: a
+    .model({
+      email: a.string().required(),
+    })
+    .authorization((allow) => [
+      allow.owner().to(['create', 'read', 'update', 'delete']),
+    ]),
+  
   // Enhanced TBT User model with progress tracking
   TBTUser: a
     .model({

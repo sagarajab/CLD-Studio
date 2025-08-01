@@ -1,13 +1,12 @@
 import { getCurrentUser } from 'aws-amplify/auth';
-import { generateClient } from 'aws-amplify/api';
-import { listTBTUsers } from '../../queries';
-import { createTBTUser, updateTBTUser } from '../../mutations';
+import { generateClient } from 'aws-amplify/data';
 
 export class TBTAuthService {
   /**
    * Step 1: Verify amplify_Auth passed
-   * Step 2: Check tbt_auth status in DynamoDB
-   * Step 3: Grant appropriate access level
+   * Step 2: Check if user is registered in TBTRegisteredStudents
+   * Step 3: Check/create user in TBTUser table for progress tracking
+   * Step 4: Grant appropriate access level
    */
   static async performTBTAuth() {
     try {
@@ -25,50 +24,85 @@ export class TBTAuthService {
         this._authAttempted = true;
       }
 
-      // Step 2: Check tbt_auth status using GraphQL
       const client = generateClient();
-      const { data } = await client.graphql({
-        query: listTBTUsers,
-        variables: {
-          filter: { email: { eq: userEmail } }
-        }
+
+      // Step 2: Check if user is registered in TBTRegisteredStudents
+      const { data: registeredStudents } = await client.models.TBTRegisteredStudents.list({
+        filter: { email: { eq: userEmail } }
       });
 
-      const tbtUsers = data.listTBTUsers?.items || [];
+      const isRegistered = registeredStudents.length > 0;
 
-      if (tbtUsers.length === 0) {
-        // User not in TBT database - create guest user
+      // Step 3: Check existing TBTUser record
+      const { data: tbtUsers } = await client.models.TBTUser.list({
+        filter: { email: { eq: userEmail } }
+      });
+
+      const existingTBTUser = tbtUsers[0];
+
+      if (!isRegistered) {
+        // User not in registered students list - create or update to guest user
+        if (!existingTBTUser) {
+          if (!this._userCreated) {
+            console.log('🆕 Creating new TBT user with guest access (not registered)');
+            this._userCreated = true;
+          }
+          const guestUser = await this.createGuestTBTUser(amplifyUser);
+          return { 
+            tbtAuthStatus: 'guest', 
+            accessLevel: 'guest', 
+            user: guestUser,
+            isNewUser: true,
+            amplifyAuthVerified: true
+          };
+        } else {
+          // User exists but not registered - ensure guest status
+          if (!this._authCompleted) {
+            console.log('👤 User exists but not registered - guest access');
+            this._authCompleted = true;
+          }
+          return { 
+            tbtAuthStatus: 'guest', 
+            accessLevel: 'guest', 
+            user: existingTBTUser,
+            isNewUser: false,
+            amplifyAuthVerified: true
+          };
+        }
+      }
+
+      // User is registered for TBT
+      if (!existingTBTUser) {
+        // Create new TBT user with full access
         if (!this._userCreated) {
-          console.log('🆕 Creating new TBT user with guest access');
+          console.log('🆕 Creating new TBT user with full access (registered)');
           this._userCreated = true;
         }
-        const guestUser = await this.createGuestTBTUser(amplifyUser);
+        const tbtUser = await this.createTBTUser(amplifyUser);
         return { 
-          tbtAuthStatus: 'guest', 
-          accessLevel: 'guest', 
-          user: guestUser,
+          tbtAuthStatus: 'tbt', 
+          accessLevel: 'tbt', 
+          user: tbtUser,
           isNewUser: true,
           amplifyAuthVerified: true
         };
-      }
+      } else {
+        // Update existing user to TBT status and update login stats
+        const updatedUser = await this.updateUserLoginStats(existingTBTUser);
+        
+        if (!this._authCompleted) {
+          console.log('✅ tbt_auth completed - Status: tbt, Level:', updatedUser.accessLevel);
+          this._authCompleted = true;
+        }
 
-      const tbtUser = tbtUsers[0];
-      
-      // Update login tracking
-      const updatedUser = await this.updateUserLoginStats(tbtUser);
-      
-      if (!this._authCompleted) {
-        console.log('✅ tbt_auth completed - Status:', updatedUser.tbtAuthStatus, 'Level:', updatedUser.accessLevel);
-        this._authCompleted = true;
+        return { 
+          tbtAuthStatus: 'tbt', 
+          accessLevel: updatedUser.accessLevel, 
+          user: updatedUser,
+          isNewUser: false,
+          amplifyAuthVerified: true
+        };
       }
-
-      return { 
-        tbtAuthStatus: updatedUser.tbtAuthStatus, 
-        accessLevel: updatedUser.accessLevel, 
-        user: updatedUser,
-        isNewUser: false,
-        amplifyAuthVerified: true
-      };
     } catch (error) {
       if (!this._authErrorLogged) {
         console.error('❌ tbt_auth failed:', error);
@@ -88,53 +122,102 @@ export class TBTAuthService {
     try {
       const now = new Date().toISOString();
       const client = generateClient();
-      const { data } = await client.graphql({
-        query: createTBTUser,
-        variables: {
-          input: {
-            email: amplifyUser.signInDetails?.loginId,
-            cognitoUserId: amplifyUser.userId,
-            tbtAuthStatus: 'guest',
-            accessLevel: 'guest',
-            amplifyAuthVerified: true,
-            createdAt: now,
-            lastLoginAt: now,
-            lastActiveAt: now,
-            currentSessionStart: now,
-            totalLogins: 1,
-            consecutiveLogins: 1,
-            lastLoginStreak: 0,
-            totalActiveTime: 0,
-            totalIdleTime: 0,
-            currentSessionActiveTime: 0,
-            assignmentsCompleted: 0,
-            assignmentsInProgress: 0,
-            totalAssignmentScore: 0.0,
-            averageAssignmentScore: 0.0,
-            highestAssignmentScore: 0.0,
-            diagramsCreated: 0,
-            diagramsShared: 0,
-            simulationsRun: 0,
-            loopsIdentified: 0,
-            learningLevel: 'beginner',
-            skillsUnlocked: JSON.stringify([]),
-            achievements: JSON.stringify([]),
-            preferences: JSON.stringify({
-              theme: 'light',
-              autoSave: true,
-              showGrid: true
-            }),
-            metadata: JSON.stringify({
-              authFlow: 'amplify_auth -> tbt_auth_guest',
-              createdAsGuest: true,
-              source: 'amplify_auth'
-            })
-          }
+      const { data } = await client.models.TBTUser.create({
+        input: {
+          email: amplifyUser.signInDetails?.loginId,
+          cognitoUserId: amplifyUser.userId,
+          tbtAuthStatus: 'guest',
+          accessLevel: 'guest',
+          amplifyAuthVerified: true,
+          createdAt: now,
+          lastLoginAt: now,
+          lastActiveAt: now,
+          currentSessionStart: now,
+          totalLogins: 1,
+          consecutiveLogins: 1,
+          lastLoginStreak: 0,
+          totalActiveTime: 0,
+          totalIdleTime: 0,
+          currentSessionActiveTime: 0,
+          assignmentsCompleted: 0,
+          assignmentsInProgress: 0,
+          totalAssignmentScore: 0.0,
+          averageAssignmentScore: 0.0,
+          highestAssignmentScore: 0.0,
+          diagramsCreated: 0,
+          diagramsShared: 0,
+          simulationsRun: 0,
+          loopsIdentified: 0,
+          learningLevel: 'beginner',
+          skillsUnlocked: JSON.stringify([]),
+          achievements: JSON.stringify([]),
+          preferences: JSON.stringify({
+            theme: 'light',
+            autoSave: true,
+            showGrid: true
+          }),
+          metadata: JSON.stringify({
+            authFlow: 'amplify_auth -> tbt_auth_guest',
+            createdAsGuest: true,
+            source: 'amplify_auth'
+          })
         }
       });
-      return data.createTBTUser;
+      return data;
     } catch (error) {
       console.error('Error creating guest TBT user:', error);
+      throw error;
+    }
+  }
+
+  static async createTBTUser(amplifyUser) {
+    try {
+      const now = new Date().toISOString();
+      const client = generateClient();
+      const { data } = await client.models.TBTUser.create({
+        input: {
+          email: amplifyUser.signInDetails?.loginId,
+          cognitoUserId: amplifyUser.userId,
+          tbtAuthStatus: 'tbt',
+          accessLevel: 'tbt',
+          amplifyAuthVerified: true,
+          createdAt: now,
+          lastLoginAt: now,
+          lastActiveAt: now,
+          currentSessionStart: now,
+          totalLogins: 1,
+          consecutiveLogins: 1,
+          lastLoginStreak: 0,
+          totalActiveTime: 0,
+          totalIdleTime: 0,
+          currentSessionActiveTime: 0,
+          assignmentsCompleted: 0,
+          assignmentsInProgress: 0,
+          totalAssignmentScore: 0.0,
+          averageAssignmentScore: 0.0,
+          highestAssignmentScore: 0.0,
+          diagramsCreated: 0,
+          diagramsShared: 0,
+          simulationsRun: 0,
+          loopsIdentified: 0,
+          learningLevel: 'beginner',
+          skillsUnlocked: JSON.stringify([]),
+          achievements: JSON.stringify([]),
+          preferences: JSON.stringify({
+            theme: 'light',
+            autoSave: true,
+            showGrid: true
+          }),
+          metadata: JSON.stringify({
+            authFlow: 'amplify_auth -> tbt_auth_registered',
+            createdAsTBT: true,
+            source: 'amplify_auth'
+          })
+        }
+      });
+      return data;
+    } catch (error) {
+      console.error('Error creating TBT user:', error);
       throw error;
     }
   }
@@ -155,22 +238,19 @@ export class TBTAuthService {
       }
 
       const client = generateClient();
-      const { data } = await client.graphql({
-        query: updateTBTUser,
-        variables: {
-          input: {
-            id: tbtUser.id,
-            lastLoginAt: now,
-            lastActiveAt: now,
-            currentSessionStart: now,
-            totalLogins: (tbtUser.totalLogins || 0) + 1,
-            consecutiveLogins: consecutiveLogins,
-            currentSessionActiveTime: 0
-          }
+      const { data } = await client.models.TBTUser.update({
+        input: {
+          id: tbtUser.id,
+          lastLoginAt: now,
+          lastActiveAt: now,
+          currentSessionStart: now,
+          totalLogins: (tbtUser.totalLogins || 0) + 1,
+          consecutiveLogins: consecutiveLogins,
+          currentSessionActiveTime: 0
         }
       });
       
-      return data.updateTBTUser;
+      return data;
     } catch (error) {
       console.error('Error updating user login stats:', error);
       throw error;
@@ -184,14 +264,11 @@ export class TBTAuthService {
       const client = generateClient();
       
       // Get user by ID
-      const { data: userData } = await client.graphql({
-        query: listTBTUsers,
-        variables: {
-          filter: { id: { eq: userId } }
-        }
+      const { data: userData } = await client.models.TBTUser.list({
+        filter: { id: { eq: userId } }
       });
       
-      const users = userData.listTBTUsers?.items || [];
+      const users = userData || [];
       if (users.length === 0) return;
 
       const user = users[0];
@@ -210,11 +287,8 @@ export class TBTAuthService {
         updates.totalIdleTime = (user.totalIdleTime || 0) + 1;
       }
 
-      await client.graphql({
-        query: updateTBTUser,
-        variables: {
-          input: updates
-        }
+      await client.models.TBTUser.update({
+        input: updates
       });
 
       // Log activity to session
@@ -230,7 +304,7 @@ export class TBTAuthService {
       const sessionId = `session_${userId}_${new Date().toISOString().split('T')[0]}`;
       
       // For now, let's skip session logging to focus on the core auth functionality
-      // This can be implemented later with the proper GraphQL operations
+      // This can be implemented later with the proper Data client operations
       // console.log('Activity logged:', { userId, actionType, isActive, sessionId });
     } catch (error) {
       console.error('Error logging activity to session:', error);
@@ -241,7 +315,7 @@ export class TBTAuthService {
   static async startAssignment(userId, assignmentId) {
     try {
       // console.log('Starting assignment:', { userId, assignmentId });
-      // TODO: Implement with GraphQL operations
+      // TODO: Implement with Data client operations
       return { id: 'temp-assignment-id', status: 'in_progress' };
     } catch (error) {
       console.error('Error starting assignment:', error);
@@ -252,7 +326,7 @@ export class TBTAuthService {
   static async completeAssignment(userAssignmentId, score, diagramData) {
     try {
       // console.log('Completing assignment:', { userAssignmentId, score });
-      // TODO: Implement with GraphQL operations
+      // TODO: Implement with Data client operations
       return { id: userAssignmentId, status: 'completed', score };
     } catch (error) {
       console.error('Error completing assignment:', error);
@@ -263,7 +337,7 @@ export class TBTAuthService {
   static async updateUserAssignmentStats(userId, newScore) {
     try {
       // console.log('Updating assignment stats:', { userId, newScore });
-      // TODO: Implement with GraphQL operations
+      // TODO: Implement with Data client operations
     } catch (error) {
       console.error('Error updating user assignment stats:', error);
     }
@@ -273,7 +347,7 @@ export class TBTAuthService {
   static async trackDiagramCreation(userId) {
     try {
       // console.log('Tracking diagram creation:', { userId });
-      // TODO: Implement with GraphQL operations
+      // TODO: Implement with Data client operations
     } catch (error) {
       console.error('Error tracking diagram creation:', error);
     }
@@ -282,7 +356,7 @@ export class TBTAuthService {
   static async trackSimulationRun(userId) {
     try {
       // console.log('Tracking simulation run:', { userId });
-      // TODO: Implement with GraphQL operations
+      // TODO: Implement with Data client operations
     } catch (error) {
       console.error('Error tracking simulation run:', error);
     }
@@ -291,7 +365,7 @@ export class TBTAuthService {
   static async trackLoopIdentification(userId, loopCount = 1) {
     try {
       // console.log('Tracking loop identification:', { userId, loopCount });
-      // TODO: Implement with GraphQL operations
+      // TODO: Implement with Data client operations
     } catch (error) {
       console.error('Error tracking loop identification:', error);
     }
