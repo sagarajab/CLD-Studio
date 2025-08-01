@@ -44,7 +44,8 @@ function App({ user, signOut }) {
     accessLevel, 
     isNewUser,
     isLoading: tbtAuthLoading,
-    error: tbtAuthError
+    error: tbtAuthError,
+    clearAuth  // Add this import
   } = useTBTAuthStore()
   
   // User progress tracking
@@ -90,6 +91,15 @@ function App({ user, signOut }) {
   const loops = useMemo(() => {
     return allLoops
   }, [allLoops])
+
+  // Reset TBT auth state when user changes
+  useEffect(() => {
+    if (user) {
+      // Reset TBT auth state for new user
+      clearAuth();
+      console.log('🔄 User changed, resetting TBT auth state...');
+    }
+  }, [user?.userId]); // Track user ID changes specifically
 
   // Perform tbt_auth when amplify_Auth user is available
   useEffect(() => {
