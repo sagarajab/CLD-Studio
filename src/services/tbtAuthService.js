@@ -87,6 +87,8 @@ export class TBTAuthService {
           console.error('❌ Direct GraphQL query failed:', graphqlError);
           throw new Error('Data client models not available and direct GraphQL failed');
         }
+      } else {
+        console.log('✅ Models are available - will use standard Data client models');
       }
 
       // Check if TBTRegisteredStudents model exists
@@ -100,11 +102,31 @@ export class TBTAuthService {
       console.log('📋 STEP 3: Checking TBT Registration Status...');
       try {
         console.log('🔍 Checking TBTRegisteredStudents for:', userEmail);
+        
+        // First, let's get all records to debug
+        console.log('🔍 Getting all TBTRegisteredStudents records for debugging...');
+        const { data: allStudents } = await dataClient.models.TBTRegisteredStudents.list();
+        console.log('📋 All TBTRegisteredStudents:', allStudents);
+        
+        // Now try the filtered query
         const { data: registeredStudents } = await dataClient.models.TBTRegisteredStudents.list({
           filter: { email: { eq: userEmail } }
         });
 
-        const isRegistered = registeredStudents.length > 0;
+        let isRegistered = registeredStudents.length > 0;
+        
+        // If not found with exact match, try case-insensitive search
+        if (!isRegistered && allStudents.length > 0) {
+          console.log('🔍 Exact match failed, trying case-insensitive search...');
+          const foundUser = allStudents.find(student => 
+            student.email && student.email.toLowerCase() === userEmail.toLowerCase()
+          );
+          if (foundUser) {
+            console.log('✅ Found user with case-insensitive search:', foundUser);
+            isRegistered = true;
+          }
+        }
+        
         console.log('📋 TBT registration check:', { userEmail, isRegistered, count: registeredStudents.length });
         
         if (isRegistered) {

@@ -14,9 +14,7 @@ const schema = a.schema({
     .model({
       email: a.string().required(),
     })
-    .authorization((allow) => [
-      allow.owner().to(['create', 'read', 'update', 'delete']),
-    ]),
+    .authorization(allow => [allow.publicApiKey()]),
   
   // Enhanced TBT User model with progress tracking
   TBTUser: a

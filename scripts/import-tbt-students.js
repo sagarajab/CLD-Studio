@@ -1,4 +1,5 @@
-import { dataClient } from '../src/config/dataClientConfig.js';
+import { getDataClient } from '../src/config/dataClientConfig.js';
+import { initializeAmplify } from '../src/config/amplifyConfig.js';
 
 // List of student emails to import
 const studentEmails = [
@@ -11,6 +12,13 @@ const studentEmails = [
 
 async function importTBTStudents() {
   console.log('Starting TBT student import...');
+  
+  // Initialize Amplify first
+  await initializeAmplify();
+  
+  // Get the data client after initialization
+  const dataClient = getDataClient();
+  
   console.log(`Total emails to import: ${studentEmails.length}`);
   
   let successCount = 0;
