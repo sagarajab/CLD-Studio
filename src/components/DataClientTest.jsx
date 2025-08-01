@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { generateClient } from 'aws-amplify/data';
+import { getDataClient } from '../config/dataClientConfig';
 
 const DataClientTest = () => {
   const [status, setStatus] = useState('Testing...');
@@ -14,24 +14,24 @@ const DataClientTest = () => {
     try {
       setStatus('Initializing Data client...');
       
-      const client = generateClient();
+      const dataClient = getDataClient();
       
-      if (!client) {
+      if (!dataClient) {
         throw new Error('Data client is null');
       }
       
       setStatus('Checking models...');
       
-      if (!client.models) {
+      if (!dataClient.models) {
         throw new Error('Client models are undefined');
       }
       
-      const availableModels = Object.keys(client.models);
+      const availableModels = Object.keys(dataClient.models);
       setModels(availableModels);
       
       setStatus('Testing TBTRegisteredStudents list...');
       
-      const { data } = await client.models.TBTRegisteredStudents.list({
+      const { data } = await dataClient.models.TBTRegisteredStudents.list({
         limit: 10
       });
       

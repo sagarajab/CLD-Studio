@@ -1,4 +1,4 @@
-import { generateClient } from 'aws-amplify/data';
+import { dataClient } from '../src/config/dataClientConfig.js';
 
 // List of student emails to import
 const studentEmails = [
@@ -10,8 +10,6 @@ const studentEmails = [
 ];
 
 async function importTBTStudents() {
-  const client = generateClient();
-  
   console.log('Starting TBT student import...');
   console.log(`Total emails to import: ${studentEmails.length}`);
   
@@ -20,7 +18,7 @@ async function importTBTStudents() {
   
   for (const email of studentEmails) {
     try {
-      const { data } = await client.models.TBTRegisteredStudents.create({
+      const { data } = await dataClient.models.TBTRegisteredStudents.create({
         input: {
           email: email
         }

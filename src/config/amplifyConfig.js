@@ -87,17 +87,11 @@ export async function initializeAmplify() {
             : 'userPool'
       }
     },
-    // Add the new Data configuration for Amplify Gen 2
-    Data: {
-      url: cfg.data.url,
-      region: cfg.data.aws_region,
-      defaultAuthMode: cfg.data.default_authorization_type === 'AWS_IAM' ? 'iam' : 'userPool'
-    },
     ssr: false
   });
 
   // Ensure both token and identity use session-only storage
   cognitoUserPoolsTokenProvider.setKeyValueStorage(customSessionStorage);
 
-  console.log('Amplify configured with session-only custom storage and Data API support.');
+  console.log('Amplify configured with session-only custom storage.');
 }

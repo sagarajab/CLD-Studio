@@ -1,5 +1,5 @@
 import { getCurrentUser } from 'aws-amplify/auth';
-import { generateClient } from 'aws-amplify/data';
+import { getDataClient } from '../config/dataClientConfig';
 
 export class TBTAuthService {
   /**
@@ -24,27 +24,27 @@ export class TBTAuthService {
         this._authAttempted = true;
       }
 
-      // Initialize Data client
-      const client = generateClient();
+      // Get Data client (lazy initialization)
+      const dataClient = getDataClient();
       
       // Debug: Check if client and models are available
-      if (!client) {
+      if (!dataClient) {
         throw new Error('Data client is not available');
       }
       
       // Wait a moment for the client to be fully initialized
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      if (!client.models) {
+      if (!dataClient.models) {
         throw new Error('Data client models are not available. Make sure the schema is deployed.');
       }
       
-      console.log('🔍 Available models:', Object.keys(client.models));
+      console.log('🔍 Available models:', Object.keys(dataClient.models));
 
       // Step 2: Check if user is registered in TBTRegisteredStudents
       try {
         console.log('🔍 Checking TBTRegisteredStudents for:', userEmail);
-        const { data: registeredStudents } = await client.models.TBTRegisteredStudents.list({
+        const { data: registeredStudents } = await dataClient.models.TBTRegisteredStudents.list({
           filter: { email: { eq: userEmail } }
         });
 
@@ -53,7 +53,7 @@ export class TBTAuthService {
 
         // Step 3: Check existing TBTUser record
         console.log('🔍 Checking TBTUser for:', userEmail);
-        const { data: tbtUsers } = await client.models.TBTUser.list({
+        const { data: tbtUsers } = await dataClient.models.TBTUser.list({
           filter: { email: { eq: userEmail } }
         });
 
@@ -155,10 +155,10 @@ export class TBTAuthService {
   static async createGuestTBTUser(amplifyUser) {
     try {
       const now = new Date().toISOString();
-      const client = generateClient();
+      const dataClient = getDataClient();
       console.log('🆕 Creating guest TBT user for:', amplifyUser.signInDetails?.loginId);
       
-      const { data } = await client.models.TBTUser.create({
+      const { data } = await dataClient.models.TBTUser.create({
         input: {
           email: amplifyUser.signInDetails?.loginId,
           cognitoUserId: amplifyUser.userId,
@@ -210,10 +210,10 @@ export class TBTAuthService {
   static async createTBTUser(amplifyUser) {
     try {
       const now = new Date().toISOString();
-      const client = generateClient();
+      const dataClient = getDataClient();
       console.log('🆕 Creating TBT user for:', amplifyUser.signInDetails?.loginId);
       
-      const { data } = await client.models.TBTUser.create({
+      const { data } = await dataClient.models.TBTUser.create({
         input: {
           email: amplifyUser.signInDetails?.loginId,
           cognitoUserId: amplifyUser.userId,
@@ -277,8 +277,8 @@ export class TBTAuthService {
         consecutiveLogins = 1;
       }
 
-      const client = generateClient();
-      const { data } = await client.models.TBTUser.update({
+      const dataClient = getDataClient();
+      const { data } = await dataClient.models.TBTUser.update({
         input: {
           id: tbtUser.id,
           lastLoginAt: now,
@@ -301,10 +301,10 @@ export class TBTAuthService {
   static async updateUserActivity(userId, isActive = true, actionType = null) {
     try {
       const now = new Date().toISOString();
-      const client = generateClient();
+      const dataClient = getDataClient();
       
       // Get user by ID
-      const { data: userData } = await client.models.TBTUser.list({
+      const { data: userData } = await dataClient.models.TBTUser.list({
         filter: { id: { eq: userId } }
       });
       
@@ -327,7 +327,7 @@ export class TBTAuthService {
         updates.totalIdleTime = (user.totalIdleTime || 0) + 1;
       }
 
-      await client.models.TBTUser.update({
+      await dataClient.models.TBTUser.update({
         input: updates
       });
 
