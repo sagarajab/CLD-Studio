@@ -1,15 +1,10 @@
+// dataClientConfig.js - Gen 2 v6 Data Client
 import { generateClient } from 'aws-amplify/data';
 
-// Lazy Data client - only created when needed
-let _dataClient = null;
+// Gen 2 v6 Data client - automatically configured from amplify_outputs.json
+export const dataClient = generateClient();
 
-// Create and export the Data client
+// Export a function to get the client (for lazy initialization if needed)
 export const getDataClient = () => {
-  if (!_dataClient) {
-    _dataClient = generateClient();
-  }
-  return _dataClient;
-};
-
-// Export the client directly for backward compatibility
-export const dataClient = getDataClient(); 
+  return dataClient;
+}; 

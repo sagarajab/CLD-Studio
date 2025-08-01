@@ -1,24 +1,20 @@
-// amplifyConfig.js
+// amplifyConfig.js - Gen 2 v6 Configuration
 import { Amplify } from 'aws-amplify';
 import { cognitoUserPoolsTokenProvider } from 'aws-amplify/auth/cognito';
 
 // Custom session-only key/value storage
 const customSessionStorage = {
   setItem: async (key, value) => {
-    // console.log('[Storage] setItem', key, value);
     sessionStorage.setItem(key, value);
   },
   getItem: async (key) => {
     const value = sessionStorage.getItem(key);
-    // console.log('[Storage] getItem', key, value);
     return value;
   },
   removeItem: async (key) => {
-    // console.log('[Storage] removeItem', key);
     sessionStorage.removeItem(key);
   },
   clear: async () => {
-    // console.log('[Storage] clear');
     sessionStorage.clear();
   }
 };
@@ -47,12 +43,13 @@ async function clearExistingAuthData() {
   console.log('=== Auth Data Cleared ===');
 }
 
-// Main setup function
+// Main setup function - Gen 2 v6
 export async function initializeAmplify() {
   await clearExistingAuthData();
 
   const { default: cfg } = await import('../../amplify_outputs.json');
 
+  // Gen 2 v6 Configuration - Much simpler
   Amplify.configure({
     Auth: {
       Cognito: {
@@ -76,22 +73,12 @@ export async function initializeAmplify() {
         region: cfg.storage.aws_region
       }
     },
-    // Keep the old API config for backward compatibility
-    API: {
-      GraphQL: {
-        endpoint: cfg.data.url,
-        region: cfg.data.aws_region,
-        defaultAuthMode:
-          cfg.data.default_authorization_type === 'AWS_IAM'
-            ? 'iam'
-            : 'userPool'
-      }
-    },
+    // Gen 2 Data configuration - automatically handled by the Data client
     ssr: false
   });
 
   // Ensure both token and identity use session-only storage
   cognitoUserPoolsTokenProvider.setKeyValueStorage(customSessionStorage);
 
-  console.log('Amplify configured with session-only custom storage.');
+  console.log('Amplify Gen 2 v6 configured successfully.');
 }

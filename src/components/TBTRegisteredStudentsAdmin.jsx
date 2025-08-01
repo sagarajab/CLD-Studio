@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getDataClient } from '../config/dataClientConfig';
+import { dataClient } from '../config/dataClientConfig';
 
 const TBTRegisteredStudentsAdmin = () => {
   const [students, setStudents] = useState([]);
@@ -14,7 +14,6 @@ const TBTRegisteredStudentsAdmin = () => {
   const loadStudents = async () => {
     try {
       setLoading(true);
-      const dataClient = getDataClient();
       const { data } = await dataClient.models.TBTRegisteredStudents.list({
         limit: 1000
       });
@@ -31,7 +30,6 @@ const TBTRegisteredStudentsAdmin = () => {
     if (!newEmail.trim()) return;
 
     try {
-      const dataClient = getDataClient();
       const { data } = await dataClient.models.TBTRegisteredStudents.create({
         input: {
           email: newEmail.trim()
@@ -53,7 +51,6 @@ const TBTRegisteredStudentsAdmin = () => {
     const emails = bulkEmails.split('\n').map(email => email.trim()).filter(email => email);
     
     try {
-      const dataClient = getDataClient();
       for (const email of emails) {
         await dataClient.models.TBTRegisteredStudents.create({
           input: { email }
@@ -73,7 +70,6 @@ const TBTRegisteredStudentsAdmin = () => {
     if (!confirm('Are you sure you want to remove this student?')) return;
 
     try {
-      const dataClient = getDataClient();
       await dataClient.models.TBTRegisteredStudents.delete({
         input: { id: studentId }
       });

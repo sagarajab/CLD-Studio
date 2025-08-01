@@ -1,5 +1,5 @@
 import { getCurrentUser } from 'aws-amplify/auth';
-import { getDataClient } from '../config/dataClientConfig';
+import { dataClient } from '../config/dataClientConfig';
 
 export class TBTAuthService {
   /**
@@ -24,16 +24,10 @@ export class TBTAuthService {
         this._authAttempted = true;
       }
 
-      // Get Data client (lazy initialization)
-      const dataClient = getDataClient();
-      
       // Debug: Check if client and models are available
       if (!dataClient) {
         throw new Error('Data client is not available');
       }
-      
-      // Wait a moment for the client to be fully initialized
-      await new Promise(resolve => setTimeout(resolve, 100));
       
       if (!dataClient.models) {
         throw new Error('Data client models are not available. Make sure the schema is deployed.');
@@ -155,7 +149,6 @@ export class TBTAuthService {
   static async createGuestTBTUser(amplifyUser) {
     try {
       const now = new Date().toISOString();
-      const dataClient = getDataClient();
       console.log('🆕 Creating guest TBT user for:', amplifyUser.signInDetails?.loginId);
       
       const { data } = await dataClient.models.TBTUser.create({
@@ -210,7 +203,6 @@ export class TBTAuthService {
   static async createTBTUser(amplifyUser) {
     try {
       const now = new Date().toISOString();
-      const dataClient = getDataClient();
       console.log('🆕 Creating TBT user for:', amplifyUser.signInDetails?.loginId);
       
       const { data } = await dataClient.models.TBTUser.create({
@@ -277,7 +269,6 @@ export class TBTAuthService {
         consecutiveLogins = 1;
       }
 
-      const dataClient = getDataClient();
       const { data } = await dataClient.models.TBTUser.update({
         input: {
           id: tbtUser.id,
@@ -301,7 +292,6 @@ export class TBTAuthService {
   static async updateUserActivity(userId, isActive = true, actionType = null) {
     try {
       const now = new Date().toISOString();
-      const dataClient = getDataClient();
       
       // Get user by ID
       const { data: userData } = await dataClient.models.TBTUser.list({
