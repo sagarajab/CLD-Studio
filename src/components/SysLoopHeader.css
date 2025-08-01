@@ -10,6 +10,17 @@
   border-radius: 0.5px;
 }
 
+/* Menu Group Styles */
+.menu-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.menu-group .menu-icon-btn {
+  margin: 0 2px;
+}
+
 /* Menu Item Container */
 .menu-item-relative {
   position: relative;

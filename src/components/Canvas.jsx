@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import { useUserProgressStore } from '../stores/userProgressStore'
 import CLDNode from './CLDNode'
+import SimulationControlsOverlay from './SimulationControlsOverlay'
 import './Canvas.css'
 import { getEllipseDimensions } from '../utils/text'
 import { findConvexHullIntersection } from '../utils/geometry'
@@ -1553,6 +1554,9 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         SIMULATION MODE
       </div>
     )}
+
+    {/* Simulation Controls Overlay */}
+    <SimulationControlsOverlay />
 
 
 

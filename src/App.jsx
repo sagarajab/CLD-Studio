@@ -9,10 +9,16 @@ import SettingsModal from './components/SettingsModal'
 import S3FileManager from './components/S3FileManager'
 import TBTAuthTest from './components/TBTAuthTest'
 import TBTUserAdmin from './components/TBTUserAdmin'
+import StateVectorModal from './components/StateVectorModal'
+import PlotsModal from './components/PlotsModal'
+import NodeAnalysisModal from './components/NodeAnalysisModal'
+import ConnectionAnalysisModal from './components/ConnectionAnalysisModal'
+import SystemStatsModal from './components/SystemStatsModal'
+import AdjacencyMatrixModal from './components/AdjacencyMatrixModal'
 import { useCLDStore } from './stores/cldStore'
 import { useTBTAuthStore } from './stores/tbtAuthStore'
 import { useUserProgressStore } from './stores/userProgressStore'
-import { Wrench, Settings as SettingsIcon, Info, HelpCircle, Undo2, Redo2, LogOut, Database, User, UserCheck, TestTube, Users } from 'lucide-react'
+import { Undo2, Redo2, Database, User, UserCheck, TreeDeciduous, MailCheck } from 'lucide-react'
 import './components/StatusBar.css'
 
 function App({ user, signOut }) {
@@ -24,6 +30,10 @@ function App({ user, signOut }) {
   const [showS3FileManager, setShowS3FileManager] = useState(false) // Add S3 file manager state
   const [showTBTAuthTest, setShowTBTAuthTest] = useState(false) // Add TBT auth test modal state
   const [showTBTUserAdmin, setShowTBTUserAdmin] = useState(false) // Add TBT user admin modal state
+  const [showNodeAnalysisModal, setShowNodeAnalysisModal] = useState(false) // Add node analysis modal state
+  const [showConnectionAnalysisModal, setShowConnectionAnalysisModal] = useState(false) // Add connection analysis modal state
+  const [showSystemStatsModal, setShowSystemStatsModal] = useState(false) // Add system stats modal state
+  const [showAdjacencyMatrixModal, setShowAdjacencyMatrixModal] = useState(false) // Add adjacency matrix modal state
   const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 }) // Add mouse coordinates state
   
   // TBT Authentication state
@@ -56,7 +66,11 @@ function App({ user, signOut }) {
     eventsLog,
     undo,
     redo,
-    viewTransform
+    viewTransform,
+    showStateVectorModal,
+    showPlotsModal,
+    setShowStateVectorModal,
+    setShowPlotsModal
   } = useCLDStore()
 
   // Set initial browser title based on diagram name
@@ -205,7 +219,14 @@ function App({ user, signOut }) {
   return (
     <div className="sysloop-app" onClick={handleAppClick} onMouseMove={handleMouseMove}>
              {/* Header */}
-       <SysLoopHeader mode={mode} setMode={setMode} signOut={signOut} />
+       <SysLoopHeader 
+         signOut={signOut}
+         onSettingsClick={() => setShowSettingsModal(true)}
+         onTBTUserAdminClick={() => setShowTBTUserAdmin(true)}
+         onTBTAuthTestClick={() => setShowTBTAuthTest(true)}
+         onDevModeToggle={() => setDevMode(!devMode)}
+         devMode={devMode}
+       />
 
       {/* Main Content */}
       <div className="main-layout">
@@ -217,6 +238,14 @@ function App({ user, signOut }) {
           setDimmingEnabled={setDimmingEnabled}
           hoveredLoop={hoveredLoop}
           setHoveredLoop={setHoveredLoop}
+          setShowSettingsModal={setShowSettingsModal}
+          setShowStateVectorModal={setShowStateVectorModal}
+          setShowPlotsModal={setShowPlotsModal}
+          setShowS3FileManager={setShowS3FileManager}
+          setShowNodeAnalysisModal={setShowNodeAnalysisModal}
+          setShowConnectionAnalysisModal={setShowConnectionAnalysisModal}
+          setShowSystemStatsModal={setShowSystemStatsModal}
+          setShowAdjacencyMatrixModal={setShowAdjacencyMatrixModal}
         />
         
         {/* Main Canvas */}
@@ -277,69 +306,19 @@ function App({ user, signOut }) {
             <span>User: <b>{user?.signInDetails?.loginId || user?.attributes?.email || 'Guest'}</b></span>
             <div className="status-separator"></div>
             <div className="auth-status-indicators">
-              <span className={`auth-indicator amplify ${amplifyAuthVerified ? 'passed' : 'failed'}`}>
-                amplify_Auth: {amplifyAuthVerified ? '✅' : '❌'}
-              </span>
-              <span className={`auth-indicator tbt ${tbtAuthStatus}`}>
-                tbt_auth: {tbtAuthStatus === 'tbt' ? '✅' : tbtAuthStatus === 'guest' ? '👤' : '⏳'}
-              </span>
+              <div className={`auth-icon amplify ${amplifyAuthVerified ? 'authenticated' : 'not-authenticated'}`}>
+                <MailCheck size={16} />
+              </div>
+              <div className={`auth-icon tbt ${tbtAuthStatus === 'tbt' ? 'authenticated' : 'not-authenticated'}`}>
+                <TreeDeciduous size={16} />
+              </div>
             </div>
             <div className="status-separator"></div>
-            <span className={`access-level ${accessLevel}`}>
-              {accessLevel.toUpperCase()}
+            <span className="access-level-text">
+              {amplifyAuthVerified && tbtAuthStatus === 'tbt' ? 'TBTuser' : 'Guest'}
             </span>
           </div>
-          <div className="status-controls">
-            
-            {/* Dev Mode Toggle */}
-            <button
-              onClick={() => setDevMode(!devMode)}
-              className={`statusbar-icon-btn dev-mode-btn ${devMode ? 'active' : ''}`}
-              title="Toggle Dev Mode"
-            >
-              <Wrench size={18} />
-            </button>
-            {/* Settings Button */}
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              className="statusbar-icon-btn settings-btn"
-              title="Application Settings"
-            >
-              <SettingsIcon size={18} />
-            </button>
-            {/* About Button */}
-            <button
-              onClick={() => alert('About: CLD Studio v1.0')}
-              className="statusbar-icon-btn about-btn"
-              title="About"
-            >
-              <Info size={18} />
-            </button>
-            {/* Help Button */}
-            <button
-              onClick={() => alert('Help: For assistance, visit the documentation.')}
-              className="statusbar-icon-btn help-btn"
-              title="Help"
-            >
-              <HelpCircle size={18} />
-            </button>
-            {/* TBT Auth Test Button */}
-            <button
-              onClick={() => setShowTBTAuthTest(true)}
-              className="statusbar-icon-btn test-btn"
-              title="TBT Auth Test"
-            >
-              <TestTube size={18} />
-            </button>
-            {/* TBT User Admin Button */}
-            <button
-              onClick={() => setShowTBTUserAdmin(true)}
-              className="statusbar-icon-btn admin-btn"
-              title="TBT User Management"
-            >
-              <Users size={18} />
-            </button>
-          </div>
+
         </div>
       </div>
 
@@ -391,6 +370,54 @@ function App({ user, signOut }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* State Vector Modal */}
+      {showStateVectorModal && (
+        <StateVectorModal 
+          isOpen={showStateVectorModal} 
+          onClose={() => setShowStateVectorModal(false)} 
+        />
+      )}
+
+      {/* Plots Modal */}
+      {showPlotsModal && (
+        <PlotsModal 
+          isOpen={showPlotsModal} 
+          onClose={() => setShowPlotsModal(false)} 
+        />
+      )}
+
+      {/* Node Analysis Modal */}
+      {showNodeAnalysisModal && (
+        <NodeAnalysisModal 
+          isOpen={showNodeAnalysisModal} 
+          onClose={() => setShowNodeAnalysisModal(false)} 
+        />
+      )}
+
+      {/* Connection Analysis Modal */}
+      {showConnectionAnalysisModal && (
+        <ConnectionAnalysisModal 
+          isOpen={showConnectionAnalysisModal} 
+          onClose={() => setShowConnectionAnalysisModal(false)} 
+        />
+      )}
+
+      {/* System Stats Modal */}
+      {showSystemStatsModal && (
+        <SystemStatsModal 
+          isOpen={showSystemStatsModal} 
+          onClose={() => setShowSystemStatsModal(false)} 
+        />
+      )}
+
+      {/* Adjacency Matrix Modal */}
+      {showAdjacencyMatrixModal && (
+        <AdjacencyMatrixModal 
+          isOpen={showAdjacencyMatrixModal} 
+          onClose={() => setShowAdjacencyMatrixModal(false)} 
+        />
       )}
     </div>
   )

@@ -69,6 +69,10 @@ const useCLDStore = create((set, get) => ({
   // Global dropdown state management - ensures only one dropdown is open at a time
   activeDropdown: null, // 'designSettings' | 'nodeColor' | 'arrowColor' | 'export' | 'open' | 'simSettings' | null
   
+  // Modal state management
+  showStateVectorModal: false,
+  showPlotsModal: false,
+  
   // Selected colors state (like PowerPoint)
   selectedNodeColor: loadConfig().colors.defaultSelected.nodeColor,
   selectedArrowColor: loadConfig().colors.defaultSelected.arrowColor,
@@ -118,6 +122,15 @@ const useCLDStore = create((set, get) => ({
   
   closeAllDropdowns: () => {
     set({ activeDropdown: null })
+  },
+  
+  // Modal state management
+  setShowStateVectorModal: (show) => {
+    set({ showStateVectorModal: show })
+  },
+  
+  setShowPlotsModal: (show) => {
+    set({ showPlotsModal: show })
   },
   
   // Node editing operations
@@ -1926,7 +1939,8 @@ const useCLDStore = create((set, get) => ({
     }
     
     // Find the node index
-    const nodeIndex = nodes.findIndex(node => node.id === perturbedNodeId)
+    const nodeIndex = nodes.findIndex(node => node.id == perturbedNodeId) // Use loose equality to handle string/number conversion
+    
     if (nodeIndex === -1) {
       console.warn(`Node ${perturbedNodeId} not found`)
       return false

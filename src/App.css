@@ -609,6 +609,12 @@ body {
   padding-left: 40px;
 }
 
+.menu-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .font-select {
   background: rgba(255, 255, 255, 0.1);
   border: none;
@@ -955,15 +961,20 @@ body {
 
 .problem-textarea {
   width: 100%;
+  height: 50vh;
   min-height: 120px;
   background: #ffffff;
   border: 1px solid #bdc3c7;
   border-radius: 4px;
   padding: 12px;
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 1.6;
   resize: vertical;
-  font-family: inherit;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 400;
+  color: #2d3748;
+  letter-spacing: 0.01em;
+  text-align: left;
 }
 
 .problem-textarea:focus {
@@ -1058,13 +1069,14 @@ body {
 /* Status Bar */
 .status-bar {
   height: 32px;
-  background: #ecf0f1;
-  border-top: 1px solid #bdc3c7;
+  background: #1a1a1a;
+  border-top: 1px solid #333;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
   font-size: 12px;
+  color: #ffffff;
 }
 
 .status-left {
@@ -1113,7 +1125,7 @@ body {
 }
 
 .status-text {
-  color: #7f8c8d;
+  color: #b0b0b0;
   font-style: italic;
 }
 
@@ -1126,7 +1138,7 @@ body {
 .status-btn {
   background: transparent;
   border: none;
-  color: #7f8c8d;
+  color: #b0b0b0;
   padding: 4px;
   border-radius: 2px;
   cursor: pointer;
@@ -1134,8 +1146,8 @@ body {
 }
 
 .status-btn:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #2c3e50;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
 }
 
 .zoom-control {
@@ -1147,7 +1159,7 @@ body {
 .zoom-slider {
   width: 60px;
   height: 4px;
-  background: #bdc3c7;
+  background: #404040;
   border-radius: 2px;
   outline: none;
   -webkit-appearance: none;
@@ -1160,6 +1172,7 @@ body {
   background: #f39c12;
   border-radius: 50%;
   cursor: pointer;
+  border: 1px solid #ffffff;
 }
 
 .zoom-level {
@@ -1227,8 +1240,8 @@ body {
   border: none;
   font-weight: 500;
   font-size: 0.8rem;
-  background: #f3f4f6;
-  color: #374151;
+  background: #3f424e;
+  color: #4f5765;
   width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1256,7 +1269,8 @@ body {
   justify-content: flex-start;
   width: 350px;
   height: 34px !important;
-  background: #f3f4f6;
+  background: #282828;
+  border: none;
   border-radius: 9999px;
   padding: 0 16px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
@@ -1266,6 +1280,7 @@ body {
 }
 
 .file-name-container.editing {
+  background: #404040;
   border: 1.5px solid #2563eb;
   box-shadow: 0 2px 8px rgba(37,99,235,0.08);
 }
@@ -1277,7 +1292,7 @@ body {
   outline: none;
   font-weight: 500;
   font-size: 0.8rem;
-  color: #374151;
+  color: #d1d5db;
   padding: 0;
   margin: 0;
   min-width: 0;
@@ -2845,8 +2860,8 @@ body {
 
 /* Events log styling */
 .status-item.events {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: #2d2d2d;
+  border: 1px solid #404040;
   padding: 4px 8px;
   border-radius: 4px;
   max-width: 400px;
@@ -2863,7 +2878,7 @@ body {
 
 .event-item {
   font-size: 11px;
-  color: #495057;
+  color: #d1d5db;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2876,17 +2891,17 @@ body {
 }
 
 .events-log::-webkit-scrollbar-track {
-  background: #f1f3f4;
+  background: #404040;
   border-radius: 2px;
 }
 
 .events-log::-webkit-scrollbar-thumb {
-  background: #dadce0;
+  background: #666666;
   border-radius: 2px;
 }
 
 .events-log::-webkit-scrollbar-thumb:hover {
-  background: #bdc1c6;
+  background: #808080;
 }
 
 /* Value pill in nodes */
@@ -3008,125 +3023,56 @@ body {
   transition: opacity 0.2s ease;
 }
 
-.file-name-container {
-  display: flex;
-  align-items: center;
-  width: 350px;
-  height: 42px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border-radius: 24px;
-  padding: 0 20px;
-  box-shadow: 
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 1px 3px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  box-sizing: border-box;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  position: relative;
-  overflow: hidden;
-}
-
-.file-name-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-  border-radius: 24px;
-  pointer-events: none;
-}
-
-.file-name-container:hover {
-  box-shadow: 
-    0 3px 10px rgba(0, 0, 0, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  border-color: rgba(203, 213, 225, 0.9);
-}
-
-.file-name-container:hover .file-name-suffix {
-  opacity: 1;
-  color: #6b7280;
-}
-
-.file-name-container.editing {
-  border: 2px solid #3b82f6;
-  box-shadow: 
-    0 4px 16px rgba(59, 130, 246, 0.15),
-    0 2px 8px rgba(59, 130, 246, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  background: linear-gradient(135deg, #fefefe 0%, #f8fafc 100%);
-  transform: translateY(-1px);
-}
-
-.file-name-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-weight: 600;
-  font-size: 1rem;
-  color: #1e293b;
-  padding: 0;
-  margin: 0;
-  min-width: 0;
-  position: relative;
-  z-index: 1;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  letter-spacing: -0.01em;
-}
-
 /* Status bar stats container */
 .status-stats-container {
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #4b5563;
+  color: #d1d5db;
   user-select: none;
 }
 
 /* Status bar stat labels */
 .status-stat-label {
   font-weight: bold;
+  color: #9ca3af;
 }
 
 /* Status bar stat values */
 .status-stat-value {
   margin-left: 4px;
+  color: #ffffff;
 }
 
 /* Zoom level container */
 .zoom-level-container {
   font-size: 12px;
-  color: #374151;
+  color: #d1d5db;
   padding: 3px 10px;
-  background: #f3f4f6;
+  background: #2d2d2d;
   border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 6px;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-weight: 500;
-  border: 1px solid #d1d5db;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #404040;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   width: 90px;
   justify-content: space-between;
 }
 
 /* Zoom level label */
 .zoom-level-label {
-  color: #6b7280;
+  color: #9ca3af;
   font-size: 11px;
   font-weight: 400;
 }
 
 /* Zoom level value */
 .zoom-level-value {
-  color: #1f2937;
+  color: #ffffff;
   font-weight: 600;
   min-width: 30px;
   text-align: right;

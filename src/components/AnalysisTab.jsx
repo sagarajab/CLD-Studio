@@ -319,6 +319,7 @@ function AnalysisTab() {
           onChange={(e) => setEditValue(e.target.value)}
           onKeyDown={handleEditKeyDown}
           onBlur={saveEdit}
+          onFocus={(e) => e.target.select()}
           autoFocus
           rows={1}
           style={{
