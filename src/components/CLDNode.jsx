@@ -21,6 +21,7 @@ function CLDNode({
   isArrowSource = false,
   renderEditBox = true,
   onSaveLabel,
+  isAssignmentSelected = false,
 }) {
   // Use data.label directly instead of local state to avoid sync issues
   const label = data.label || 'New Node'
@@ -34,7 +35,7 @@ function CLDNode({
 
   // Debug: log current data structure and sync localLabel
   useEffect(() => {
-    console.log('CLDNode data structure for node', id, ':', data)
+
     setLocalLabel(data.label || 'New Node')
   }, [data.label, id])
 
@@ -187,6 +188,7 @@ function CLDNode({
           stroke={
             isInHighlightedLoop || isInHoveredLoop
               ? 'none'
+              : isAssignmentSelected ? "#f59e0b" // Orange for assignment selected nodes
               : isArrowSource ? "#f97316" // Orange for arrow source node
               : isFromNode ? "#f97316" // Orange for FROM node
               : (selected || isMultiSelected) ? "#3b82f6" // Modern blue for selected (single or multi)
@@ -196,6 +198,7 @@ function CLDNode({
           strokeWidth={
             isInHighlightedLoop || isInHoveredLoop
               ? "0"
+              : isAssignmentSelected ? "4" // Thicker stroke for assignment selected nodes
               : isArrowSource ? "3"
               : isFromNode ? "3"
               : (selected || isMultiSelected) ? "3"

@@ -1,0 +1,64 @@
+{
+  "id": "assignment-002",
+  "title": "Change Management",
+  "description": "Analyze organizational change dynamics and resistance",
+  "timeLimit": 2400,
+  "maxScore": 75,
+  "deadline": "2024-12-31T23:59:59Z",
+  "questions": [
+    {
+      "id": "q1",
+      "questionType": "text",
+      "question": "Explain how resistance to change can create reinforcing feedback loops in organizations.",
+      "maxScore": 15,
+      "timeLimit": 300,
+      "correctAnswer": "Resistance to change can create reinforcing feedback loops where initial resistance leads to increased management pressure, which in turn increases employee resistance and fear. This creates a vicious cycle where resistance feeds more resistance, making change implementation increasingly difficult. The loop is reinforced by factors like fear of the unknown, loss of control, and perceived threats to job security.",
+      "keywords": ["resistance", "reinforcing loop", "vicious cycle", "management pressure", "fear", "change implementation"],
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q2",
+      "questionType": "mcq",
+      "question": "What type of feedback loop typically helps organizations adapt to change?",
+      "options": ["Reinforcing loop", "Balancing loop", "Delayed loop", "Random loop"],
+      "maxScore": 10,
+      "timeLimit": 120,
+      "correctAnswer": "Balancing loop",
+      "cldContext": "market-growth"
+    },
+    {
+      "id": "q3",
+      "questionType": "nat",
+      "question": "If change resistance increases by 20% and management pressure increases by 30%, what is the overall resistance multiplier?",
+      "maxScore": 8,
+      "timeLimit": 180,
+      "correctAnswer": "1.56",
+      "tolerance": 0.1,
+      "cldContext": "predator-prey"
+    },
+    {
+      "id": "q4",
+      "questionType": "edit-cld",
+      "question": "Create a CLD showing the relationship between change initiatives, employee resistance, and organizational performance.",
+      "maxScore": 25,
+      "timeLimit": 1200,
+      "correctAnswer": [
+        [0, 1, 1, 0],
+        [0, 0, -1, 1],
+        [0, 0, 0, 0],
+        [0, 1, 0, 0]
+      ],
+      "cldContext": "supply-chain"
+    },
+    {
+      "id": "q5",
+      "questionType": "text",
+      "question": "How can effective communication break negative feedback loops in change management?",
+      "maxScore": 17,
+      "timeLimit": 400,
+      "correctAnswer": "Effective communication can break negative feedback loops by reducing uncertainty and fear, which are key drivers of resistance. Clear communication about the reasons for change, expected outcomes, and individual impacts helps employees understand the necessity and benefits of change. This understanding reduces resistance, which in turn reduces the need for management pressure, creating a positive feedback loop that supports successful change implementation.",
+      "keywords": ["communication", "uncertainty", "fear", "resistance", "understanding", "positive feedback", "change implementation"],
+      "cldContext": "basic-feedback-loop"
+    }
+  ]
+} 

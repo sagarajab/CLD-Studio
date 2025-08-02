@@ -1,0 +1,108 @@
+{
+  "id": "new-question-types-demo",
+  "title": "New Question Types Demonstration",
+  "description": "This assignment demonstrates all the new question types: MCQ, NAT, TEXT, Edit CLD, Select Nodes, and Select Connections",
+  "timeLimit": 1800,
+  "maxScore": 100,
+  "deadline": "2024-12-31T23:59:59Z",
+  "questions": [
+    {
+      "id": "q1",
+      "questionType": "mcq",
+      "question": "What type of feedback loop amplifies changes in a system?",
+      "maxScore": 10,
+      "timeLimit": 120,
+      "correctAnswer": "Positive feedback",
+      "options": ["Positive feedback", "Negative feedback", "Balancing feedback", "Reinforcing feedback"],
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q2",
+      "questionType": "nat",
+      "question": "How many nodes are in the basic feedback loop diagram?",
+      "maxScore": 5,
+      "timeLimit": 60,
+      "correctAnswer": "3",
+      "tolerance": 1,
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q3",
+      "questionType": "text",
+      "question": "Explain what a causal loop diagram represents in system dynamics.",
+      "maxScore": 15,
+      "timeLimit": 300,
+      "correctAnswer": "A causal loop diagram represents the relationships between variables in a system, showing how changes in one variable affect others through positive and negative feedback loops.",
+      "keywords": ["causal", "loop", "diagram", "relationships", "variables", "system", "feedback", "positive", "negative"],
+      "maxLength": 500,
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q4",
+      "questionType": "edit-cld",
+      "question": "Modify the basic feedback loop to include a balancing mechanism. Add a new node called 'Limiting Factor' and connect it to create a balancing loop.",
+      "maxScore": 25,
+      "timeLimit": 600,
+      "correctAnswer": [
+        [0, 1, 0],
+        [1, 0, -1],
+        [0, -1, 0]
+      ],
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q5",
+      "questionType": "select-nodes",
+      "question": "Select the nodes that form the main feedback loop in the diagram.",
+      "maxScore": 10,
+      "timeLimit": 120,
+      "correctAnswer": ["node1", "node2"],
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q6",
+      "questionType": "select-connections",
+      "question": "Select the connections that have positive polarity in the diagram.",
+      "maxScore": 10,
+      "timeLimit": 120,
+      "correctAnswer": ["edge1", "edge2"],
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q7",
+      "questionType": "mcq",
+      "question": "In a balancing feedback loop, what happens when the system reaches equilibrium?",
+      "maxScore": 10,
+      "timeLimit": 120,
+      "correctAnswer": "The system stabilizes and resists further change",
+      "options": [
+        "The system continues to grow exponentially",
+        "The system stabilizes and resists further change",
+        "The system collapses completely",
+        "The system oscillates indefinitely"
+      ],
+      "cldContext": "predator-prey"
+    },
+    {
+      "id": "q8",
+      "questionType": "nat",
+      "question": "What is the typical number of connections needed to form a complete feedback loop?",
+      "maxScore": 5,
+      "timeLimit": 60,
+      "correctAnswer": "2",
+      "tolerance": 1,
+      "cldContext": "market-growth"
+    },
+    {
+      "id": "q9",
+      "questionType": "text",
+      "question": "Describe the difference between reinforcing and balancing feedback loops in system dynamics.",
+      "maxScore": 10,
+      "timeLimit": 240,
+      "correctAnswer": "Reinforcing feedback loops amplify changes and can lead to exponential growth or decline, while balancing feedback loops counteract changes and promote stability and equilibrium in the system.",
+      "keywords": ["reinforcing", "balancing", "feedback", "loops", "amplify", "counteract", "stability", "equilibrium", "exponential"],
+      "maxLength": 300,
+      "cldContext": "supply-chain"
+    }
+  ]
+} 

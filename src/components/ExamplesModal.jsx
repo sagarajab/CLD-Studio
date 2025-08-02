@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import { Database, Download, Eye, FileText, Filter, X, RefreshCw } from 'lucide-react'
+import { validateCLDFormat, sanitizeCLDData } from '../utils/validation.js'
+import ValidationErrorModal from './ValidationErrorModal'
 import './ExamplesModal.css'
 import { getS3FileDirect, listAllFilesInBucket } from '../utils/storage';
 
@@ -37,6 +39,16 @@ function ExamplesModal({ isOpen, onClose }) {
   const [cloudLoading, setCloudLoading] = useState(false);
   const [cloudSearchTerm, setCloudSearchTerm] = useState('');
   const [cloudSortBy, setCloudSortBy] = useState('name');
+  
+  // Validation state
+  const [validationModal, setValidationModal] = useState({
+    isOpen: false,
+    validationResult: null,
+    fileName: '',
+    fileType: '',
+    diagramData: null,
+    onContinue: null
+  });
 
   // Load examples index when modal opens
   useEffect(() => {
@@ -165,6 +177,48 @@ function ExamplesModal({ isOpen, onClose }) {
     }
   }, [thumbnails])
 
+  const validateAndLoadExample = async (diagramData, exampleName, fileName) => {
+    // Validate the diagram data
+    const validationResult = validateCLDFormat(diagramData);
+    
+    if (!validationResult.isValid) {
+      // Show validation modal
+      setValidationModal({
+        isOpen: true,
+        validationResult,
+        fileName,
+        fileType: '.cld',
+        diagramData,
+        onContinue: () => {
+          // Continue loading with warnings
+          try {
+            const sanitizedData = sanitizeCLDData(diagramData);
+            loadDiagramData(sanitizedData);
+            console.log(`Successfully loaded example with warnings: ${exampleName}`);
+            setValidationModal({ isOpen: false, validationResult: null, fileName: '', fileType: '', diagramData: null, onContinue: null });
+            onClose();
+          } catch (error) {
+            console.error('Error loading example with warnings:', error);
+            alert('Failed to load example with warnings.');
+          }
+        }
+      });
+      return false;
+    }
+    
+    // Sanitize data if there are warnings
+    if (validationResult.warnings && validationResult.warnings.length > 0) {
+      const sanitizedData = sanitizeCLDData(diagramData);
+      loadDiagramData(sanitizedData);
+      console.log(`Successfully loaded example with warnings: ${exampleName}`);
+    } else {
+      loadDiagramData(diagramData);
+      console.log(`Successfully loaded example: ${exampleName}`);
+    }
+    
+    return true;
+  };
+
   const handleLoadExample = async (example) => {
     setLoading(true)
     try {
@@ -208,18 +262,13 @@ function ExamplesModal({ isOpen, onClose }) {
         console.log('Local edges count:', diagramData.edges?.length);
       }
       
-      // Load the example into the store
-      console.log('About to call loadDiagramData with:', {
-        diagramName: diagramData.diagramName,
-        nodesCount: diagramData.nodes?.length,
-        edgesCount: diagramData.edges?.length,
-        version: diagramData.version,
-        hasProblemStatement: !!diagramData.problemStatement
-      });
+      // Validate and load the example
+      const fileName = example.key ? example.key.split('/').pop() : example.filename;
+      const success = await validateAndLoadExample(diagramData, example.name, fileName);
       
-      loadDiagramData(diagramData)
-      console.log(`Successfully loaded example: ${example.name}`)
-      onClose()
+      if (success) {
+        onClose();
+      }
     } catch (error) {
       console.error('Error loading example:', error)
       alert('Failed to load example. Please try again.')
@@ -713,6 +762,20 @@ function ExamplesModal({ isOpen, onClose }) {
           )}
         </div>
       </div>
+      
+      {/* Validation Error Modal */}
+      <ValidationErrorModal
+        isOpen={validationModal.isOpen}
+        onClose={() => setValidationModal({ isOpen: false, validationResult: null, fileName: '', fileType: '', diagramData: null, onContinue: null })}
+        validationResult={validationModal.validationResult}
+        fileName={validationModal.fileName}
+        fileType={validationModal.fileType}
+        onRetry={() => {
+          // Close modal and allow user to try loading again
+          setValidationModal({ isOpen: false, validationResult: null, fileName: '', fileType: '', diagramData: null, onContinue: null });
+        }}
+        onContinue={validationModal.onContinue}
+      />
     </div>
   )
 }

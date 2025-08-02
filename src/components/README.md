@@ -37,9 +37,6 @@ This directory contains all React components used in the CLD Studio application.
 - **SimulationVisualization.jsx** - Simulation visualization
 
 ### Authentication Components
-- **TBTAuthTest.jsx** - TBT authentication testing
-- **TBTUserAdmin.jsx** - TBT user administration
-- **TBTRegisteredStudentsAdmin.jsx** - Student administration
 - **UserProgressDashboard.jsx** - User progress tracking
 
 ### Utility Components

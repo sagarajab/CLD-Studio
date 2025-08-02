@@ -1,185 +1,158 @@
-import { useState, useEffect } from 'react';
-import { useTBTAuthStore } from '../stores/tbtAuthStore';
-import { useUserProgressStore } from '../stores/userProgressStore';
-import { getDataClient } from '../config/dataClientConfig';
+import React, { useState, useEffect } from 'react';
+import { AssessmentService } from '../services/assessmentService';
+import './UserProgressDashboard.css';
 
-export default function UserProgressDashboard() {
-  const { user } = useTBTAuthStore();
-  const { currentSession } = useUserProgressStore();
-  const [userStats, setUserStats] = useState(null);
-  const [userAssignments, setUserAssignments] = useState([]);
+const UserProgressDashboard = ({ userEmail }) => {
+  const [assessmentData, setAssessmentData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (user) {
-      loadUserProgress();
-    }
-  }, [user]);
+    loadAssessmentData();
+  }, [userEmail]);
 
-  const loadUserProgress = async () => {
-    setLoading(true);
+  const loadAssessmentData = async () => {
     try {
-      const dataClient = getDataClient();
-      
-      // Load user stats
-      const { data: userData } = await dataClient.models.TBTUser.list({
-        filter: { id: { eq: user.id } }
-      });
-
-      const users = userData || [];
-      if (users.length > 0) {
-        setUserStats(users[0]);
-      }
-
-      // Load user assignments
-      const { data: assignmentData } = await dataClient.models.UserAssignment.list({
-        filter: { userId: { eq: user.id } }
-      });
-      
-      const assignments = assignmentData || [];
-      setUserAssignments(assignments);
-    } catch (error) {
-      console.error('Error loading user progress:', error);
+      setLoading(true);
+      const data = await AssessmentService.getAllAssessmentData(userEmail);
+      setAssessmentData(data);
+    } catch (err) {
+      setError('Failed to load assessment data');
+      console.error('Error loading assessment data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
+  const getAssignmentStatus = (assignmentId) => {
+    const assignment = assessmentData[assignmentId];
+    if (!assignment) return 'not-attempted';
+    return assignment.assignmentStatus || 'not-attempted';
+  };
+
+  const getAssignmentScore = (assignmentId) => {
+    const assignment = assessmentData[assignmentId];
+    if (!assignment) return { score: 0, maxScore: 0 };
+    return {
+      score: assignment.totalScore || 0,
+      maxScore: assignment.maxTotalScore || 0
+    };
+  };
+
+  const getQuestionStatus = (assignmentId, questionId) => {
+    const assignment = assessmentData[assignmentId];
+    if (!assignment || !assignment[questionId]) return 'not-attempted';
+    return assignment[questionId].status;
+  };
+
+  const getQuestionScore = (assignmentId, questionId) => {
+    const assignment = assessmentData[assignmentId];
+    if (!assignment || !assignment[questionId]) return { score: 0, maxScore: 0 };
+    return {
+      score: assignment[questionId].score || 0,
+      maxScore: assignment[questionId].maxScore || 0
+    };
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'submitted':
+        return 'green';
+      case 'not-attempted':
+        return 'gray';
+      default:
+        return 'orange';
+    }
+  };
+
+  const getScorePercentage = (score, maxScore) => {
+    if (maxScore === 0) return 0;
+    return Math.round((score / maxScore) * 100);
   };
 
   if (loading) {
-    return <div>Loading progress...</div>;
+    return (
+      <div className="user-progress-dashboard">
+        <div className="loading">Loading assessment data...</div>
+      </div>
+    );
   }
 
-  if (!userStats) {
-    return <div>No progress data available</div>;
+  if (error) {
+    return (
+      <div className="user-progress-dashboard">
+        <div className="error">{error}</div>
+      </div>
+    );
   }
+
+  const assignmentIds = Object.keys(assessmentData);
 
   return (
     <div className="user-progress-dashboard">
-      <h2>Your Progress</h2>
+      <h2>Assessment Progress</h2>
       
-      {/* Authentication Status */}
-      <div className="progress-section">
-        <h3>Authentication Status</h3>
-        <div className="auth-status-grid">
-          <div className="status-item">
-            <span className="label">amplify_Auth:</span>
-            <span className={`value ${userStats.amplifyAuthVerified ? 'success' : 'error'}`}>
-              {userStats.amplifyAuthVerified ? '✅ Verified' : '❌ Failed'}
-            </span>
-          </div>
-          <div className="status-item">
-            <span className="label">tbt_auth:</span>
-            <span className={`value ${userStats.tbtAuthStatus}`}>
-              {userStats.tbtAuthStatus}
-            </span>
-          </div>
-          <div className="status-item">
-            <span className="label">Access Level:</span>
-            <span className="value">{userStats.accessLevel}</span>
-          </div>
+      {assignmentIds.length === 0 ? (
+        <div className="no-assignments">
+          <p>No assignments attempted yet.</p>
         </div>
-      </div>
-
-      {/* Login Statistics */}
-      <div className="progress-section">
-        <h3>Login Statistics</h3>
-        <div className="stats-grid">
-          <div className="stat-item">
-            <span className="stat-value">{userStats.totalLogins || 0}</span>
-            <span className="stat-label">Total Logins</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{userStats.consecutiveLogins || 0}</span>
-            <span className="stat-label">Consecutive Days</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{formatTime(userStats.totalActiveTime || 0)}</span>
-            <span className="stat-label">Total Active Time</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Current Session */}
-      <div className="progress-section">
-        <h3>Current Session</h3>
-        <div className="session-info">
-          <p>Session Start: {userStats.currentSessionStart ? new Date(userStats.currentSessionStart).toLocaleString() : 'N/A'}</p>
-          <p>Active Time: {formatTime(currentSession?.activeTime || 0)}</p>
-          <p>Actions: {currentSession?.actions?.length || 0}</p>
-        </div>
-      </div>
-
-      {/* Assignment Progress */}
-      <div className="progress-section">
-        <h3>Assignment Progress</h3>
-        <div className="stats-grid">
-          <div className="stat-item">
-            <span className="stat-value">{userStats.assignmentsCompleted || 0}</span>
-            <span className="stat-label">Completed</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{userStats.assignmentsInProgress || 0}</span>
-            <span className="stat-label">In Progress</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{(userStats.averageAssignmentScore || 0).toFixed(1)}</span>
-            <span className="stat-label">Avg Score</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{userStats.highestAssignmentScore || 0}</span>
-            <span className="stat-label">Best Score</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Learning Progress */}
-      <div className="progress-section">
-        <h3>Learning Progress</h3>
-        <div className="stats-grid">
-          <div className="stat-item">
-            <span className="stat-value">{userStats.diagramsCreated || 0}</span>
-            <span className="stat-label">Diagrams Created</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{userStats.simulationsRun || 0}</span>
-            <span className="stat-label">Simulations Run</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{userStats.loopsIdentified || 0}</span>
-            <span className="stat-label">Loops Identified</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-value">{userStats.learningLevel || 'beginner'}</span>
-            <span className="stat-label">Learning Level</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Assignments */}
-      {userAssignments.length > 0 && (
-        <div className="progress-section">
-          <h3>Recent Assignments</h3>
-          <div className="assignments-list">
-            {userAssignments.slice(0, 5).map(assignment => (
-              <div key={assignment.id} className="assignment-item">
-                <span className="assignment-title">Assignment {assignment.assignmentId}</span>
-                <span className={`assignment-status ${assignment.status}`}>
-                  {assignment.status}
-                </span>
-                {assignment.score > 0 && (
-                  <span className="assignment-score">{assignment.score}/{assignment.maxScore}</span>
-                )}
+      ) : (
+        <div className="assignments-grid">
+          {assignmentIds.map(assignmentId => {
+            const status = getAssignmentStatus(assignmentId);
+            const { score, maxScore } = getAssignmentScore(assignmentId);
+            const percentage = getScorePercentage(score, maxScore);
+            
+            return (
+              <div key={assignmentId} className="assignment-card">
+                <div className="assignment-header">
+                  <h3>{assignmentId}</h3>
+                  <span className={`status ${getStatusColor(status)}`}>
+                    {status}
+                  </span>
+                </div>
+                
+                <div className="assignment-score">
+                  <div className="score-bar">
+                    <div 
+                      className="score-fill" 
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                  <div className="score-text">
+                    {score} / {maxScore} ({percentage}%)
+                  </div>
+                </div>
+                
+                <div className="questions-summary">
+                  {Object.keys(assessmentData[assignmentId]).map(questionId => {
+                    if (questionId === 'totalScore' || questionId === 'maxTotalScore' || questionId === 'assignmentStatus') {
+                      return null;
+                    }
+                    
+                    const questionStatus = getQuestionStatus(assignmentId, questionId);
+                    const questionScore = getQuestionScore(assignmentId, questionId);
+                    
+                    return (
+                      <div key={questionId} className="question-item">
+                        <span className="question-id">{questionId}</span>
+                        <span className={`question-status ${getStatusColor(questionStatus)}`}>
+                          {questionStatus}
+                        </span>
+                        <span className="question-score">
+                          {questionScore.score}/{questionScore.maxScore}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
-} 
+};
+
+export default UserProgressDashboard; 

@@ -7,18 +7,22 @@ import SysLoopHeader from './components/SysLoopHeader'
 import SysLoopSidebar from './components/SysLoopSidebar'
 import SettingsModal from './components/SettingsModal'
 import S3FileManager from './components/S3FileManager'
-import TBTAuthTest from './components/TBTAuthTest'
-import TBTUserAdmin from './components/TBTUserAdmin'
 import StateVectorModal from './components/StateVectorModal'
 import PlotsModal from './components/PlotsModal'
 import NodeAnalysisModal from './components/NodeAnalysisModal'
 import ConnectionAnalysisModal from './components/ConnectionAnalysisModal'
 import SystemStatsModal from './components/SystemStatsModal'
 import AdjacencyMatrixModal from './components/AdjacencyMatrixModal'
+
+import AssignmentInterface from './components/AssignmentInterface'
+import AssignmentSidebar from './components/AssignmentSidebar'
+import AssignmentProgressModal from './components/AssignmentProgressModal'
+import TBTAuthLoadingScreen from './components/TBTAuthLoadingScreen'
 import { useCLDStore } from './stores/cldStore'
-import { useTBTAuthStore } from './stores/tbtAuthStore'
+import useTBTAuthStore from './stores/tbtAuthStore'
 import { useUserProgressStore } from './stores/userProgressStore'
-import { Undo2, Redo2, Database, User, UserCheck, TreeDeciduous, MailCheck } from 'lucide-react'
+import useAssignmentStore from './stores/assignmentStore'
+import { Undo2, Redo2, Database, User, UserCheck, TreeDeciduous, MailCheck, BookOpen } from 'lucide-react'
 import StatusBar from './components/StatusBar'
 
 function App({ user, signOut }) {
@@ -28,28 +32,30 @@ function App({ user, signOut }) {
   const [devMode, setDevMode] = useState(false) // Add dev mode state
   const [showSettingsModal, setShowSettingsModal] = useState(false) // Add settings modal state
   const [showS3FileManager, setShowS3FileManager] = useState(false) // Add S3 file manager state
-  const [showTBTAuthTest, setShowTBTAuthTest] = useState(false) // Add TBT auth test modal state
-  const [showTBTUserAdmin, setShowTBTUserAdmin] = useState(false) // Add TBT user admin modal state
   const [showNodeAnalysisModal, setShowNodeAnalysisModal] = useState(false) // Add node analysis modal state
   const [showConnectionAnalysisModal, setShowConnectionAnalysisModal] = useState(false) // Add connection analysis modal state
   const [showSystemStatsModal, setShowSystemStatsModal] = useState(false) // Add system stats modal state
   const [showAdjacencyMatrixModal, setShowAdjacencyMatrixModal] = useState(false) // Add adjacency matrix modal state
+
   const [mouseCoords, setMouseCoords] = useState({ x: 0, y: 0 }) // Add mouse coordinates state
+  const [showAuthLoadingScreen, setShowAuthLoadingScreen] = useState(false) // Add auth loading screen state
   
   // TBT Authentication state
   const { 
-    performTBTAuth, 
-    amplifyAuthVerified,
+    authenticateUser, 
     tbtAuthStatus, 
     accessLevel, 
-    isNewUser,
+    isApproved,
     isLoading: tbtAuthLoading,
     error: tbtAuthError,
-    clearAuth  // Add this import
+    clearUser
   } = useTBTAuthStore()
   
   // User progress tracking
   const { startActivityTracking, stopActivityTracking } = useUserProgressStore()
+  
+  // Assignment store
+  const { isAssignmentMode, showProgressModal, setShowProgressModal, startAssignment, loadAssignments, sidebarWidth, currentAssignment, currentQuestion } = useAssignmentStore()
   
   const { 
     nodes, 
@@ -80,6 +86,69 @@ function App({ user, signOut }) {
     document.title = title
   }, [diagramName])
 
+  // Handle assignment button click
+  const handleAssignmentClick = async () => {
+    // If already in assignment mode, exit it
+    if (isAssignmentMode) {
+      const { exitAssignment } = useAssignmentStore.getState()
+      exitAssignment()
+      return
+    }
+
+    try {
+      const assignments = await loadAssignments()
+      if (assignments.length > 0) {
+        // For now, start with the first assignment
+        // In a real implementation, you might want to show a selection modal
+        await startAssignment(assignments[0])
+      } else {
+        // If no assignments loaded, try to start a test assignment
+        const testAssignment = {
+          id: 'test-assignment-001',
+          title: 'Test Assignment - Basic Feedback Loop',
+          description: 'A test assignment for development and testing purposes',
+          timeLimit: 1800,
+          maxScore: 50,
+          questions: [
+            {
+              id: 'q1',
+              questionType: 'text',
+              question: 'What is a feedback loop? Explain in your own words.',
+              maxScore: 10,
+              timeLimit: 300
+            },
+            {
+              id: 'q2',
+              questionType: 'number',
+              question: 'How many nodes are in your diagram?',
+              maxScore: 5,
+              timeLimit: 120
+            },
+            {
+              id: 'q3',
+              questionType: 'mcq',
+              question: 'What type of feedback loop did you create?',
+              options: ['Positive feedback', 'Negative feedback', 'Both', 'Neither'],
+              maxScore: 10,
+              timeLimit: 180
+            },
+            {
+              id: 'q4',
+              questionType: 'diagram',
+              question: 'Create a causal loop diagram showing a simple feedback loop with at least 3 nodes.',
+              maxScore: 25,
+              timeLimit: 1200
+            }
+          ]
+        }
+        await startAssignment(testAssignment)
+      }
+    } catch (error) {
+      console.error('Error starting assignment:', error)
+      alert('Failed to load assignments. Please try again.')
+    }
+  }
+
   // Update graph analysis when nodes or edges change significantly
   useEffect(() => {
     if (nodes.length > 0 || edges.length > 0) {
@@ -96,26 +165,54 @@ function App({ user, signOut }) {
   useEffect(() => {
     if (user) {
       // Reset TBT auth state for new user
-      clearAuth();
+      clearUser();
+      // Show auth loading screen when user logs in
+      setShowAuthLoadingScreen(true);
+    } else {
+      // Hide loading screen when user logs out
+      setShowAuthLoadingScreen(false);
     }
   }, [user?.userId]); // Track user ID changes specifically
 
-  // Perform tbt_auth when amplify_Auth user is available
+  // Perform TBT authentication when user is available
   useEffect(() => {
-    if (user && !amplifyAuthVerified) {
-      performTBTAuth();
+    if (user && !tbtAuthLoading) {
+      const userEmail = user.signInDetails?.loginId || user.attributes?.email;
+      authenticateUser(userEmail);
     }
-  }, [user, amplifyAuthVerified, performTBTAuth]);
+  }, [user?.userId]); // Only depend on user ID, not tbtAuthLoading
+
+  // Hide auth loading screen when authentication is complete
+  useEffect(() => {
+    if (!tbtAuthLoading && showAuthLoadingScreen && tbtAuthStatus) {
+      // Auto-hide after 1 second
+      const timer = setTimeout(() => {
+        setShowAuthLoadingScreen(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [tbtAuthLoading, showAuthLoadingScreen, tbtAuthStatus]);
+
+  // Fallback: Hide loading screen after 8 seconds to prevent getting stuck
+  useEffect(() => {
+    if (showAuthLoadingScreen) {
+      const fallbackTimer = setTimeout(() => {
+        console.warn('Auth loading screen timeout - hiding automatically');
+        setShowAuthLoadingScreen(false);
+      }, 8000);
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [showAuthLoadingScreen]);
 
   // Start activity tracking when user is authenticated
   useEffect(() => {
-    if (user && amplifyAuthVerified) {
+    if (user) {
       startActivityTracking();
       return () => {
         stopActivityTracking();
       };
     }
-  }, [user, amplifyAuthVerified, startActivityTracking, stopActivityTracking]);
+  }, [user, startActivityTracking, stopActivityTracking]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -123,40 +220,19 @@ function App({ user, signOut }) {
       if (event.key === 'Escape') {
         // Close settings modal
         setShowSettingsModal(false)
-        
-        // Exit loop view mode
-        if (loopViewMode) {
-          exitLoopViewMode()
-          clearHighlightedLoop()
-        }
-        
-        // Reset hovered loop
-        setHoveredLoop(null)
-        
-        // Reset dimming to enabled
-        setDimmingEnabled(true)
-      }
-      
-      // Spacebar for step-by-step simulation
-      if (event.key === ' ' && simulationMode && simulationState.perturbedNode && !simulationState.isRunning) {
-        event.preventDefault()
-        stepSimulation()
-      }
-      
-      // Left arrow for step back simulation
-      if (event.key === 'ArrowLeft' && simulationMode && simulationState.perturbedNode && !simulationState.isRunning && simulationState.currentStep > 0) {
-        event.preventDefault()
-        stepBackSimulation()
+        setShowS3FileManager(false)
+        setShowNodeAnalysisModal(false)
+        setShowConnectionAnalysisModal(false)
+        setShowSystemStatsModal(false)
+        setShowAdjacencyMatrixModal(false)
       }
       
       // Undo/Redo shortcuts
       if (event.ctrlKey || event.metaKey) {
         if (event.key === 'z' && !event.shiftKey) {
-          // Ctrl+Z: Undo
           event.preventDefault()
           undo()
         } else if ((event.key === 'z' && event.shiftKey) || event.key === 'y') {
-          // Ctrl+Shift+Z or Ctrl+Y: Redo
           event.preventDefault()
           redo()
         }
@@ -167,11 +243,10 @@ function App({ user, signOut }) {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [loopViewMode, exitLoopViewMode, clearHighlightedLoop, simulationMode, simulationState, stepSimulation, stepBackSimulation, undo, redo])
+  }, [undo, redo])
 
-  // Handle clicking outside to exit loop view mode
+  // Handle app click to exit loop view mode
   const handleAppClick = (event) => {
-    // Only exit if clicking on the main app container (not on sidebar or canvas)
     if (event.target === event.currentTarget && loopViewMode) {
       exitLoopViewMode()
       clearHighlightedLoop()
@@ -183,57 +258,42 @@ function App({ user, signOut }) {
     setMouseCoords({ x: event.clientX, y: event.clientY })
   }
 
-  // Show loading state during tbt_auth
-  if (tbtAuthLoading) {
-    return (
-      <div className="auth-loading-container">
-        <div className="loading-spinner"></div>
-        <p>✅ amplify_Auth completed</p>
-        <p>🔄 Performing tbt_auth verification...</p>
-      </div>
-    );
+  // Handle continue button click on auth loading screen
+  const handleAuthContinue = () => {
+    setShowAuthLoadingScreen(false);
   }
 
-  // Show error state
-  if (tbtAuthError) {
-    return (
-      <div className="auth-error-container">
-        <h2>Authentication Error</h2>
-        <p>amplify_Auth: ✅ Passed</p>
-        <p>tbt_auth: ❌ Failed</p>
-        <p>Error: {tbtAuthError}</p>
-        <button onClick={() => window.location.reload()}>Retry</button>
-      </div>
-    );
-  }
-
-  // Show welcome message for new users
-  if (isNewUser) {
-    return (
-      <div className="welcome-container">
-        <h2>Welcome to CLD Studio!</h2>
-        <div className="auth-status">
-          <p>✅ amplify_Auth: Passed</p>
-          <p>✅ tbt_auth: Guest Access Granted</p>
-        </div>
-        <p>You're currently using guest access. Some features may be limited.</p>
-        <button onClick={() => window.location.reload()}>
-          Continue with Guest Access
-        </button>
-      </div>
-    );
-  }
+  // Handle escape key for auth loading screen
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && showAuthLoadingScreen) {
+        setShowAuthLoadingScreen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showAuthLoadingScreen]);
 
   return (
     <div className="sysloop-app" onClick={handleAppClick} onMouseMove={handleMouseMove}>
-             {/* Header */}
+      {/* TBT Authentication Loading Screen */}
+      {showAuthLoadingScreen && (
+        <TBTAuthLoadingScreen
+          userEmail={user?.signInDetails?.loginId || user?.attributes?.email}
+          tbtAuthStatus={tbtAuthStatus}
+          isLoading={tbtAuthLoading}
+          onContinue={handleAuthContinue}
+        />
+      )}
+
+      {/* Header */}
        <SysLoopHeader 
          signOut={signOut}
          onSettingsClick={() => setShowSettingsModal(true)}
-         onTBTUserAdminClick={() => setShowTBTUserAdmin(true)}
-         onTBTAuthTestClick={() => setShowTBTAuthTest(true)}
          onDevModeToggle={() => setDevMode(!devMode)}
          devMode={devMode}
+         onAssignmentClick={handleAssignmentClick}
+         userEmail={user?.signInDetails?.loginId || user?.attributes?.email}
        />
 
       {/* Main Content */}
@@ -257,7 +317,10 @@ function App({ user, signOut }) {
         />
         
         {/* Main Canvas */}
-        <div className="canvas-area">
+        <div 
+          className={`canvas-area ${isAssignmentMode ? 'assignment-mode' : ''}`}
+          style={isAssignmentMode ? { marginRight: `${sidebarWidth}px` } : {}}
+        >
           <ReactFlowProvider>
                          <Canvas 
                mode={mode} 
@@ -266,6 +329,9 @@ function App({ user, signOut }) {
                hoveredLoop={hoveredLoop}
                devMode={devMode}
                setDevMode={setDevMode}
+               isAssignmentMode={isAssignmentMode}
+               currentAssignment={currentAssignment}
+               currentQuestion={currentQuestion}
              />
           </ReactFlowProvider>
           
@@ -282,8 +348,9 @@ function App({ user, signOut }) {
         loops={loops}
         eventsLog={eventsLog}
         user={user}
-        amplifyAuthVerified={amplifyAuthVerified}
+        isAuthenticated={!!user}
         tbtAuthStatus={tbtAuthStatus}
+        accessLevel={accessLevel}
       />
 
       {/* Settings Modal */}
@@ -294,46 +361,6 @@ function App({ user, signOut }) {
       {/* S3 File Manager Modal */}
       {showS3FileManager && (
         <S3FileManager isOpen={showS3FileManager} onClose={() => setShowS3FileManager(false)} />
-      )}
-
-      {/* TBT Auth Test Modal */}
-      {showTBTAuthTest && (
-        <div className="modal-overlay" onClick={() => setShowTBTAuthTest(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>TBT Authentication Test</h2>
-              <button 
-                className="modal-close"
-                onClick={() => setShowTBTAuthTest(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <TBTAuthTest />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TBT User Admin Modal */}
-      {showTBTUserAdmin && (
-        <div className="modal-overlay" onClick={() => setShowTBTUserAdmin(false)}>
-          <div className="modal-content large-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>TBT User Management</h2>
-              <button 
-                className="modal-close"
-                onClick={() => setShowTBTUserAdmin(false)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <TBTUserAdmin />
-            </div>
-          </div>
-        </div>
       )}
 
       {/* State Vector Modal */}
@@ -381,6 +408,17 @@ function App({ user, signOut }) {
         <AdjacencyMatrixModal 
           isOpen={showAdjacencyMatrixModal} 
           onClose={() => setShowAdjacencyMatrixModal(false)} 
+        />
+      )}
+
+      {/* Assignment Sidebar */}
+      {isAssignmentMode && <AssignmentSidebar />}
+
+      {/* Assignment Progress Modal */}
+      {showProgressModal && (
+        <AssignmentProgressModal 
+          isOpen={showProgressModal} 
+          onClose={() => setShowProgressModal(false)} 
         />
       )}
     </div>

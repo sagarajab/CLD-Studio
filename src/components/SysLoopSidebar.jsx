@@ -1,14 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
+import useAssignmentStore from '../stores/assignmentStore'
 import AnalysisTab from './AnalysisTab'
 import { Infinity as InfinityIcon } from 'lucide-react'
 import './SysLoopSidebar.css'
 
 function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLoop, setShowSettingsModal, setShowStateVectorModal, setShowPlotsModal, setShowS3FileManager, setShowNodeAnalysisModal, setShowConnectionAnalysisModal, setShowSystemStatsModal, setShowAdjacencyMatrixModal }) {
+  const { isAssignmentMode } = useAssignmentStore()
   const [activeTab, setActiveTab] = useState('problem') // 'problem', 'loops', 'analysis'
   const [sidebarWidth, setSidebarWidth] = useState(300)
   const [isResizing, setIsResizing] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  
+  // Force collapse and lock in assignment mode
+  const effectiveIsCollapsed = isAssignmentMode ? true : isCollapsed
   
   // Modal state for loops detail view
   const [showLoopsModal, setShowLoopsModal] = useState(false)
@@ -105,10 +110,14 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
 
   const handleResizeStart = (e) => {
     e.preventDefault()
+    // Prevent resizing in assignment mode
+    if (isAssignmentMode) return
     setIsResizing(true)
   }
 
   const toggleCollapse = () => {
+    // Prevent toggle in assignment mode
+    if (isAssignmentMode) return
     setIsCollapsed(!isCollapsed)
   }
 
@@ -394,15 +403,15 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
 
   return (
     <div 
-      className={`sysloop-sidebar ${isCollapsed ? 'collapsed' : ''} ${isResizing ? 'resizing' : ''} sidebar-container ${isCollapsed ? 'collapsed' : ''}`}
+      className={`sysloop-sidebar ${effectiveIsCollapsed ? 'collapsed' : ''} ${isResizing ? 'resizing' : ''} sidebar-container ${effectiveIsCollapsed ? 'collapsed' : ''}`}
       ref={sidebarRef}
       style={{ 
-        width: isCollapsed ? `${COLLAPSED_WIDTH}px` : `${sidebarWidth}px`
+        width: effectiveIsCollapsed ? `${COLLAPSED_WIDTH}px` : `${sidebarWidth}px`
       }}
     >
       {/* Collapse/Expand Button */}
       <button
-        className="sidebar-collapse-btn"
+        className={`sidebar-collapse-btn ${isAssignmentMode ? 'disabled' : ''}`}
         onClick={toggleCollapse}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -410,8 +419,9 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
             toggleCollapse()
           }
         }}
-        title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title={isAssignmentMode ? 'Locked in assignment mode' : (effectiveIsCollapsed ? 'Expand sidebar' : 'Collapse sidebar')}
+        aria-label={isAssignmentMode ? 'Locked in assignment mode' : (effectiveIsCollapsed ? 'Expand sidebar' : 'Collapse sidebar')}
+        disabled={isAssignmentMode}
       >
         <svg 
           width="16" 
@@ -425,8 +435,8 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
         </svg>
       </button>
 
-      {/* Resize Handle - Only show when not collapsed */}
-      {!isCollapsed && (
+      {/* Resize Handle - Only show when not collapsed and not in assignment mode */}
+      {!effectiveIsCollapsed && !isAssignmentMode && (
         <div 
           className={`sidebar-resize-handle ${isResizing ? 'dragging' : ''}`}
           onMouseDown={handleResizeStart}
@@ -434,7 +444,7 @@ function SysLoopSidebar({ loops, dimmingEnabled, setDimmingEnabled, setHoveredLo
       )}
       
       {/* Tab Navigation - Only show when not collapsed */}
-      {!isCollapsed && (
+      {!effectiveIsCollapsed && (
         <div className="sidebar-tabs">
                   <button
           className={`sidebar-tab ${activeTab === 'problem' ? 'active' : ''}`}

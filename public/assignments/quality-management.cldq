@@ -1,0 +1,64 @@
+{
+  "id": "assignment-005",
+  "title": "Quality Management",
+  "description": "Analyze quality improvement processes and continuous improvement cycles",
+  "timeLimit": 2400,
+  "maxScore": 70,
+  "deadline": "2024-12-31T23:59:59Z",
+  "questions": [
+    {
+      "id": "q1",
+      "questionType": "text",
+      "question": "Explain how the Plan-Do-Check-Act (PDCA) cycle creates a continuous improvement feedback loop.",
+      "maxScore": 15,
+      "timeLimit": 300,
+      "correctAnswer": "The PDCA cycle creates a continuous improvement feedback loop where each phase feeds into the next. Plan establishes goals and methods, Do implements the plan, Check measures results against objectives, and Act standardizes successful improvements or adjusts the plan based on findings. This creates a balancing feedback loop that continuously refines processes, where the Act phase feeds back into the Plan phase for the next iteration, creating ongoing quality improvement.",
+      "keywords": ["PDCA cycle", "continuous improvement", "feedback loop", "plan", "do", "check", "act", "balancing feedback", "quality improvement"],
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q2",
+      "questionType": "mcq",
+      "question": "What type of feedback loop is most important for maintaining quality standards?",
+      "options": ["Reinforcing loop", "Balancing loop", "Delayed loop", "Random loop"],
+      "maxScore": 8,
+      "timeLimit": 120,
+      "correctAnswer": "Balancing loop",
+      "cldContext": "market-growth"
+    },
+    {
+      "id": "q3",
+      "questionType": "nat",
+      "question": "If defect rate decreases by 20% and customer satisfaction increases by 15%, what is the quality improvement index?",
+      "maxScore": 7,
+      "timeLimit": 150,
+      "correctAnswer": "1.38",
+      "tolerance": 0.1,
+      "cldContext": "predator-prey"
+    },
+    {
+      "id": "q4",
+      "questionType": "edit-cld",
+      "question": "Create a CLD showing the relationship between quality improvement, customer satisfaction, and process efficiency.",
+      "maxScore": 25,
+      "timeLimit": 1200,
+      "correctAnswer": [
+        [0, 1, 1, -1],
+        [0, 0, 0, 0],
+        [1, 0, 0, 0],
+        [0, -1, 0, 0]
+      ],
+      "cldContext": "supply-chain"
+    },
+    {
+      "id": "q5",
+      "questionType": "text",
+      "question": "How can quality management systems create positive feedback loops that drive continuous improvement?",
+      "maxScore": 15,
+      "timeLimit": 300,
+      "correctAnswer": "Quality management systems can create positive feedback loops where improved quality leads to higher customer satisfaction, which increases demand and revenue. This increased revenue provides more resources for quality improvement initiatives, leading to further quality enhancements. The loop is reinforced by factors like employee engagement, process optimization, and innovation in quality methods, creating a virtuous cycle of continuous improvement and business success.",
+      "keywords": ["quality management systems", "positive feedback", "customer satisfaction", "continuous improvement", "virtuous cycle", "employee engagement", "process optimization"],
+      "cldContext": "market-growth"
+    }
+  ]
+} 

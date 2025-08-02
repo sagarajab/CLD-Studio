@@ -1,6 +1,7 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import { useUserProgressStore } from '../stores/userProgressStore'
+import useAssignmentStore from '../stores/assignmentStore'
 import CLDNode from './CLDNode'
 import SimulationControlsOverlay from './SimulationControlsOverlay'
 import './Canvas.css'
@@ -8,7 +9,7 @@ import { getEllipseDimensions } from '../utils/text'
 import { findConvexHullIntersection } from '../utils/geometry'
 import shortIcon from '../assets/short_icon.png'
 
-function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, devMode = false }) {
+function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, devMode = false, isAssignmentMode = false, currentAssignment = null, currentQuestion = null }) {
   const canvasRef = useRef(null)
   const lastClickTimeRef = useRef(0)
   const lastClickPositionRef = useRef({ x: 0, y: 0 })
@@ -16,6 +17,11 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
   
   // Progress tracking
   const { trackDiagramCreation } = useUserProgressStore()
+  
+  // Assignment store
+  const { saveUserResponse, userResponses } = useAssignmentStore()
+  
+
   
   // Connection creation state
   const [isCreatingConnection, setIsCreatingConnection] = useState(false)
@@ -800,6 +806,29 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
         // Remove highlight from source node
         updateNode(connectionSource, { borderColor: undefined })
       } else if (!isCreatingConnection && !simulationMode) {
+        // Handle assignment mode selections
+        if (isAssignmentMode && currentQuestion && currentAssignment) {
+          const questionType = currentQuestion.questionType
+          
+          if (questionType === 'select-nodes') {
+            // Handle node selection for select-nodes questions
+            const assignmentSpecificId = `${currentAssignment.id}-${currentQuestion.id}`
+            const currentResponse = userResponses[assignmentSpecificId]?.response || '[]'
+            const selectedNodes = JSON.parse(currentResponse)
+            
+            if (selectedNodes.includes(nodeId)) {
+              // Remove node from selection
+              const updatedNodes = selectedNodes.filter(id => id !== nodeId)
+              saveUserResponse(currentAssignment.id, currentQuestion.id, JSON.stringify(updatedNodes))
+            } else {
+              // Add node to selection
+              const updatedNodes = [...selectedNodes, nodeId]
+              saveUserResponse(currentAssignment.id, currentQuestion.id, JSON.stringify(updatedNodes))
+            }
+            return // Don't proceed with normal selection logic
+          }
+        }
+        
         // Handle multiselect with Ctrl+click
         if (event.ctrlKey || event.metaKey) {
           // Ctrl/Cmd+click: toggle selection
@@ -1061,6 +1090,18 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       const shouldHighlight = isInLoop || isInHoveredLoop
       const opacity = getElementOpacity(shouldHighlight)
       
+      // Check if node is selected in assignment mode
+      let isAssignmentSelected = false
+      if (isAssignmentMode && currentQuestion && currentAssignment) {
+        const questionType = currentQuestion.questionType
+        if (questionType === 'select-nodes') {
+          const assignmentSpecificId = `${currentAssignment.id}-${currentQuestion.id}`
+          const currentResponse = userResponses[assignmentSpecificId]?.response || '[]'
+          const selectedNodes = JSON.parse(currentResponse)
+          isAssignmentSelected = selectedNodes.includes(node.id)
+        }
+      }
+      
       return (
         <g key={node.id} transform={`translate(${node.position.x}, ${node.position.y})`} data-node-id={node.id} style={{ opacity }}>
           <CLDNode 
@@ -1068,6 +1109,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             data={node.data}
             selected={selectedNode === node.id}
             isMultiSelected={selectedNodes.includes(node.id)}
+            isAssignmentSelected={isAssignmentSelected}
             isInHighlightedLoop={isInLoop}
             isInHoveredLoop={isInHoveredLoop}
             highlightedLoopType={highlightedLoop !== null && loops[highlightedLoop] ? loops[highlightedLoop].type : null}
@@ -1096,6 +1138,18 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
     const shouldHighlight = isInLoop || isInHoveredLoop
     const opacity = getElementOpacity(shouldHighlight)
     
+    // Check if node is selected in assignment mode
+    let isAssignmentSelected = false
+    if (isAssignmentMode && currentQuestion && currentAssignment) {
+      const questionType = currentQuestion.questionType
+      if (questionType === 'select-nodes') {
+        const assignmentSpecificId = `${currentAssignment.id}-${currentQuestion.id}`
+        const currentResponse = userResponses[assignmentSpecificId]?.response || '[]'
+        const selectedNodes = JSON.parse(currentResponse)
+        isAssignmentSelected = selectedNodes.includes(editingNode.id)
+      }
+    }
+    
     return (
       <g key={`editing-${editingNode.id}`} transform={`translate(${editingNode.position.x}, ${editingNode.position.y})`} data-node-id={editingNode.id} style={{ opacity }}>
         <CLDNode 
@@ -1103,6 +1157,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
           data={editingNode.data}
           selected={selectedNode === editingNode.id}
           isMultiSelected={selectedNodes.includes(editingNode.id)}
+          isAssignmentSelected={isAssignmentSelected}
           isInHighlightedLoop={isInLoop}
           isInHoveredLoop={isInHoveredLoop}
           highlightedLoopType={highlightedLoop !== null && loops[highlightedLoop] ? loops[highlightedLoop].type : null}
@@ -1213,7 +1268,19 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
       const isInHoveredLoop = isEdgeInHoveredLoop(edge)
       const shouldHighlight = isInLoop || isInHoveredLoop
       const loopColor = getHighlightedLoopColor()
-      const arrowColor = isInLoop ? loopColor : (edge.data?.color || '#6b7280') // Only change color for selected loops, not hovered
+      // Check if edge is selected in assignment mode
+      let isAssignmentSelected = false
+      if (isAssignmentMode && currentQuestion && currentAssignment) {
+        const questionType = currentQuestion.questionType
+        if (questionType === 'select-connections') {
+          const assignmentSpecificId = `${currentAssignment.id}-${currentQuestion.id}`
+          const currentResponse = userResponses[assignmentSpecificId]?.response || '[]'
+          const selectedConnections = JSON.parse(currentResponse)
+          isAssignmentSelected = selectedConnections.includes(edge.id)
+        }
+      }
+      
+      const arrowColor = isAssignmentSelected ? "#f59e0b" : (isInLoop ? loopColor : (edge.data?.color || '#6b7280')) // Orange for assignment selected edges
       const arrowTransparency = globalStyles.arrowTransparency || 0.3
       const arrowHeadSize = globalStyles.arrowHeadSize || 3
       const opacity = getElementOpacity(shouldHighlight)
@@ -1275,6 +1342,29 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             onClick={(e) => {
               // Only select if we're not dragging
               if (!isDraggingArrow) {
+                // Handle assignment mode selections
+                if (isAssignmentMode && currentQuestion && currentAssignment) {
+                  const questionType = currentQuestion.questionType
+                  
+                  if (questionType === 'select-connections') {
+                    // Handle edge selection for select-connections questions
+                    const assignmentSpecificId = `${currentAssignment.id}-${currentQuestion.id}`
+                    const currentResponse = userResponses[assignmentSpecificId]?.response || '[]'
+                    const selectedConnections = JSON.parse(currentResponse)
+                    
+                    if (selectedConnections.includes(edge.id)) {
+                      // Remove edge from selection
+                      const updatedConnections = selectedConnections.filter(id => id !== edge.id)
+                      saveUserResponse(currentAssignment.id, currentQuestion.id, JSON.stringify(updatedConnections))
+                    } else {
+                      // Add edge to selection
+                      const updatedConnections = [...selectedConnections, edge.id]
+                      saveUserResponse(currentAssignment.id, currentQuestion.id, JSON.stringify(updatedConnections))
+                    }
+                    return // Don't proceed with normal selection logic
+                  }
+                }
+                
                 // Handle multiselect with Ctrl+click
                 if (e.ctrlKey || e.metaKey) {
                   // Ctrl/Cmd+click: toggle selection
@@ -1322,6 +1412,7 @@ function Canvas({ mode, loops = [], dimmingEnabled = true, hoveredLoop = null, d
             stroke={arrowColor}
             strokeOpacity={arrowTransparency}
             strokeWidth={
+              isAssignmentSelected ? globalStyles.arrowWidth + 4 : // Thicker for assignment selected edges
               (selectedEdge === edge.id || selectedEdges.includes(edge.id)) ? globalStyles.arrowWidth + 2 : 
               shouldHighlight ? globalStyles.arrowWidth + 1 : 
               hoveredEdge === edge.id ? globalStyles.arrowWidth + 2 :

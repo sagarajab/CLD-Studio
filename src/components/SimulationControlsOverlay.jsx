@@ -10,9 +10,11 @@ import {
   Activity 
 } from 'lucide-react'
 import { useCLDStore } from '../stores/cldStore'
+import useAssignmentStore from '../stores/assignmentStore'
 import './SimulationControlsOverlay.css'
 
 function SimulationControlsOverlay() {
+  const { isAssignmentMode } = useAssignmentStore()
   const [activeDropdown, setActiveDropdown] = useState(null)
   const [selectedSimNode, setSelectedSimNode] = useState('')
   const [perturbationValue, setPerturbationValue] = useState(1)
@@ -93,8 +95,8 @@ function SimulationControlsOverlay() {
     }
   }
 
-  // Only show when simulation mode is active
-  if (!simulationMode) {
+  // Only show when simulation mode is active and not in assignment mode
+  if (!simulationMode || isAssignmentMode) {
     return null
   }
 

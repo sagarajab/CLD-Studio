@@ -1,5 +1,6 @@
 import React, { memo } from 'react'
 import { MailCheck, TreeDeciduous } from 'lucide-react'
+import useAssignmentStore from '../stores/assignmentStore'
 
 const StatusBar = memo(({ 
   nodes, 
@@ -7,9 +8,11 @@ const StatusBar = memo(({
   loops, 
   eventsLog, 
   user, 
-  amplifyAuthVerified, 
-  tbtAuthStatus
+  isAuthenticated,
+  tbtAuthStatus,
+  accessLevel
 }) => {
+  const { isAssignmentMode } = useAssignmentStore()
   return (
     <div className="status-bar">
       <div className="status-left">
@@ -30,17 +33,17 @@ const StatusBar = memo(({
         <div className="status-stats-container">
           <span>
             <span className="status-stat-label">Variables</span> 
-            <span className="status-stat-value">{nodes.length}</span>
+            <span className="status-stat-value">{isAssignmentMode ? 'N/A' : nodes.length}</span>
           </span>
           <div className="status-separator"></div>
           <span>
             <span className="status-stat-label">Connections</span> 
-            <span className="status-stat-value">{edges.length}</span>
+            <span className="status-stat-value">{isAssignmentMode ? 'N/A' : edges.length}</span>
           </span>
           <div className="status-separator"></div>
           <span>
             <span className="status-stat-label">Loops</span> 
-            <span className="status-stat-value">{loops.length}</span>
+            <span className="status-stat-value">{isAssignmentMode ? 'N/A' : loops.length}</span>
           </span>
         </div>
       </div>
@@ -49,7 +52,7 @@ const StatusBar = memo(({
           <span>User: <b>{user?.signInDetails?.loginId || user?.attributes?.email || 'Guest'}</b></span>
           <div className="status-separator"></div>
           <div className="auth-status-indicators">
-            <div className={`auth-icon amplify ${amplifyAuthVerified ? 'authenticated' : 'not-authenticated'}`}>
+            <div className={`auth-icon amplify ${isAuthenticated ? 'authenticated' : 'not-authenticated'}`}>
               <MailCheck size={16} />
             </div>
             <div className={`auth-icon tbt ${tbtAuthStatus === 'tbt' ? 'authenticated' : 'not-authenticated'}`}>
@@ -58,11 +61,9 @@ const StatusBar = memo(({
           </div>
           <div className="status-separator"></div>
           <span className="access-level-text">
-            {amplifyAuthVerified && tbtAuthStatus === 'tbt' ? 'TBTuser' : 'Guest'}
+            {isAuthenticated && tbtAuthStatus === 'tbt' ? 'TBT User' : accessLevel === 'guest' ? 'Guest' : 'Unknown'}
           </span>
         </div>
-        
-
       </div>
     </div>
   )

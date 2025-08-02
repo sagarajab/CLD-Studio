@@ -1,15 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
-import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Undo2, Redo2, Eraser, Grid3x3, SplinePointer, Trash, DraftingCompass, Laptop, Database, Gamepad2, LogOut, Info, HelpCircle, Wrench, Users, TestTube, FileText } from 'lucide-react'
+import useAssignmentStore from '../stores/assignmentStore'
+import useTBTAuthStore from '../stores/tbtAuthStore'
+import { FolderOpen, Save, RotateCcw, RotateCw, Trash2, Download, Diamond, Spline, Brush, Settings, RefreshCw, Grid, LayoutGrid, Undo2, Redo2, Eraser, Grid3x3, SplinePointer, Trash, DraftingCompass, Laptop, Database, Gamepad2, LogOut, Info, HelpCircle, Wrench, Users, TestTube, FileText, BookOpen, BarChart3, User } from 'lucide-react'
 
 import SettingsModal from './SettingsModal'
 import ExamplesModal from './ExamplesModal'
+import UserProgressDashboard from './UserProgressDashboard'
 import { loadConfig } from '../config/appConfig'
 import appIcon from '../assets/app_icon.png'
-import tbtIcon from '../assets/tbt_icon.png'
 import './SysLoopHeader.css'
 
-function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAuthTestClick, onDevModeToggle, devMode }) {
+function SysLoopHeader({ signOut, onSettingsClick, onDevModeToggle, devMode, onAssignmentClick, userEmail }) {
+  const { isAssignmentMode } = useAssignmentStore()
+  const { tbtAuthStatus, hasTBTAccess } = useTBTAuthStore()
   const { 
     saveDiagram, 
     loadDiagram, 
@@ -60,6 +64,8 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
   const [tempName, setTempName] = useState(diagramName)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showExamplesModal, setShowExamplesModal] = useState(false)
+  const [showProgressModal, setShowProgressModal] = useState(false)
+  const [showAccountModal, setShowAccountModal] = useState(false)
   
   // Load config for colors
   const config = loadConfig()
@@ -380,6 +386,28 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
     }
   ]
 
+  // TBT-specific menu items (only shown for TBT users)
+  const tbtMenuItems = [
+    {
+      label: 'Assignment',
+      action: onAssignmentClick,
+      icon: BookOpen,
+      title: isAssignmentMode ? 'Exit Assignment Mode' : 'Start Assignment Mode'
+    },
+    {
+      label: 'Progress',
+      action: () => setShowProgressModal(true),
+      icon: BarChart3,
+      title: 'View Progress Dashboard'
+    },
+    {
+      label: 'Account Info',
+      action: () => setShowAccountModal(true),
+      icon: User,
+      title: 'Account Information'
+    }
+  ]
+
   // Miscellaneous menu items
   const miscellaneousItems = [
     {
@@ -410,18 +438,6 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
 
   // User-related menu items
   const userRelatedItems = [
-    {
-      label: 'TBT User Management',
-      action: onTBTUserAdminClick,
-      icon: Users,
-      title: 'TBT User Management'
-    },
-    {
-      label: 'TBT Auth Test',
-      action: onTBTAuthTestClick,
-      icon: TestTube,
-      title: 'TBT Auth Test'
-    },
     {
       label: 'Sign Out',
       action: signOut,
@@ -773,16 +789,36 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
           {/* Simulation Mode Toggle */}
           <button
             onClick={toggleSimulationMode}
-            className={`menu-icon-btn simulation-mode-btn ${simulationMode ? 'simulation-active' : ''} simulation-button-enabled`}
-            title={simulationMode ? 'Disable Simulation Mode' : 'Enable Simulation Mode'}
+            disabled={isAssignmentMode}
+            className={`menu-icon-btn simulation-mode-btn ${simulationMode ? 'simulation-active' : ''} simulation-button-enabled ${isAssignmentMode ? 'disabled' : ''}`}
+            title={isAssignmentMode ? 'Simulation disabled in assignment mode' : (simulationMode ? 'Disable Simulation Mode' : 'Enable Simulation Mode')}
           >
             <Gamepad2 className="menu-icon" />
           </button>
 
+          {/* Separator before TBT Menu Items */}
+          {hasTBTAccess() && <div className="menu-separator"></div>}
+
+          {/* Group 4: TBT-specific Menu Items (only for TBT users) */}
+          {hasTBTAccess() && (
+            <div className="menu-group">
+              {tbtMenuItems.map((item, index) => (
+                <button
+                  key={index}
+                  className={`menu-icon-btn ${item.label === 'Assignment' && isAssignmentMode ? 'active' : ''}`}
+                  onClick={item.action}
+                  title={item.title}
+                >
+                  <item.icon className="menu-icon" />
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Separator before Miscellaneous */}
           <div className="menu-separator"></div>
 
-          {/* Group 4: Miscellaneous */}
+          {/* Group 5: Miscellaneous */}
           <div className="menu-group">
             {miscellaneousItems.map((item, index) => (
               <button
@@ -799,7 +835,7 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
           {/* Separator before User Related */}
           <div className="menu-separator"></div>
 
-          {/* Group 5: User Related */}
+          {/* Group 6: User Related */}
           <div className="menu-group">
             {userRelatedItems.map((item, index) => (
               <button
@@ -815,15 +851,7 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
         </div>
       </div>
 
-      {/* Header Right - TBT Logo */}
-      <div className="header-right">
-        <div className="bodhi-logo">
-          <img 
-            src={tbtIcon} 
-            alt="TBT Logo" 
-          />
-        </div>
-      </div>
+
 
       {/* Modals */}
       {showExamplesModal && (
@@ -831,6 +859,58 @@ function SysLoopHeader({ signOut, onSettingsClick, onTBTUserAdminClick, onTBTAut
           isOpen={showExamplesModal} 
           onClose={() => setShowExamplesModal(false)} 
         />
+      )}
+      
+      {/* Progress Dashboard Modal */}
+      {showProgressModal && (
+        <div className="modal-overlay" onClick={() => setShowProgressModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Progress Dashboard</h3>
+              <button 
+                className="modal-close-btn"
+                onClick={() => setShowProgressModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <UserProgressDashboard userEmail={userEmail} />
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Account Info Modal */}
+      {showAccountModal && (
+        <div className="modal-overlay" onClick={() => setShowAccountModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Account Information</h3>
+              <button 
+                className="modal-close-btn"
+                onClick={() => setShowAccountModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="account-info">
+                <div className="info-section">
+                  <h4>User Status</h4>
+                  <p><strong>Status:</strong> {tbtAuthStatus === 'tbt' ? 'TBT User' : 'Guest'}</p>
+                  <p><strong>Access Level:</strong> {tbtAuthStatus === 'tbt' ? 'Full Access' : 'Limited Access'}</p>
+                </div>
+                <div className="info-section">
+                  <h4>Account Details</h4>
+                  <p><strong>Email:</strong> {userEmail || 'Not available'}</p>
+                  <p><strong>Authentication:</strong> {hasTBTAccess() ? 'Approved' : 'Not Approved'}</p>
+                  <p><strong>Assignment Access:</strong> {hasTBTAccess() ? 'Available' : 'Not Available'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </header>
   )

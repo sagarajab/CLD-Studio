@@ -1,0 +1,78 @@
+{
+  "id": "assignment-001",
+  "title": "Basic Feedback Loop Analysis",
+  "description": "Create and analyze a simple feedback loop system",
+  "timeLimit": 3300,
+  "maxScore": 85,
+  "deadline": "2024-12-31T23:59:59Z",
+  "questions": [
+    {
+      "id": "q1",
+      "questionType": "text",
+      "question": "What is a feedback loop? Explain in your own words.",
+      "maxScore": 10,
+      "timeLimit": 300,
+      "correctAnswer": "A feedback loop is a system where the output of a process influences the input, creating a circular cause-and-effect relationship that can either amplify or dampen changes in the system.",
+      "keywords": ["feedback", "loop", "output", "input", "circular", "cause", "effect", "amplify", "dampen", "system"],
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q2",
+      "questionType": "nat",
+      "question": "How many nodes are in your diagram?",
+      "maxScore": 5,
+      "timeLimit": 120,
+      "correctAnswer": "3",
+      "tolerance": 1,
+      "cldContext": "predator-prey"
+    },
+    {
+      "id": "q3",
+      "questionType": "mcq",
+      "question": "What type of feedback loop did you create?",
+      "options": ["Positive feedback", "Negative feedback", "Both", "Neither"],
+      "maxScore": 10,
+      "timeLimit": 180,
+      "correctAnswer": "Both",
+      "cldContext": "market-growth"
+    },
+    {
+      "id": "q4",
+      "questionType": "edit-cld",
+      "question": "Create a causal loop diagram showing a simple feedback loop with at least 3 nodes.",
+      "maxScore": 25,
+      "timeLimit": 1200,
+      "correctAnswer": [
+        [0, 1, 0, 0],
+        [1, 0, 0, 0],
+        [0, 0, 0, -1],
+        [0, 0, -1, 0]
+      ],
+      "cldContext": "supply-chain"
+    },
+    {
+      "id": "q5",
+      "questionType": "edit-cld",
+      "question": "The current diagram shows a simple population growth model with reinforcing loops. Your task is to modify this diagram to include environmental factors that create a balancing loop. Add a new node called 'Environmental Carrying Capacity' and connect it to create a balancing feedback loop that limits population growth. Make sure to use appropriate positive (+) and negative (-) connections.",
+      "maxScore": 20,
+      "timeLimit": 900,
+      "correctAnswer": [
+        [0, 1, 0, 0],
+        [1, 0, 0, -1],
+        [0, 0, 0, 0],
+        [0, -1, 0, 0]
+      ],
+      "cldContext": "sample-diagram"
+    },
+    {
+      "id": "q6",
+      "questionType": "text",
+      "question": "Based on the diagram you just edited, explain how the Environmental Carrying Capacity creates a balancing loop and why this is important for population dynamics.",
+      "maxScore": 15,
+      "timeLimit": 600,
+      "correctAnswer": "The Environmental Carrying Capacity creates a balancing loop by limiting population growth. As population increases, it puts more pressure on environmental resources, which reduces the carrying capacity. This reduction in carrying capacity then limits further population growth, creating a negative feedback loop that prevents unlimited population expansion. This is important for population dynamics because it ensures sustainable growth and prevents ecosystem collapse.",
+      "keywords": ["carrying capacity", "balancing loop", "population growth", "environmental resources", "negative feedback", "sustainable", "ecosystem"],
+      "cldContext": "predator-prey"
+    }
+  ]
+} 

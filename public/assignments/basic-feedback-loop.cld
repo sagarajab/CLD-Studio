@@ -1,0 +1,63 @@
+{
+  "version": "2.0",
+  "diagramName": "Basic Feedback Loop",
+  "description": "A simple positive feedback loop demonstrating exponential growth",
+  "category": "Basic Examples",
+  "nodes": [
+    {
+      "id": "population",
+      "label": "Population",
+      "type": "variable",
+      "position": { "x": 200, "y": 150 },
+      "color": "#3B82F6",
+      "size": 60
+    },
+    {
+      "id": "births",
+      "label": "Births",
+      "type": "variable",
+      "position": { "x": 400, "y": 150 },
+      "color": "#10B981",
+      "size": 60
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge1",
+      "source": "population",
+      "target": "births",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "More population leads to more births"
+    },
+    {
+      "id": "edge2",
+      "source": "births",
+      "target": "population",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "More births increase population"
+    }
+  ],
+  "viewTransform": { "x": 0, "y": 0, "scale": 1 },
+  "showGrid": true,
+  "globalStyles": {
+    "nodeColor": "#3B82F6",
+    "edgeColor": "#6B7280",
+    "backgroundColor": "#FFFFFF"
+  },
+  "problemStatement": {
+    "mode": "sandbox",
+    "currentProblem": null,
+    "customStatement": "Explore how population growth creates a reinforcing feedback loop"
+  },
+  "analysis": {
+    "adjacencyMatrix": [],
+    "allLoops": []
+  },
+  "simulation": {
+    "isInitialized": false,
+    "timeStep": 1,
+    "duration": 100
+  }
+} 

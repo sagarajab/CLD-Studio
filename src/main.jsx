@@ -6,7 +6,7 @@ import './index.css'
 import './components/AuthCustomization.css'
 import App from './App.jsx'
 import { initializeAmplify } from './config/amplifyConfig.js'
-import appIcon from './assets/app_n_tbt_icon.png'
+import appIcon from './assets/app_icon.png'
 
 // Custom components for the Authenticator
 const components = {
@@ -31,7 +31,7 @@ const components = {
     return (
       <View textAlign="center" padding="1.5rem 2rem">
         <Text fontSize="0.75rem" color="gray">
-          © 2025 TBT | CLD Studio. All Rights Reserved.
+          © 2025 CLD Studio. All Rights Reserved.
         </Text>
       </View>
     );

@@ -1,0 +1,360 @@
+/* TBT Authentication Loading Screen */
+.tbt-auth-loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.auth-container {
+  background: rgba(26, 32, 44, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  animation: slideInUp 0.6s ease-out;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Header Styles */
+.auth-header {
+  margin-bottom: 40px;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.logo-icon {
+  width: 320px;
+  height: 100px;
+  object-fit: contain;
+  filter: brightness(1.2);
+}
+
+/* Loading Section */
+.loading-section {
+  margin-bottom: 30px;
+}
+
+.loading-animation {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.pulse-circle {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: 3px solid #e2e8f0;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  color: #667eea;
+  animation: spin 1s linear infinite;
+}
+
+/* Loading Steps */
+.loading-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loading-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  opacity: 0.5;
+  transform: translateX(-20px);
+}
+
+.loading-step.active {
+  opacity: 1;
+  transform: translateX(0);
+  border-color: #667eea;
+  background: #edf2f7;
+  animation: slideInRight 0.5s ease-out;
+}
+
+.loading-step.completed {
+  opacity: 1;
+  transform: translateX(0);
+  border-color: #48bb78;
+  background: #f0fff4;
+}
+
+.step-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.loading-step.active .step-icon {
+  background: #667eea;
+  color: white;
+}
+
+.loading-step.completed .step-icon {
+  background: #48bb78;
+  color: white;
+}
+
+.step-icon-inner {
+  width: 16px;
+  height: 16px;
+}
+
+.step-check {
+  width: 16px;
+  height: 16px;
+  animation: checkmark 0.3s ease-out;
+}
+
+.step-text {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.loading-step.active .step-text {
+  color: #2d3748;
+}
+
+.loading-step.completed .step-text {
+  color: #2f855a;
+}
+
+/* Status Section */
+.status-section {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.status-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  animation: bounceIn 0.8s ease-out;
+}
+
+.status-icon.success {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  box-shadow: 0 8px 20px rgba(72, 187, 120, 0.3);
+}
+
+.status-icon.info {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  box-shadow: 0 8px 20px rgba(66, 153, 225, 0.3);
+}
+
+.status-icon.loading {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  animation: pulse 2s infinite;
+}
+
+.status-icon-inner {
+  width: 32px;
+  height: 32px;
+  color: white;
+}
+
+.status-content {
+  margin-bottom: 32px;
+}
+
+.status-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0 0 12px 0;
+}
+
+.status-message {
+  color: #a0aec0;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+}
+
+/* User Identification */
+.user-identification {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.identification-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #a0aec0;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+.user-type-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.user-type-badge.success {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.user-type-badge.info {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+}
+
+
+
+/* Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes checkmark {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 30px 20px;
+    margin: 20px;
+  }
+  
+  .auth-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .status-title {
+    font-size: 1.25rem;
+  }
+  
+  .continue-button {
+    padding: 14px 24px;
+    font-size: 0.9rem;
+  }
+} 

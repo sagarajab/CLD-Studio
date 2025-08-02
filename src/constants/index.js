@@ -12,8 +12,6 @@ export const MODES = {
 export const MODAL_NAMES = {
   SETTINGS: 'settings',
   S3_FILE_MANAGER: 's3FileManager',
-  TBT_AUTH_TEST: 'tbtAuthTest',
-  TBT_USER_ADMIN: 'tbtUserAdmin',
   STATE_VECTOR: 'stateVector',
   PLOTS: 'plots',
   NODE_ANALYSIS: 'nodeAnalysis',

@@ -1,0 +1,64 @@
+{
+  "id": "assignment-003",
+  "title": "Ecosystem Sustainability",
+  "description": "Analyze ecosystem dynamics and sustainability challenges",
+  "timeLimit": 2700,
+  "maxScore": 80,
+  "deadline": "2024-12-31T23:59:59Z",
+  "questions": [
+    {
+      "id": "q1",
+      "questionType": "text",
+      "question": "Explain how biodiversity loss can create negative feedback loops that threaten ecosystem stability.",
+      "maxScore": 18,
+      "timeLimit": 300,
+      "correctAnswer": "Biodiversity loss can create negative feedback loops where reduced species diversity decreases ecosystem resilience, making the system more vulnerable to disturbances. This vulnerability leads to further species loss, which reduces ecosystem services and stability even more. The loop is reinforced by factors like habitat fragmentation, climate change, and invasive species, creating a downward spiral that threatens the entire ecosystem's sustainability.",
+      "keywords": ["biodiversity loss", "negative feedback", "ecosystem resilience", "species diversity", "ecosystem services", "habitat fragmentation", "climate change", "invasive species"],
+      "cldContext": "predator-prey"
+    },
+    {
+      "id": "q2",
+      "questionType": "mcq",
+      "question": "What type of feedback loop typically maintains ecosystem balance?",
+      "options": ["Reinforcing loop", "Balancing loop", "Delayed loop", "Random loop"],
+      "maxScore": 10,
+      "timeLimit": 120,
+      "correctAnswer": "Balancing loop",
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q3",
+      "questionType": "nat",
+      "question": "If a population decreases by 25% and its predator population decreases by 40%, what is the predator-prey ratio change?",
+      "maxScore": 8,
+      "timeLimit": 180,
+      "correctAnswer": "0.8",
+      "tolerance": 0.1,
+      "cldContext": "predator-prey"
+    },
+    {
+      "id": "q4",
+      "questionType": "edit-cld",
+      "question": "Create a CLD showing the relationship between human activities, ecosystem health, and biodiversity.",
+      "maxScore": 25,
+      "timeLimit": 1200,
+      "correctAnswer": [
+        [0, -1, 0, 1],
+        [0, 0, 1, 0],
+        [0, 1, 0, 0],
+        [0, 0, 0, 0]
+      ],
+      "cldContext": "supply-chain"
+    },
+    {
+      "id": "q5",
+      "questionType": "text",
+      "question": "How can sustainable practices create positive feedback loops in ecosystem management?",
+      "maxScore": 19,
+      "timeLimit": 400,
+      "correctAnswer": "Sustainable practices can create positive feedback loops by improving ecosystem health, which increases biodiversity and ecosystem services. These improvements provide more resources and benefits to human communities, which encourages further adoption of sustainable practices. This creates a virtuous cycle where sustainability leads to better ecosystem outcomes, which reinforces sustainable behavior and creates long-term environmental benefits.",
+      "keywords": ["sustainable practices", "positive feedback", "ecosystem health", "biodiversity", "ecosystem services", "virtuous cycle", "environmental benefits"],
+      "cldContext": "market-growth"
+    }
+  ]
+} 

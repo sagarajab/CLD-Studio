@@ -1,0 +1,64 @@
+{
+  "id": "assignment-006",
+  "title": "Population Dynamics",
+  "description": "Model population growth, competition, and carrying capacity",
+  "timeLimit": 1800,
+  "maxScore": 60,
+  "deadline": "2024-12-31T23:59:59Z",
+  "questions": [
+    {
+      "id": "q1",
+      "questionType": "text",
+      "question": "Explain the concept of exponential growth and its relationship to carrying capacity in population dynamics.",
+      "maxScore": 15,
+      "timeLimit": 300,
+      "correctAnswer": "Exponential growth occurs when a population increases at a rate proportional to its current size, creating a J-shaped curve. This happens when resources are abundant and there are no limiting factors. However, exponential growth cannot continue indefinitely because of carrying capacity - the maximum population size that the environment can sustain. When a population approaches carrying capacity, growth slows and eventually stabilizes, creating an S-shaped logistic growth curve. The transition from exponential to logistic growth is driven by negative feedback loops through resource limitation.",
+      "keywords": ["exponential growth", "carrying capacity", "logistic growth", "J-shaped curve", "S-shaped curve", "negative feedback", "resource limitation"],
+      "cldContext": "predator-prey"
+    },
+    {
+      "id": "q2",
+      "questionType": "mcq",
+      "question": "What type of growth curve does a population show when it reaches carrying capacity?",
+      "options": ["J-shaped", "S-shaped", "Linear", "Circular"],
+      "maxScore": 8,
+      "timeLimit": 120,
+      "correctAnswer": "S-shaped",
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q3",
+      "questionType": "nat",
+      "question": "What is the doubling time for a population growing at 2% per year?",
+      "maxScore": 5,
+      "timeLimit": 90,
+      "correctAnswer": "35",
+      "tolerance": 2,
+      "cldContext": "market-growth"
+    },
+    {
+      "id": "q4",
+      "questionType": "edit-cld",
+      "question": "Create a CLD showing the relationship between population size, resource availability, and growth rate.",
+      "maxScore": 25,
+      "timeLimit": 1200,
+      "correctAnswer": [
+        [0, 0, 1, 0],
+        [0, 0, 1, 0],
+        [1, 0, 0, 0],
+        [0, -1, 0, 0]
+      ],
+      "cldContext": "supply-chain"
+    },
+    {
+      "id": "q5",
+      "questionType": "text",
+      "question": "Describe how density-dependent and density-independent factors create different feedback loops in population dynamics.",
+      "maxScore": 7,
+      "timeLimit": 200,
+      "correctAnswer": "Density-dependent factors (like competition, predation, disease) create negative feedback loops where their impact increases with population density, helping regulate population size. Density-independent factors (like weather, natural disasters) create external disturbances that can affect populations regardless of size, potentially disrupting existing feedback loops. The interaction between these factors creates complex population dynamics where multiple feedback loops operate simultaneously.",
+      "keywords": ["density-dependent", "density-independent", "negative feedback", "population regulation", "competition", "external disturbances"],
+      "cldContext": "predator-prey"
+    }
+  ]
+} 

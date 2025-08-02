@@ -1,0 +1,87 @@
+{
+  "version": "2.0",
+  "diagramName": "Sample Population Growth Model",
+  "description": "A simple causal loop diagram showing population dynamics with birth and death rates",
+  "category": "Sample Examples",
+  "nodes": [
+    {
+      "id": "population",
+      "label": "Population",
+      "type": "variable",
+      "position": { "x": 200, "y": 150 },
+      "color": "#3B82F6",
+      "size": 60
+    },
+    {
+      "id": "birth-rate",
+      "label": "Birth Rate",
+      "type": "variable",
+      "position": { "x": 400, "y": 150 },
+      "color": "#10B981",
+      "size": 60
+    },
+    {
+      "id": "death-rate",
+      "label": "Death Rate",
+      "type": "variable",
+      "position": { "x": 300, "y": 300 },
+      "color": "#EF4444",
+      "size": 60
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge1",
+      "source": "population",
+      "target": "birth-rate",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Larger population leads to higher birth rate"
+    },
+    {
+      "id": "edge2",
+      "source": "birth-rate",
+      "target": "population",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Higher birth rate leads to population growth"
+    },
+    {
+      "id": "edge3",
+      "source": "population",
+      "target": "death-rate",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Larger population leads to higher death rate"
+    },
+    {
+      "id": "edge4",
+      "source": "death-rate",
+      "target": "population",
+      "polarity": "negative",
+      "type": "causal",
+      "label": "Higher death rate leads to population decline"
+    }
+  ],
+  "viewTransform": { "x": 0, "y": 0, "scale": 1 },
+  "showGrid": true,
+  "globalStyles": {
+    "nodeColor": "#3B82F6",
+    "edgeColor": "#6B7280",
+    "backgroundColor": "#FFFFFF"
+  },
+  "problemStatement": {
+    "mode": "sandbox",
+    "currentProblem": null,
+    "customStatement": "Explore population dynamics with birth and death rates"
+  },
+  "analysis": {
+    "adjacencyMatrix": [],
+    "allLoops": []
+  },
+  "simulation": {
+    "isInitialized": false,
+    "timeStep": 1,
+    "duration": 100
+  }
+} 

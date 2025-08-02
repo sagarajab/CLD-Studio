@@ -1,0 +1,64 @@
+{
+  "id": "assignment-004",
+  "title": "Innovation Diffusion",
+  "description": "Analyze how innovations spread through populations and markets",
+  "timeLimit": 2100,
+  "maxScore": 65,
+  "deadline": "2024-12-31T23:59:59Z",
+  "questions": [
+    {
+      "id": "q1",
+      "questionType": "text",
+      "question": "Explain how the S-curve of innovation adoption creates different feedback loops at different stages.",
+      "maxScore": 15,
+      "timeLimit": 300,
+      "correctAnswer": "The S-curve of innovation adoption shows different feedback loops at different stages. In the early stage, positive feedback dominates as early adopters create visibility and reduce uncertainty for others, accelerating adoption. In the middle stage, both positive and negative feedback operate as network effects drive adoption while market saturation begins to slow growth. In the late stage, negative feedback dominates as the market becomes saturated and adoption rates decline, creating a balancing loop that stabilizes the system.",
+      "keywords": ["S-curve", "innovation adoption", "positive feedback", "negative feedback", "early adopters", "network effects", "market saturation", "balancing loop"],
+      "cldContext": "market-growth"
+    },
+    {
+      "id": "q2",
+      "questionType": "mcq",
+      "question": "What percentage of the population typically represents early adopters in innovation diffusion?",
+      "options": ["2.5%", "13.5%", "34%", "50%"],
+      "maxScore": 8,
+      "timeLimit": 120,
+      "correctAnswer": "13.5%",
+      "cldContext": "basic-feedback-loop"
+    },
+    {
+      "id": "q3",
+      "questionType": "nat",
+      "question": "If adoption rate increases by 15% and network effects increase by 25%, what is the overall adoption multiplier?",
+      "maxScore": 7,
+      "timeLimit": 150,
+      "correctAnswer": "1.44",
+      "tolerance": 0.1,
+      "cldContext": "predator-prey"
+    },
+    {
+      "id": "q4",
+      "questionType": "edit-cld",
+      "question": "Create a CLD showing the relationship between innovation adoption, network effects, and market penetration.",
+      "maxScore": 20,
+      "timeLimit": 900,
+      "correctAnswer": [
+        [0, 1, 1, 0],
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [1, 0, 0, 0]
+      ],
+      "cldContext": "supply-chain"
+    },
+    {
+      "id": "q5",
+      "questionType": "text",
+      "question": "How do network effects create reinforcing feedback loops in innovation diffusion?",
+      "maxScore": 15,
+      "timeLimit": 300,
+      "correctAnswer": "Network effects create reinforcing feedback loops where each additional user increases the value of the innovation for all users. This increased value attracts more users, which further increases network value, creating a virtuous cycle. The loop is reinforced by factors like reduced uncertainty, increased social proof, and improved functionality through user feedback. This positive feedback can lead to rapid adoption and market dominance, but can also create barriers to entry for competing innovations.",
+      "keywords": ["network effects", "reinforcing feedback", "user value", "virtuous cycle", "social proof", "market dominance", "barriers to entry"],
+      "cldContext": "market-growth"
+    }
+  ]
+} 

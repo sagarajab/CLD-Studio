@@ -4,8 +4,6 @@ export const useModalManager = () => {
   const [modals, setModals] = useState({
     settings: false,
     s3FileManager: false,
-    tbtAuthTest: false,
-    tbtUserAdmin: false,
     stateVector: false,
     plots: false,
     nodeAnalysis: false,
@@ -26,8 +24,6 @@ export const useModalManager = () => {
     setModals({
       settings: false,
       s3FileManager: false,
-      tbtAuthTest: false,
-      tbtUserAdmin: false,
       stateVector: false,
       plots: false,
       nodeAnalysis: false,

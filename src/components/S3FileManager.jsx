@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { list, downloadData, uploadData, remove } from 'aws-amplify/storage';
 import { Upload, Download, Trash2, Folder, File, RefreshCw } from 'lucide-react';
+import { validateFileFormat, sanitizeCLDData } from '../utils/validation.js';
+import ValidationErrorModal from './ValidationErrorModal';
 import './S3FileManager.css';
 
 function S3FileManager({ isOpen, onClose }) {
@@ -9,6 +11,15 @@ function S3FileManager({ isOpen, onClose }) {
   const [uploading, setUploading] = useState(false);
   const [currentPath, setCurrentPath] = useState('public/');
   const [selectedFile, setSelectedFile] = useState(null);
+  
+  // Validation state
+  const [validationModal, setValidationModal] = useState({
+    isOpen: false,
+    validationResult: null,
+    fileName: '',
+    fileType: '',
+    fileData: null
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -31,21 +42,100 @@ function S3FileManager({ isOpen, onClose }) {
     }
   };
 
+  const validateAndUploadFile = async (file) => {
+    try {
+      // Get file extension
+      const fileName = file.name;
+      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+      
+      // Check if it's a supported file type
+      if (!['.cld', '.cldq', '.json'].includes(fileExtension.toLowerCase())) {
+        // Upload without validation for unsupported types
+        const key = `${currentPath}${fileName}`;
+        await uploadData(key, file, {
+          level: 'public',
+          contentType: file.type
+        });
+        return { success: true, message: 'File uploaded successfully!' };
+      }
+      
+      // Read and validate file content
+      const text = await file.text();
+      let fileData;
+      
+      try {
+        fileData = JSON.parse(text);
+      } catch (parseError) {
+        return { 
+          success: false, 
+          message: `Invalid JSON format: ${parseError.message}` 
+        };
+      }
+      
+      // Validate file format
+      const validationResult = validateFileFormat(fileData, fileExtension);
+      
+      if (!validationResult.isValid) {
+        // Show validation modal
+        setValidationModal({
+          isOpen: true,
+          validationResult,
+          fileName,
+          fileType: fileExtension,
+          fileData
+        });
+        return { success: false, message: 'Validation failed' };
+      }
+      
+      // Sanitize data if it's a CLD file
+      if (fileExtension.toLowerCase() === '.cld') {
+        fileData = sanitizeCLDData(fileData);
+      }
+      
+      // Create a new file with sanitized data
+      const sanitizedFile = new File(
+        [JSON.stringify(fileData, null, 2)],
+        fileName,
+        { type: file.type }
+      );
+      
+      // Upload the sanitized file
+      const key = `${currentPath}${fileName}`;
+      await uploadData(key, sanitizedFile, {
+        level: 'public',
+        contentType: file.type
+      });
+      
+      return { 
+        success: true, 
+        message: 'File validated and uploaded successfully!',
+        warnings: validationResult.warnings
+      };
+      
+    } catch (error) {
+      console.error('Error processing file:', error);
+      return { 
+        success: false, 
+        message: `Failed to process file: ${error.message}` 
+      };
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     setUploading(true);
     try {
-      const key = `${currentPath}${file.name}`;
-      await uploadData(key, file, {
-        level: 'public',
-        contentType: file.type
-      });
+      const result = await validateAndUploadFile(file);
       
-      // Reload files after upload
-      await loadFiles();
-      alert('File uploaded successfully!');
+      if (result.success) {
+        // Reload files after upload
+        await loadFiles();
+        alert(result.message);
+      } else {
+        alert(result.message);
+      }
     } catch (error) {
       console.error('Error uploading file:', error);
       alert('Failed to upload file');
@@ -245,6 +335,56 @@ function S3FileManager({ isOpen, onClose }) {
           </div>
         )}
       </div>
+      
+      {/* Validation Error Modal */}
+      <ValidationErrorModal
+        isOpen={validationModal.isOpen}
+        onClose={() => setValidationModal({ isOpen: false, validationResult: null, fileName: '', fileType: '', fileData: null })}
+        validationResult={validationModal.validationResult}
+        fileName={validationModal.fileName}
+        fileType={validationModal.fileType}
+        onRetry={() => {
+          // Close modal and allow user to try uploading again
+          setValidationModal({ isOpen: false, validationResult: null, fileName: '', fileType: '', fileData: null });
+        }}
+        onContinue={async () => {
+          // Try to upload with warnings
+          if (validationModal.fileData) {
+            try {
+              const fileName = validationModal.fileName;
+              const fileExtension = validationModal.fileType;
+              
+              // Sanitize data if it's a CLD file
+              let fileData = validationModal.fileData;
+              if (fileExtension.toLowerCase() === '.cld') {
+                fileData = sanitizeCLDData(fileData);
+              }
+              
+              // Create a new file with sanitized data
+              const sanitizedFile = new File(
+                [JSON.stringify(fileData, null, 2)],
+                fileName,
+                { type: 'application/json' }
+              );
+              
+              // Upload the sanitized file
+              const key = `${currentPath}${fileName}`;
+              await uploadData(key, sanitizedFile, {
+                level: 'public',
+                contentType: 'application/json'
+              });
+              
+              // Reload files and close modal
+              await loadFiles();
+              setValidationModal({ isOpen: false, validationResult: null, fileName: '', fileType: '', fileData: null });
+              alert('File uploaded with warnings.');
+            } catch (error) {
+              console.error('Error uploading file with warnings:', error);
+              alert('Failed to upload file with warnings.');
+            }
+          }
+        }}
+      />
     </div>
   );
 }

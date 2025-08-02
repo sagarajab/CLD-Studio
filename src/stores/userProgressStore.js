@@ -1,6 +1,4 @@
 import { create } from 'zustand';
-import { TBTAuthService } from '../services/tbtAuthService';
-import { useTBTAuthStore } from './tbtAuthStore';
 
 const useUserProgressStore = create((set, get) => ({
   // Progress state
@@ -28,12 +26,7 @@ const useUserProgressStore = create((set, get) => ({
     // Start activity timer
     const timer = setInterval(() => {
       const { isActive, currentSession } = get();
-      const { user } = useTBTAuthStore.getState();
       
-      if (user) {
-        TBTAuthService.updateUserActivity(user.id, isActive);
-      }
-
       set({
         currentSession: {
           ...currentSession,
@@ -68,69 +61,46 @@ const useUserProgressStore = create((set, get) => ({
     });
   },
 
-  // Assignment tracking
-  startAssignment: async (assignmentId) => {
-    const { user } = useTBTAuthStore.getState();
-    if (!user) throw new Error('No user logged in');
-    
-    try {
-      const userAssignment = await TBTAuthService.startAssignment(user.id, assignmentId);
-      return userAssignment;
-    } catch (error) {
-      console.error('Error starting assignment:', error);
-      throw error;
-    }
+  // Progress tracking (simplified for CSV-based system)
+  trackDiagramCreation: () => {
+    get().trackAction('diagram_created');
+    console.log('📊 Diagram creation tracked');
   },
 
-  completeAssignment: async (userAssignmentId, score, diagramData) => {
-    try {
-      const completedAssignment = await TBTAuthService.completeAssignment(
-        userAssignmentId, 
-        score, 
-        diagramData
-      );
-      return completedAssignment;
-    } catch (error) {
-      console.error('Error completing assignment:', error);
-      throw error;
-    }
+  trackSimulationRun: () => {
+    get().trackAction('simulation_run');
+    console.log('📊 Simulation run tracked');
   },
 
-  // Progress tracking
-  trackDiagramCreation: async () => {
-    const { user } = useTBTAuthStore.getState();
-    if (!user) return;
-    
-    try {
-      await TBTAuthService.trackDiagramCreation(user.id);
-      get().trackAction('diagram_created');
-    } catch (error) {
-      console.error('Error tracking diagram creation:', error);
-    }
+  trackLoopIdentification: (loopCount = 1) => {
+    get().trackAction('loop_identified');
+    console.log(`📊 Loop identification tracked: ${loopCount} loops`);
   },
 
-  trackSimulationRun: async () => {
-    const { user } = useTBTAuthStore.getState();
-    if (!user) return;
-    
-    try {
-      await TBTAuthService.trackSimulationRun(user.id);
-      get().trackAction('simulation_run');
-    } catch (error) {
-      console.error('Error tracking simulation run:', error);
-    }
+  // Get current session stats
+  getSessionStats: () => {
+    const { currentSession } = get();
+    return {
+      startTime: currentSession.startTime,
+      activeTime: currentSession.activeTime,
+      idleTime: currentSession.idleTime,
+      totalActions: currentSession.actions.length,
+      actions: currentSession.actions
+    };
   },
 
-  trackLoopIdentification: async (loopCount = 1) => {
-    const { user } = useTBTAuthStore.getState();
-    if (!user) return;
-    
-    try {
-      await TBTAuthService.trackLoopIdentification(user.id, loopCount);
-      get().trackAction('loop_identified');
-    } catch (error) {
-      console.error('Error tracking loop identification:', error);
-    }
+  // Reset session
+  resetSession: () => {
+    set({
+      currentSession: {
+        startTime: null,
+        activeTime: 0,
+        idleTime: 0,
+        actions: []
+      },
+      activityTimer: null,
+      isActive: true
+    });
   }
 }));
 

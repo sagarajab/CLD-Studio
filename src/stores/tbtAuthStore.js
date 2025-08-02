@@ -2,85 +2,69 @@ import { create } from 'zustand';
 import { TBTAuthService } from '../services/tbtAuthService';
 
 const useTBTAuthStore = create((set, get) => ({
-  // Authentication state
-  amplifyAuthVerified: false,
-  tbtAuthStatus: 'guest', // 'guest', 'tbt', 'pending'
-  accessLevel: 'guest', // 'guest', 'tbt', 'admin'
-  user: null,
-  isNewUser: false,
+  // State
+  tbtAuthStatus: 'guest',
+  accessLevel: 'guest',
+  isApproved: false,
   isLoading: false,
   error: null,
 
   // Actions
-  performTBTAuth: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const authResult = await TBTAuthService.performTBTAuth();
+  authenticateUser: async (userEmail) => {
+    if (!userEmail) {
       set({
-        amplifyAuthVerified: authResult.amplifyAuthVerified,
-        tbtAuthStatus: authResult.tbtAuthStatus,
-        accessLevel: authResult.accessLevel,
-        user: authResult.user,
-        isNewUser: authResult.isNewUser,
+        tbtAuthStatus: 'guest',
+        accessLevel: 'guest',
+        isApproved: false,
         isLoading: false
       });
-      return authResult;
+      return;
+    }
+
+    set({ isLoading: true, error: null });
+
+    try {
+      const authStatus = await TBTAuthService.getTBTAuthStatus(userEmail);
+      
+      set({
+        tbtAuthStatus: authStatus.tbtAuthStatus,
+        accessLevel: authStatus.accessLevel,
+        isApproved: authStatus.isApproved,
+        isLoading: false,
+        error: null
+      });
     } catch (error) {
-      set({ error: error.message, isLoading: false });
-      throw error;
+      console.error('TBT authentication error:', error);
+      set({
+        tbtAuthStatus: 'guest',
+        accessLevel: 'guest',
+        isApproved: false,
+        isLoading: false,
+        error: error.message
+      });
     }
   },
 
-  upgradeAccess: async (newAccessLevel, newAuthStatus = 'tbt') => {
-    const { user } = get();
-    if (!user) throw new Error('No TBT user to upgrade');
-
-    set({ isLoading: true, error: null });
-    try {
-      const updatedUser = await TBTAuthService.upgradeTBTUserAccess(
-        user.id, 
-        newAccessLevel, 
-        newAuthStatus
-      );
-      set({
-        user: updatedUser,
-        tbtAuthStatus: updatedUser.tbtAuthStatus,
-        accessLevel: updatedUser.accessLevel,
-        isLoading: false
-      });
-      return updatedUser;
-    } catch (error) {
-      set({ error: error.message, isLoading: false });
-      throw error;
-    }
-  },
-
-  clearAuth: () => {
+  clearUser: () => {
     set({
-      amplifyAuthVerified: false,
       tbtAuthStatus: 'guest',
       accessLevel: 'guest',
-      user: null,
-      isNewUser: false,
+      isApproved: false,
+      isLoading: false,
       error: null
     });
   },
 
-  // Computed getters
-  get isFullyAuthenticated() {
-    const { amplifyAuthVerified, tbtAuthStatus } = get();
-    return amplifyAuthVerified && tbtAuthStatus === 'tbt';
+  // Helper functions
+  hasTBTAccess: () => {
+    const { tbtAuthStatus } = get();
+    return tbtAuthStatus === 'tbt';
   },
 
-  get canAccessTBTFeatures() {
-    const { accessLevel } = get();
-    return ['tbt', 'admin'].includes(accessLevel);
-  },
-
-  get canAccessAdminFeatures() {
+  hasAdminAccess: () => {
     const { accessLevel } = get();
     return accessLevel === 'admin';
   }
 }));
 
-export { useTBTAuthStore }; 
+export default useTBTAuthStore; 

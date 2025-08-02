@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { useCLDStore } from '../stores/cldStore'
 import SimplifiedAdjacencyMatrix from './SimplifiedAdjacencyMatrix'
 import AdjacencyMatrix from './AdjacencyMatrix'
-import { ChevronsDownUp, ChevronsUpDown } from 'lucide-react'
+import { ChevronsDownUp, ChevronsUpDown, BookOpen } from 'lucide-react'
 
 function AnalysisTab() {
   const { 
@@ -16,7 +16,8 @@ function AnalysisTab() {
     setHoveredEdge,
     clearHoveredEdge,
     setHighlightedLoop,
-    clearHighlightedLoop
+    clearHighlightedLoop,
+    mode
   } = useCLDStore()
   const [activeModal, setActiveModal] = useState(null) // 'nodes', 'connections', 'stats', or null
   const [editingCell, setEditingCell] = useState(null) // { type: 'node'|'edge', id: number, field: 'description' }
@@ -539,9 +540,9 @@ function AnalysisTab() {
         <div className="control-groups">
           <div className="control-group">
             <button 
-              className="control-toggle"
-              onClick={() => openModal('nodes')}
-              title="Node Analysis - View detailed node information and statistics"
+              className={`control-toggle ${mode === 'assignment' ? 'disabled' : ''}`}
+              onClick={() => mode !== 'assignment' && openModal('nodes')}
+              title={mode === 'assignment' ? 'Analysis disabled in assignment mode' : "Node Analysis - View detailed node information and statistics"}
             >
               <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -551,9 +552,9 @@ function AnalysisTab() {
           
           <div className="control-group">
             <button 
-              className="control-toggle"
-              onClick={() => openModal('connections')}
-              title="Connection Analysis - View detailed connection information and polarity"
+              className={`control-toggle ${mode === 'assignment' ? 'disabled' : ''}`}
+              onClick={() => mode !== 'assignment' && openModal('connections')}
+              title={mode === 'assignment' ? 'Analysis disabled in assignment mode' : "Connection Analysis - View detailed connection information and polarity"}
             >
               <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -563,9 +564,9 @@ function AnalysisTab() {
           
           <div className="control-group">
             <button 
-              className="control-toggle"
-              onClick={() => openModal('stats')}
-              title="System Statistics - View comprehensive system metrics and analysis"
+              className={`control-toggle ${mode === 'assignment' ? 'disabled' : ''}`}
+              onClick={() => mode !== 'assignment' && openModal('stats')}
+              title={mode === 'assignment' ? 'Analysis disabled in assignment mode' : "System Statistics - View comprehensive system metrics and analysis"}
             >
               <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -575,9 +576,9 @@ function AnalysisTab() {
           
           <div className="control-group">
             <button 
-              className="control-toggle"
-              onClick={() => setShowAdjacencyMatrix(true)}
-              title="Adjacency Matrix - View detailed connection matrix with node relationships"
+              className={`control-toggle ${mode === 'assignment' ? 'disabled' : ''}`}
+              onClick={() => mode !== 'assignment' && setShowAdjacencyMatrix(true)}
+              title={mode === 'assignment' ? 'Analysis disabled in assignment mode' : "Adjacency Matrix - View detailed connection matrix with node relationships"}
             >
               <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h18v18H3z" />
@@ -587,6 +588,8 @@ function AnalysisTab() {
               </svg>
             </button>
           </div>
+
+
 
           <div className="control-group">
             <button 

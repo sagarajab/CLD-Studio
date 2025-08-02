@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { loadConfig, saveConfig } from '../config/appConfig'
 import { generateUniqueNodeId, generateUniqueEdgeId } from '../utils/idGenerator'
+import { validateCLDFormat, sanitizeCLDData } from '../utils/validation.js'
 
 const useCLDStore = create((set, get) => ({
   // State
@@ -708,9 +709,7 @@ const useCLDStore = create((set, get) => ({
     // Set loading state
     set({ isLoading: true })
     
-    console.log('loadDiagramData called with:', diagramData);
-    console.log('Input nodes count:', diagramData.nodes?.length);
-    console.log('Input edges count:', diagramData.edges?.length);
+
     
     try {
       // Handle both new enhanced format (v2.0) and legacy format (v1.0)
@@ -727,10 +726,7 @@ const useCLDStore = create((set, get) => ({
           const { id, position, ...nodeData } = node
           const newId = typeof id === 'string' ? index + 1 : id
           
-          // Log ID conversion for debugging
-          if (typeof id === 'string') {
-            console.log(`Converting node ID: "${id}" → ${newId}`)
-          }
+
           
           return {
             id: newId, // Convert string IDs to integers
@@ -759,10 +755,7 @@ const useCLDStore = create((set, get) => ({
           const newSource = sourceNodeIndex !== -1 ? sourceNodeIndex + 1 : source
           const newTarget = targetNodeIndex !== -1 ? targetNodeIndex + 1 : target
           
-          // Log ID conversion for debugging
-          if (typeof id === 'string' || typeof source === 'string' || typeof target === 'string') {
-            console.log(`Converting edge ID: "${id}" → ${newId}, source: "${source}" → ${newSource}, target: "${target}" → ${newTarget}`)
-          }
+
           
           return {
             id: newId, // Convert string IDs to integers
@@ -1022,8 +1015,25 @@ const useCLDStore = create((set, get) => ({
           try {
             const diagramData = JSON.parse(e.target.result)
             
+            // Validate the diagram data
+            const validationResult = validateCLDFormat(diagramData)
+            
+            if (!validationResult.isValid) {
+              console.error('Diagram validation failed:', validationResult.errors)
+              alert(`Error loading diagram file. Validation failed:\n${validationResult.errors.join('\n')}`)
+              set({ isLoading: false })
+              return
+            }
+            
+            // Sanitize data if there are warnings
+            let processedData = diagramData
+            if (validationResult.warnings && validationResult.warnings.length > 0) {
+              console.warn('Diagram loaded with warnings:', validationResult.warnings)
+              processedData = sanitizeCLDData(diagramData)
+            }
+            
             // Handle both new enhanced format (v2.0) and legacy format (v1.0)
-            const isEnhancedFormat = diagramData.version === '2.0' || diagramData.problemStatement
+            const isEnhancedFormat = processedData.version === '2.0' || processedData.problemStatement
             
             // Transform nodes to match expected structure
             const transformNodes = (nodes) => {
@@ -1036,10 +1046,7 @@ const useCLDStore = create((set, get) => ({
                 const { id, position, ...nodeData } = node
                 const newId = typeof id === 'string' ? index + 1 : id
                 
-                // Log ID conversion for debugging
-                if (typeof id === 'string') {
-                  console.log(`Converting node ID: "${id}" → ${newId}`)
-                }
+
                 
                 return {
                   id: newId, // Convert string IDs to integers
@@ -1060,7 +1067,7 @@ const useCLDStore = create((set, get) => ({
                 const { id, source, target, ...edgeData } = edge
                 
                 // Convert string IDs to integers by finding the corresponding node indices
-                const nodes = diagramData.nodes || []
+                const nodes = processedData.nodes || []
                 const sourceNodeIndex = nodes.findIndex(n => n.id === source)
                 const targetNodeIndex = nodes.findIndex(n => n.id === target)
                 
@@ -1068,10 +1075,7 @@ const useCLDStore = create((set, get) => ({
                 const newSource = sourceNodeIndex !== -1 ? sourceNodeIndex + 1 : source
                 const newTarget = targetNodeIndex !== -1 ? targetNodeIndex + 1 : target
                 
-                // Log ID conversion for debugging
-                if (typeof id === 'string' || typeof source === 'string' || typeof target === 'string') {
-                  console.log(`Converting edge ID: "${id}" → ${newId}, source: "${source}" → ${newSource}, target: "${target}" → ${newTarget}`)
-                }
+
                 
                 return {
                   id: newId, // Convert string IDs to integers
@@ -1086,33 +1090,33 @@ const useCLDStore = create((set, get) => ({
               // Enhanced format - load all available data
               set({
                 // Basic diagram data
-                nodes: transformNodes(diagramData.nodes || []),
-                edges: transformEdges(diagramData.edges || []),
-                diagramName: diagramData.diagramName || 'Untitled',
+                nodes: transformNodes(processedData.nodes || []),
+                edges: transformEdges(processedData.edges || []),
+                diagramName: processedData.diagramName || 'Untitled',
                 
                 // Problem statement and mode
-                mode: diagramData.problemStatement?.mode || 'sandbox',
-                currentProblem: diagramData.problemStatement?.currentProblem || null,
-                problemStatement: diagramData.problemStatement?.customStatement || '',
+                mode: processedData.problemStatement?.mode || 'sandbox',
+                currentProblem: processedData.problemStatement?.currentProblem || null,
+                problemStatement: processedData.problemStatement?.customStatement || '',
                 
                 // View and layout
-                viewTransform: diagramData.viewTransform || { x: 0, y: 0, scale: 1 },
-                showGrid: diagramData.showGrid !== undefined ? diagramData.showGrid : false,
+                viewTransform: processedData.viewTransform || { x: 0, y: 0, scale: 1 },
+                showGrid: processedData.showGrid !== undefined ? processedData.showGrid : false,
                 
                 // Global styles (merge with current config)
-                globalStyles: diagramData.globalStyles ? 
-                  { ...get().globalStyles, ...diagramData.globalStyles } : 
+                globalStyles: processedData.globalStyles ? 
+                  { ...get().globalStyles, ...processedData.globalStyles } : 
                   get().globalStyles,
                 
                 // Analysis data
-                adjacencyMatrix: diagramData.analysis?.adjacencyMatrix || [],
-                allLoops: diagramData.analysis?.allLoops || [],
+                adjacencyMatrix: processedData.analysis?.adjacencyMatrix || [],
+                allLoops: processedData.analysis?.allLoops || [],
                 
                 // Simulation state (if available)
-                simulationState: diagramData.simulation ? {
+                simulationState: processedData.simulation ? {
                   ...get().simulationState,
-                  ...diagramData.simulation,
-                  isInitialized: diagramData.simulation.isInitialized || false
+                  ...processedData.simulation,
+                  isInitialized: processedData.simulation.isInitialized || false
                 } : get().simulationState,
                 
                               // Reset selection states
@@ -1126,9 +1130,9 @@ const useCLDStore = create((set, get) => ({
               })
               
               // Update config if provided
-              if (diagramData.config) {
+              if (processedData.config) {
                 const currentConfig = get().config
-                const newConfig = { ...currentConfig, ...diagramData.config }
+                const newConfig = { ...currentConfig, ...processedData.config }
                 set({ config: newConfig })
                 saveConfig(newConfig)
               }
@@ -1138,9 +1142,9 @@ const useCLDStore = create((set, get) => ({
             } else {
               // Legacy format - load basic data only
               set({
-                nodes: transformNodes(diagramData.nodes || []),
-                edges: transformEdges(diagramData.edges || []),
-                diagramName: diagramData.diagramName || 'Untitled',
+                nodes: transformNodes(processedData.nodes || []),
+                edges: transformEdges(processedData.edges || []),
+                diagramName: processedData.diagramName || 'Untitled',
                 selectedNode: null,
                 selectedEdge: null,
                 isLoading: false,

@@ -1,0 +1,127 @@
+{
+  "version": "2.0",
+  "diagramName": "Market Growth Model",
+  "description": "Market dynamics with competition and saturation effects",
+  "category": "Business",
+  "nodes": [
+    {
+      "id": "market_size",
+      "label": "Market Size",
+      "type": "variable",
+      "position": { "x": 200, "y": 150 },
+      "color": "#3B82F6",
+      "size": 65
+    },
+    {
+      "id": "demand",
+      "label": "Customer Demand",
+      "type": "variable",
+      "position": { "x": 400, "y": 150 },
+      "color": "#10B981",
+      "size": 65
+    },
+    {
+      "id": "competition",
+      "label": "Competition Level",
+      "type": "variable",
+      "position": { "x": 300, "y": 250 },
+      "color": "#F59E0B",
+      "size": 60
+    },
+    {
+      "id": "innovation",
+      "label": "Innovation Rate",
+      "type": "variable",
+      "position": { "x": 100, "y": 250 },
+      "color": "#8B5CF6",
+      "size": 60
+    },
+    {
+      "id": "saturation",
+      "label": "Market Saturation",
+      "type": "variable",
+      "position": { "x": 500, "y": 250 },
+      "color": "#EF4444",
+      "size": 60
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge1",
+      "source": "market_size",
+      "target": "demand",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Larger market attracts more demand"
+    },
+    {
+      "id": "edge2",
+      "source": "demand",
+      "target": "market_size",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Higher demand expands market"
+    },
+    {
+      "id": "edge3",
+      "source": "market_size",
+      "target": "competition",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Growing market attracts competitors"
+    },
+    {
+      "id": "edge4",
+      "source": "competition",
+      "target": "demand",
+      "polarity": "negative",
+      "type": "causal",
+      "label": "Competition reduces demand per player"
+    },
+    {
+      "id": "edge5",
+      "source": "innovation",
+      "target": "market_size",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Innovation creates new market opportunities"
+    },
+    {
+      "id": "edge6",
+      "source": "market_size",
+      "target": "saturation",
+      "polarity": "positive",
+      "type": "causal",
+      "label": "Growing market approaches saturation"
+    },
+    {
+      "id": "edge7",
+      "source": "saturation",
+      "target": "demand",
+      "polarity": "negative",
+      "type": "causal",
+      "label": "Saturation limits demand growth"
+    }
+  ],
+  "viewTransform": { "x": 0, "y": 0, "scale": 1 },
+  "showGrid": true,
+  "globalStyles": {
+    "nodeColor": "#3B82F6",
+    "edgeColor": "#6B7280",
+    "backgroundColor": "#FFFFFF"
+  },
+  "problemStatement": {
+    "mode": "sandbox",
+    "currentProblem": null,
+    "customStatement": "Explore market growth dynamics and the role of competition and innovation"
+  },
+  "analysis": {
+    "adjacencyMatrix": [],
+    "allLoops": []
+  },
+  "simulation": {
+    "isInitialized": false,
+    "timeStep": 1,
+    "duration": 100
+  }
+} 

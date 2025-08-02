@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { TimerReset } from 'lucide-react'
+import { TimerReset, BookOpen, BarChart3, User } from 'lucide-react'
 import { useCLDStore } from '../stores/cldStore'
+import useAssignmentStore from '../stores/assignmentStore'
 import StateVectorModal from './StateVectorModal'
 import PlotsModal from './PlotsModal'
 import './Toolbar.css'
@@ -24,7 +25,6 @@ function Toolbar() {
     exportDetailedData,
     nodes,
     mode,
-    submitAssessment,
     simulationState,
     initializeSimulation,
     runSimulation,
@@ -37,6 +37,13 @@ function Toolbar() {
     setActiveDropdown,
     closeAllDropdowns
   } = useCLDStore()
+
+  const {
+    isAssignmentMode,
+    showProgressModal,
+    setShowProgressModal,
+    currentAssignment
+  } = useAssignmentStore()
 
   const handleClear = () => {
     if (window.confirm('Are you sure you want to clear the diagram?')) {
@@ -106,27 +113,18 @@ function Toolbar() {
   }
 
   const handleStartSimulation = () => {
-    if (selectedNode && perturbationValue !== 0) {
-      const success = initializeSimulation(parseInt(selectedNode), perturbationValue)
-      if (success) {
-        // Simulation initialized successfully
-      } else {
-        console.error('Failed to initialize simulation')
-      }
+    if (selectedNode) {
+      initializeSimulation(selectedNode, perturbationValue)
     }
   }
 
   const handlePlayWithAutoInit = () => {
-    // If simulation is not initialized, initialize it first
-    if (!simulationState.isInitialized && selectedNode && perturbationValue !== 0) {
-      const success = initializeSimulation(parseInt(selectedNode), perturbationValue)
-      if (!success) {
-        console.error('Failed to initialize simulation')
-        return
-      }
-    }
-    // Run the simulation (either after initialization or if already initialized)
-    if (simulationState.isInitialized && !simulationState.isRunning) {
+    if (!simulationState.isInitialized && selectedNode) {
+      initializeSimulation(selectedNode, perturbationValue)
+      setTimeout(() => {
+        runSimulation()
+      }, 100)
+    } else {
       runSimulation()
     }
   }
@@ -152,13 +150,6 @@ function Toolbar() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [closeAllDropdowns])
-
-  const handleSubmitAssessment = () => {
-    if (mode === 'assessment') {
-      submitAssessment()
-      alert('Assessment submitted! (This is a placeholder - backend integration pending)')
-    }
-  }
 
   return (
     <div className="toolbar px-4 py-3">
@@ -253,6 +244,35 @@ function Toolbar() {
             </div>
           </div>
         </div>
+
+        {/* Assignment Mode Icon Group */}
+        {isAssignmentMode && (
+          <div className="flex items-center space-x-2 border-l border-gray-300 pl-4">
+            <span className="text-sm font-medium text-gray-700">Assignment</span>
+            
+            <button
+              className="toolbar-button"
+              title="Current Assignment"
+            >
+              <BookOpen className="w-4 h-4" />
+            </button>
+            
+            <button
+              onClick={() => setShowProgressModal(true)}
+              className="toolbar-button"
+              title="Progress Report"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </button>
+            
+            <button
+              className="toolbar-button"
+              title="Account Info"
+            >
+              <User className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Simulation Controls Group */}
         <div className="flex items-center space-x-2">
@@ -421,17 +441,6 @@ function Toolbar() {
               }
             />
           </div>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          {mode === 'assessment' && (
-            <button
-              onClick={handleSubmitAssessment}
-              className="toolbar-button"
-            >
-              Submit Assessment
-            </button>
-          )}
         </div>
       </div>
 
