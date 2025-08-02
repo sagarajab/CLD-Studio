@@ -30,7 +30,7 @@ function AssignmentSidebar() {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   const [isResizing, setIsResizing] = useState(false)
   const [saveStatus, setSaveStatus] = useState('') // 'saving', 'saved', 'error'
-  const [localResponses, setLocalResponses] = useState({})
+
   const [showDebugModal, setShowDebugModal] = useState(false)
   const sidebarRef = useRef(null)
 
@@ -44,15 +44,9 @@ function AssignmentSidebar() {
     }
   }, [currentQuestion, assignmentQuestions])
 
-  // Initialize local responses when assignment loads
+  // Load CLD when assignment loads
   useEffect(() => {
-    if (currentAssignment && Object.keys(localResponses).length === 0) {
-      const initialResponses = {}
-      currentAssignment.questions.forEach(question => {
-        initialResponses[question.id] = ''
-      })
-      setLocalResponses(initialResponses)
-      
+    if (currentAssignment) {
       // Load a random CLD for the first question
       loadRandomCLD(0)
     }
@@ -160,24 +154,20 @@ function AssignmentSidebar() {
     // Create the assignment-specific ID that matches how responses are stored
     const assignmentSpecificId = `${currentAssignment.id}-${currentQuestion.id}`
     
-    // First try to get from localResponses (current session)
-    const localResponse = localResponses[assignmentSpecificId]
-    if (localResponse !== undefined && localResponse !== '') {
-      return localResponse
-    }
-    
-    // Fallback to userResponses (saved responses)
+    // Get response from userResponses (global store)
     switch (currentQuestion.questionType) {
       case 'text':
         return userResponses[assignmentSpecificId]?.response || ''
-      case 'number':
+      case 'nat':
         return userResponses[assignmentSpecificId]?.response || ''
       case 'mcq':
         return userResponses[assignmentSpecificId]?.response || ''
-      case 'diagram':
+      case 'edit-cld':
         return JSON.stringify({ nodes, edges })
-      case 'edit diagram':
-        return JSON.stringify({ nodes, edges })
+      case 'select-nodes':
+        return userResponses[assignmentSpecificId]?.response || ''
+      case 'select-connections':
+        return userResponses[assignmentSpecificId]?.response || ''
       default:
         return ''
     }
@@ -209,11 +199,11 @@ function AssignmentSidebar() {
 
   const confirmSubmit = async () => {
     // For now, just log the submission without saving
-    console.log('Submitting assignment from sidebar with responses:', localResponses)
+    console.log('Submitting assignment from sidebar with responses:', userResponses)
     setShowSubmitConfirm(false)
     
     // TODO: Implement grading/assessment here
-    console.log('TODO: Implement grading/assessment for responses:', localResponses)
+    console.log('TODO: Implement grading/assessment for responses:', userResponses)
   }
 
   const formatTime = (seconds) => {
@@ -559,10 +549,7 @@ function AssignmentSidebar() {
           <textarea
             value={response}
             onChange={(e) => {
-              setLocalResponses(prev => ({
-                ...prev,
-                [assignmentSpecificId]: e.target.value
-              }))
+              saveUserResponse(currentAssignment.id, currentQuestion.id, e.target.value)
             }}
             placeholder="Type your answer here..."
             className="text-response"
@@ -577,10 +564,7 @@ function AssignmentSidebar() {
             type="number"
             value={response}
             onChange={(e) => {
-              setLocalResponses(prev => ({
-                ...prev,
-                [assignmentSpecificId]: e.target.value
-              }))
+              saveUserResponse(currentAssignment.id, currentQuestion.id, e.target.value)
             }}
             placeholder="Enter your answer"
             className="nat-response"
@@ -599,10 +583,7 @@ function AssignmentSidebar() {
                   value={option}
                   checked={response === option}
                   onChange={(e) => {
-                    setLocalResponses(prev => ({
-                      ...prev,
-                      [assignmentSpecificId]: e.target.value
-                    }))
+                    saveUserResponse(currentAssignment.id, currentQuestion.id, e.target.value)
                   }}
                 />
                 <span>{option}</span>
