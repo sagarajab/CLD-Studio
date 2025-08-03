@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { generateClient } from 'aws-amplify/api'
 import { useCLDStore } from './cldStore'
-import { AssessmentService } from '../services/assessmentService'
 import { validateCLDQFormat } from '../utils/validation.js'
 import useTBTAuthStore from './tbtAuthStore'
 
@@ -91,6 +90,8 @@ const useAssignmentStore = create((set, get) => ({
         return
       }
 
+      // Dynamic import to avoid initialization issues
+      const { AssessmentService } = await import('../services/assessmentService')
       const allProgress = await AssessmentService.getAllAssessmentData(userEmail)
       
       if (allProgress && Object.keys(allProgress).length > 0) {
@@ -314,6 +315,8 @@ const useAssignmentStore = create((set, get) => ({
       
       // Check if new schema is available
       if (client.models.UserAssessment) {
+        // Dynamic import to avoid initialization issues
+        const { AssessmentService } = await import('../services/assessmentService')
         const progress = await AssessmentService.getAssignmentProgress(userEmail, assignmentId)
         
         if (progress) {
@@ -517,6 +520,7 @@ const useAssignmentStore = create((set, get) => ({
         console.log('Submitting assignment with:', { userEmail, cognitoUserId, assignmentId: currentAssignment.id });
         
         // Submit to database using AssessmentService
+        const { AssessmentService } = await import('../services/assessmentService')
         const evaluatedResponses = await AssessmentService.submitAssignment(
           userEmail,
           currentAssignment.id,
@@ -553,6 +557,7 @@ const useAssignmentStore = create((set, get) => ({
         console.log('Development mode: Submitting assignment with:', { userEmail, assignmentId: currentAssignment.id });
         
         // Use AssessmentService for evaluation without database
+        const { AssessmentService } = await import('../services/assessmentService')
         const evaluatedResponses = await AssessmentService.submitAssignment(
           userEmail,
           currentAssignment.id,

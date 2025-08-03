@@ -37,8 +37,26 @@ async function testUserCreation() {
     }
     console.log('✅ UserAssessment model available\n');
 
-    // Step 4: Test user creation with different inputs
-    console.log('4. Testing user creation...');
+    // Step 4: Check authentication status
+    console.log('4. Checking authentication status...');
+    const storedEmail = localStorage.getItem('currentUserEmail');
+    const storedCognitoId = localStorage.getItem('currentUserCognitoId');
+    
+    console.log('Stored email:', storedEmail || 'Not found');
+    console.log('Stored Cognito ID:', storedCognitoId || 'Not found');
+    
+    if (!storedEmail || !storedCognitoId) {
+      console.warn('⚠️ User not authenticated - UserAssessment.create requires authentication');
+      console.log('💡 To test user creation, you need to:');
+      console.log('   1. Log in to the application first');
+      console.log('   2. Ensure currentUserEmail and currentUserCognitoId are set in localStorage');
+      console.log('   3. Run this test again');
+      return;
+    }
+    console.log('✅ Authentication appears valid\n');
+
+    // Step 5: Test user creation with different inputs
+    console.log('5. Testing user creation...');
     
     const testCases = [
       {
@@ -136,9 +154,10 @@ async function testUserCreation() {
         if (error.message.includes('Validation')) {
           console.log('💡 This appears to be a validation error');
           console.log('   - Check if the input data matches the schema requirements');
-        } else if (error.message.includes('Unauthorized')) {
+        } else if (error.message.includes('Unauthorized') || error.message.includes('Forbidden')) {
           console.log('💡 This appears to be an authentication error');
           console.log('   - Check if you have permission to create users');
+          console.log('   - Ensure you are properly logged in');
         } else if (error.message.includes('duplicate')) {
           console.log('💡 This appears to be a duplicate key error');
           console.log('   - The email might already exist in the database');

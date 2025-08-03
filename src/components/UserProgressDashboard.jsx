@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { AssessmentService } from '../services/assessmentService';
 import './UserProgressDashboard.css';
 
 const UserProgressDashboard = ({ userEmail }) => {
@@ -14,6 +13,8 @@ const UserProgressDashboard = ({ userEmail }) => {
   const loadAssessmentData = async () => {
     try {
       setLoading(true);
+      // Dynamic import to avoid initialization issues
+      const { AssessmentService } = await import('../services/assessmentService');
       const data = await AssessmentService.getAllAssessmentData(userEmail);
       setAssessmentData(data);
     } catch (err) {

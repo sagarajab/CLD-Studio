@@ -86,6 +86,25 @@ export class DatabaseDiagnostics {
      try {
        if (client.models?.UserAssessment) {
          console.log('Testing user creation capability...');
+         
+         // First check if user is authenticated
+         const storedEmail = localStorage.getItem('currentUserEmail');
+         const storedCognitoId = localStorage.getItem('currentUserCognitoId');
+         
+         if (!storedEmail || !storedCognitoId) {
+           results.tests.userCreation = {
+             success: false,
+             message: 'User creation test skipped - user not authenticated (authentication required for UserAssessment.create)',
+             details: {
+               hasEmail: !!storedEmail,
+               hasCognitoId: !!storedCognitoId,
+               reason: 'UserAssessment model requires authentication to create records'
+             }
+           };
+           console.log('⚠️ User creation test skipped - authentication required');
+           return results;
+         }
+         
          const testUserInput = {
            email: 'test-diagnostic@example.com',
            cognitoUserId: 'test-diagnostic-id',
@@ -117,7 +136,11 @@ export class DatabaseDiagnostics {
          } else {
            results.tests.userCreation = {
              success: false,
-             message: 'User creation returned null/undefined response'
+             message: 'User creation returned null/undefined response',
+             details: {
+               createResponse: createResponse,
+               reason: 'Create operation returned null or invalid response'
+             }
            };
            console.error('❌ User creation test failed - null response');
          }
@@ -129,12 +152,25 @@ export class DatabaseDiagnostics {
          console.error('❌ Cannot test user creation');
        }
      } catch (error) {
-       results.tests.userCreation = {
-         success: false,
-         message: error.message,
-         error: error
-       };
-       console.error('❌ User creation test failed:', error);
+       // Check if it's an authentication error
+       if (error.message.includes('Unauthorized') || error.message.includes('Forbidden') || error.message.includes('authentication')) {
+         results.tests.userCreation = {
+           success: false,
+           message: 'User creation failed - authentication required',
+           details: {
+             error: error.message,
+             reason: 'UserAssessment model requires proper authentication to create records'
+           }
+         };
+         console.error('❌ User creation test failed - authentication required');
+       } else {
+         results.tests.userCreation = {
+           success: false,
+           message: error.message,
+           error: error
+         };
+         console.error('❌ User creation test failed:', error);
+       }
      }
 
     // Test 4: Check authentication status
@@ -233,7 +269,11 @@ export class DatabaseDiagnostics {
      }
 
      if (!results.tests.userCreation?.success) {
-       recommendations.push('User creation failed - check database permissions and schema validation');
+       if (results.tests.userCreation?.message?.includes('authentication')) {
+         recommendations.push('User creation requires authentication - ensure user is properly logged in before testing');
+       } else {
+         recommendations.push('User creation failed - check database permissions and schema validation');
+       }
      }
 
     if (!results.tests.authentication?.success) {
