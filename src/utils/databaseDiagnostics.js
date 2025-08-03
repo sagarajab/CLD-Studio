@@ -110,8 +110,6 @@ export class DatabaseDiagnostics {
            cognitoUserId: 'test-diagnostic-id',
            tbtAuthStatus: 'guest',
            accessLevel: 'guest',
-           createdAt: new Date().toISOString(),
-           lastLoginAt: new Date().toISOString(),
            assessmentData: JSON.stringify({})
          };
          

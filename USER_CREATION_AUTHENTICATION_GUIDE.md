@@ -2,48 +2,61 @@
 
 ## Issue Summary
 
-The database diagnostics are showing a user creation test failure with the message:
+The database diagnostics were showing a user creation test failure with the message:
 ```
 ❌ User creation test failed - null response
 ```
 
 ## Root Cause
 
-The `UserAssessment` model in the database schema requires **authentication** to create records. This is defined in the authorization rules:
+The issue was caused by a **schema field mismatch**. The `UserAssessment` model in the database schema requires **authentication** to create records, and the input data structure must exactly match the expected schema.
 
-```typescript
-.authorization((allow) => [
-  // Allow authenticated users to create records
-  allow.authenticated().to(['create']),
-  
-  // Allow users to read and update their own records
-  allow.owner().to(['read', 'update']),
-]),
+### Schema Requirements
+
+The `UserAssessment` model expects these fields:
+- `email` (String, required)
+- `cognitoUserId` (String, required)  
+- `tbtAuthStatus` (enum: 'guest', 'tbt', 'pending', optional)
+- `accessLevel` (enum: 'guest', 'tbt', 'admin', optional)
+- `createdAt` (AWSDateTime, optional)
+- `lastLoginAt` (AWSDateTime, optional)
+- `assessmentData` (String, optional)
+
+### The Problem
+
+The code was sending `createdAt` and `lastLoginAt` as ISO strings (`new Date().toISOString()`), but the AWS Amplify schema expects them as `AWSDateTime` type. This caused the error:
+
 ```
-
-## Why the Test is Failing
-
-The database diagnostics test runs without checking if the user is properly authenticated. When an unauthenticated user tries to create a `UserAssessment` record, the operation returns `null` instead of throwing an error, which causes the test to fail.
+Create operation failed: The variables input contains a field that is not defined for input object type 'CreateUserAssessmentInput'
+```
 
 ## Solution
 
-### 1. Updated Database Diagnostics
+### 1. Fixed Schema Field Mismatch
+
+The code has been updated to:
+- Remove `createdAt` and `lastLoginAt` from the user creation input (since they're optional)
+- Let AWS Amplify automatically handle timestamp fields
+- Ensure all input fields match the expected schema exactly
+
+### 2. Updated Database Diagnostics
 
 The database diagnostics have been updated to:
 - Check authentication status before attempting user creation
 - Provide clear error messages when authentication is required
 - Skip the test gracefully when user is not authenticated
+- Use correct field structure for user creation
 
-### 2. Authentication Requirements
+### 3. Authentication Requirements
 
 To successfully create `UserAssessment` records, the user must have:
 - Valid AWS Cognito authentication
 - `currentUserEmail` stored in localStorage
 - `currentUserCognitoId` stored in localStorage
 
-### 3. Testing User Creation
+## Testing User Creation
 
-#### Option A: Use the Authentication Status Test
+### Option A: Use the Authentication Status Test
 ```bash
 node scripts/test-authentication-status.js
 ```
@@ -54,7 +67,7 @@ This script will:
 - Attempt user creation with proper error handling
 - Provide detailed guidance if authentication is missing
 
-#### Option B: Manual Authentication Check
+### Option B: Manual Authentication Check
 1. Open the application in your browser
 2. Log in with your credentials
 3. Check that localStorage contains:
@@ -62,7 +75,7 @@ This script will:
    - `currentUserCognitoId`
 4. Run the user creation test again
 
-#### Option C: Use the Updated User Creation Test
+### Option C: Use the Updated User Creation Test
 ```bash
 node scripts/test-user-creation.js
 ```
@@ -126,6 +139,7 @@ This script now checks authentication status before attempting user creation.
 - **"Validation" errors**: Input data doesn't match schema requirements
 - **"Duplicate" errors**: Email already exists in database
 - **"Network" errors**: Connectivity or AWS service issues
+- **"CreateUserAssessmentInput" errors**: Schema field mismatch (now fixed)
 
 ## Development Mode Fallback
 
@@ -149,6 +163,7 @@ This prevents unauthorized access and data manipulation.
 ## Related Files
 
 - `src/utils/databaseDiagnostics.js` - Updated diagnostics with authentication checks
+- `src/services/assessmentService.js` - Fixed user creation with correct schema fields
 - `scripts/test-authentication-status.js` - Comprehensive authentication testing
 - `scripts/test-user-creation.js` - Updated user creation testing
 - `amplify/data/resource.ts` - Database schema with authorization rules 

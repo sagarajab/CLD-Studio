@@ -270,8 +270,6 @@ export class AssessmentService {
           cognitoUserId: finalCognitoUserId,
           tbtAuthStatus: finalTbtAuthStatus,
           accessLevel: finalAccessLevel,
-          createdAt: now,
-          lastLoginAt: now,
           assessmentData: JSON.stringify({})
         };
         

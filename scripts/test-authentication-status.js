@@ -82,15 +82,13 @@ async function testAuthenticationStatus() {
 
     // Step 6: Test user creation capability
     console.log('\n6. Testing user creation capability...');
-    const testUserInput = {
-      email: 'test-auth-check@example.com',
-      cognitoUserId: 'test-auth-check-id',
-      tbtAuthStatus: 'guest',
-      accessLevel: 'guest',
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString(),
-      assessmentData: JSON.stringify({})
-    };
+         const testUserInput = {
+       email: 'test-auth-check@example.com',
+       cognitoUserId: 'test-auth-check-id',
+       tbtAuthStatus: 'guest',
+       accessLevel: 'guest',
+       assessmentData: JSON.stringify({})
+     };
     
     try {
       const createResponse = await client.models.UserAssessment.create({

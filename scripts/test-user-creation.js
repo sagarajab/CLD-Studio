@@ -66,8 +66,6 @@ async function testUserCreation() {
           cognitoUserId: 'test-user-1-id',
           tbtAuthStatus: 'guest',
           accessLevel: 'guest',
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
           assessmentData: JSON.stringify({})
         }
       },
@@ -78,8 +76,6 @@ async function testUserCreation() {
           cognitoUserId: 'test-tbt-user-id',
           tbtAuthStatus: 'tbt',
           accessLevel: 'tbt',
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
           assessmentData: JSON.stringify({})
         }
       },
@@ -90,8 +86,6 @@ async function testUserCreation() {
           cognitoUserId: 'test-admin-id',
           tbtAuthStatus: 'tbt',
           accessLevel: 'admin',
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
           assessmentData: JSON.stringify({})
         }
       }
