@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle, AlertCircle } from 'lucide-react';
 import './TBTAuthLoadingScreen.css';
+import appIcon from '../assets/app_n_tbt_icon.png';
 
 const TBTAuthLoadingScreen = ({ userEmail, tbtAuthStatus, isLoading, onContinue }) => {
   // Show loading screen if we have a user email
@@ -40,7 +41,7 @@ const TBTAuthLoadingScreen = ({ userEmail, tbtAuthStatus, isLoading, onContinue 
         {/* Logo/Header */}
         <div className="auth-header">
           <div className="auth-logo">
-            <img src="/src/assets/app_n_tbt_icon.png" alt="CLD Studio" className="logo-icon" />
+            <img src={appIcon} alt="CLD Studio" className="logo-icon" />
           </div>
         </div>
 

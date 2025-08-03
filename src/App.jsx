@@ -47,7 +47,8 @@ function App({ user, signOut }) {
     isApproved,
     isLoading: tbtAuthLoading,
     error: tbtAuthError,
-    clearUser
+    clearUser,
+    hasTBTAccess
   } = useTBTAuthStore()
   
   // User progress tracking
