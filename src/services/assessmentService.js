@@ -76,8 +76,6 @@ export class AssessmentService {
         cognitoUserId: cognitoUserId || 'unknown', // Use 'unknown' as fallback
         tbtAuthStatus: finalTbtAuthStatus,
         accessLevel: finalAccessLevel,
-        createdAt: now,
-        lastLoginAt: now,
         assessmentData: JSON.stringify({})
       };
       
@@ -139,24 +137,20 @@ export class AssessmentService {
                 cognitoUserId: 'test-user-id',
                 tbtAuthStatus: 'guest',
                 accessLevel: 'guest',
-                createdAt: new Date().toISOString(),
-                lastLoginAt: new Date().toISOString(),
                 assessmentData: JSON.stringify({})
               }
             });
             
             if (!testResponse || !testResponse.data) {
               console.log('Development mode: Database create test failed, using fallback');
-              return {
-                id: 'dev-fallback-id',
-                email: email,
-                cognitoUserId: cognitoUserId || 'dev-user-id',
-                tbtAuthStatus: 'guest',
-                accessLevel: 'guest',
-                createdAt: new Date().toISOString(),
-                lastLoginAt: new Date().toISOString(),
-                assessmentData: JSON.stringify({})
-              };
+                          return {
+              id: 'dev-fallback-id',
+              email: email,
+              cognitoUserId: cognitoUserId || 'dev-user-id',
+              tbtAuthStatus: 'guest',
+              accessLevel: 'guest',
+              assessmentData: JSON.stringify({})
+            };
             }
             
             // Clean up test user
@@ -175,8 +169,6 @@ export class AssessmentService {
               cognitoUserId: cognitoUserId || 'dev-user-id',
               tbtAuthStatus: 'guest',
               accessLevel: 'guest',
-              createdAt: new Date().toISOString(),
-              lastLoginAt: new Date().toISOString(),
               assessmentData: JSON.stringify({})
             };
           }

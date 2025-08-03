@@ -47,8 +47,6 @@ async function testAuthorization() {
           cognitoUserId: 'test-unauth-id',
           tbtAuthStatus: 'guest',
           accessLevel: 'guest',
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
           assessmentData: JSON.stringify({})
         }
       });
@@ -93,8 +91,6 @@ async function testAuthorization() {
           cognitoUserId: 'test-guest-id',
           tbtAuthStatus: 'guest',
           accessLevel: 'guest',
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
           assessmentData: JSON.stringify({})
         },
         shouldWork: false // Should fail due to auth, not validation
@@ -106,8 +102,6 @@ async function testAuthorization() {
           cognitoUserId: 'test-tbt-id',
           tbtAuthStatus: 'tbt',
           accessLevel: 'tbt',
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
           assessmentData: JSON.stringify({})
         },
         shouldWork: false // Should fail due to auth, not validation
@@ -119,8 +113,6 @@ async function testAuthorization() {
           cognitoUserId: 'test-invalid-id',
           tbtAuthStatus: 'invalid-status',
           accessLevel: 'guest',
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
           assessmentData: JSON.stringify({})
         },
         shouldWork: false // Should fail due to validation
@@ -171,8 +163,6 @@ async function testAuthorization() {
           cognitoUserId: 'test-no-email-id',
           tbtAuthStatus: 'guest',
           accessLevel: 'guest',
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
           assessmentData: JSON.stringify({})
         }
       },
@@ -182,8 +172,6 @@ async function testAuthorization() {
           email: 'test-no-cognito@example.com',
           tbtAuthStatus: 'guest',
           accessLevel: 'guest',
-          createdAt: new Date().toISOString(),
-          lastLoginAt: new Date().toISOString(),
           assessmentData: JSON.stringify({})
         }
       }
