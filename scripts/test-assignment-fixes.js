@@ -74,10 +74,10 @@ try {
   console.log('❌ Failed to load sample diagram:', error.message)
 }
 
-// Test 3: Check AssignmentInterface.jsx for fixes
-console.log('\n📝 Test 3: AssignmentInterface.jsx Fixes')
-try {
-  const interfacePath = path.join(__dirname, '../src/components/AssignmentInterface.jsx')
+  // Test 3: Check AssignmentPanel.jsx for fixes
+  console.log('\n📝 Test 3: AssignmentPanel.jsx Fixes')
+  try {
+    const interfacePath = path.join(__dirname, '../src/components/AssignmentPanel.jsx')
   const interfaceContent = fs.readFileSync(interfacePath, 'utf8')
   
   // Check for saveDiagram import
@@ -116,7 +116,7 @@ try {
   }
   
 } catch (error) {
-  console.log('❌ Failed to check AssignmentInterface.jsx:', error.message)
+      console.log('❌ Failed to check AssignmentPanel.jsx:', error.message)
 }
 
 // Test 4: Check assessment service for question type handling

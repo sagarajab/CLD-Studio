@@ -3,9 +3,9 @@ import { ChevronLeft, ChevronRight, Clock, Save, CheckCircle, AlertCircle, X, Bo
 import { useCLDStore } from '../stores/cldStore'
 import useAssignmentStore from '../stores/assignmentStore'
 import DebugResponsesModal from './DebugResponsesModal'
-import './AssignmentSidebar.css'
+import './AssignmentPanel.css'
 
-function AssignmentSidebar() {
+function AssignmentPanel() {
   const { nodes, edges } = useCLDStore()
   const { 
     assignments,
@@ -23,7 +23,13 @@ function AssignmentSidebar() {
     switchAssignment,
     setSidebarWidth,
     loadOriginalDiagram,
-    saveUserResponse
+    saveUserResponse,
+    submitAssignment,
+    assignmentProgress,
+    isLoading,
+    getAssignmentState,
+    updateAssignmentState,
+    getAssignmentProgress
   } = useAssignmentStore()
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
@@ -31,8 +37,15 @@ function AssignmentSidebar() {
   const [isResizing, setIsResizing] = useState(false)
   const [saveStatus, setSaveStatus] = useState('') // 'saving', 'saved', 'error'
 
+  const [isGrading, setIsGrading] = useState(false)
+
   const [showDebugModal, setShowDebugModal] = useState(false)
   const sidebarRef = useRef(null)
+
+  // Helper function to get assignment display name
+  const getAssignmentDisplayName = (assignment, index) => {
+    return `Assignment ${index + 1}`
+  }
 
   // Update current question index when current question changes
   useEffect(() => {
@@ -44,11 +57,10 @@ function AssignmentSidebar() {
     }
   }, [currentQuestion, assignmentQuestions])
 
-  // Load CLD when assignment loads
+  // CLD loading is now handled in the assignment store when questions are selected
   useEffect(() => {
     if (currentAssignment) {
-      // Load a random CLD for the first question
-      loadRandomCLD(0)
+      // CLD will be loaded when the first question is selected
     }
   }, [currentAssignment])
 
@@ -71,61 +83,14 @@ function AssignmentSidebar() {
       const question = await goToQuestion(index)
       if (question) {
         setCurrentQuestionIndex(index)
-        // Load a random CLD for this question
-        await loadRandomCLD(index)
+        // CLD loading is now handled in the assignment store
       }
     } catch (error) {
       console.error('Error selecting question:', error)
     }
   }
 
-  // Load the specified CLD for every question
-  const loadRandomCLD = async (questionIndex) => {
-    try {
-      const question = currentAssignment?.questions?.[questionIndex]
-      if (!question) return
-      
-      // Use the specified CLD context from the question, or fall back to random
-      let cldToLoad = question.cldContext
-      
-      if (!cldToLoad) {
-        // Fallback to random selection if no cldContext specified
-        const response = await fetch('/examples/index.json')
-        if (response.ok) {
-          const examplesData = await response.json()
-          const examples = examplesData.examples
-          const randomIndex = Math.floor(Math.random() * examples.length)
-          cldToLoad = examples[randomIndex].id
-        }
-      }
-      
-      if (cldToLoad) {
-        // Load the specified CLD from assignments directory
-        const diagramResponse = await fetch(`/assignments/${cldToLoad}.cld`)
-        if (diagramResponse.ok) {
-          const responseText = await diagramResponse.text()
-          try {
-            const diagramData = JSON.parse(responseText)
-            if (diagramData && typeof diagramData === 'object') {
-              const cldStore = useCLDStore.getState()
-              cldStore.loadDiagramData(diagramData)
-            } else {
-              console.error('Invalid diagram data:', cldToLoad)
-            }
-          } catch (parseError) {
-            console.error('Error parsing JSON:', parseError)
-            console.error('Response text:', responseText)
-          }
-        } else {
-          console.error('Failed to load diagram:', cldToLoad)
-        }
-      } else {
-        console.error('No CLD context specified and failed to load examples index')
-      }
-    } catch (error) {
-      console.error('Error loading CLD:', error)
-    }
-  }
+
 
   const handleSaveResponse = async () => {
     if (currentQuestion && currentAssignment) {
@@ -189,6 +154,23 @@ function AssignmentSidebar() {
     setShowSubmitConfirm(true)
   }
 
+  const handleGrade = async () => {
+    try {
+      setIsGrading(true)
+      console.log('Grading assignment with responses:', userResponses)
+      
+      // Submit assignment and get grading results
+      const gradingResults = await submitAssignment()
+      
+      console.log('Grading results:', gradingResults)
+    } catch (error) {
+      console.error('Error during grading:', error)
+      // You might want to show an error message to the user here
+    } finally {
+      setIsGrading(false)
+    }
+  }
+
   const handleAssignmentSelect = async (assignment) => {
     try {
       await switchAssignment(assignment)
@@ -198,12 +180,21 @@ function AssignmentSidebar() {
   }
 
   const confirmSubmit = async () => {
-    // For now, just log the submission without saving
-    console.log('Submitting assignment from sidebar with responses:', userResponses)
-    setShowSubmitConfirm(false)
-    
-    // TODO: Implement grading/assessment here
-    console.log('TODO: Implement grading/assessment for responses:', userResponses)
+    try {
+      setIsGrading(true)
+      console.log('Submitting assignment from sidebar with responses:', userResponses)
+      
+      // Submit assignment and get grading results
+      const gradingResults = await submitAssignment()
+      
+      console.log('Grading results:', gradingResults)
+      setShowSubmitConfirm(false)
+    } catch (error) {
+      console.error('Error during grading:', error)
+      // You might want to show an error message to the user here
+    } finally {
+      setIsGrading(false)
+    }
   }
 
   const formatTime = (seconds) => {
@@ -230,9 +221,44 @@ function AssignmentSidebar() {
 
   const getQuestionStatus = (questionId) => {
     if (!currentAssignment) return 'unanswered'
+    
+    // Check if grading has been completed and assignment has been submitted
+    if (assignmentProgress && assignmentProgress.assignmentStatus === 'submitted') {
+      // Try to get question result from individual question properties
+      let questionResult = assignmentProgress[questionId]
+      
+      // If not found, try to get from questionResults array
+      if (!questionResult && assignmentProgress.questionResults) {
+        const questionIndex = assignmentQuestions.findIndex(q => q.id === questionId)
+        if (questionIndex !== -1) {
+          questionResult = assignmentProgress.questionResults[questionIndex]
+        }
+      }
+      
+      if (questionResult) {
+        // If question was answered but incorrect, show as incorrect
+        if (questionResult.status === 'submitted' && !questionResult.isCorrect) {
+          return 'incorrect'
+        }
+        // If question was answered and correct, show as answered
+        if (questionResult.status === 'submitted' && questionResult.isCorrect) {
+          return 'answered'
+        }
+        // If question was not attempted
+        if (questionResult.status === 'not-attempted') {
+          return 'unanswered'
+        }
+      }
+    }
+    
+    // Check if question has a response (saved locally)
     const assignmentSpecificId = `${currentAssignment.id}-${questionId}`
     const response = userResponses[assignmentSpecificId]?.response
-    return response && response.trim() !== '' ? 'answered' : 'unanswered'
+    if (response && response.trim() !== '') {
+      return 'saved'
+    }
+    
+    return 'unanswered'
   }
 
   // Resize handlers
@@ -292,144 +318,113 @@ function AssignmentSidebar() {
       {/* Assignment List - Left Side */}
       <div className="assignment-list-panel">
         <div className="assignment-list-header">
-          <h3>Assignments</h3>
+          <div className="assignment-list-header-content">
+            <h3>Assignments</h3>
+            <button 
+              className="control-btn close-btn assignment-list-close-btn"
+              onClick={exitAssignment}
+              title="Exit Assignment"
+            >
+              <X size={14} />
+            </button>
+          </div>
         </div>
         <div className="assignment-list-content">
-          {assignments.map((assignment) => (
-            <button
-              key={assignment.id}
-              className={`assignment-list-item ${currentAssignment?.id === assignment.id ? 'active' : ''}`}
-              onClick={() => handleAssignmentSelect(assignment)}
-              title={assignment.description}
-            >
-              <div className="assignment-list-item-content">
-                <div className="assignment-list-item-title">{assignment.title}</div>
-                <div className="assignment-list-item-meta">
-                  <span>{assignment.questions?.length || 0} Q</span>
-                  <span>{assignment.maxScore || 0} pts</span>
+          {assignments.map((assignment, index) => {
+            const assignmentState = getAssignmentState(assignment.id)
+            const assignmentProgress = getAssignmentProgress(assignment.id)
+            return (
+              <button
+                key={assignment.id}
+                className={`assignment-list-item ${currentAssignment?.id === assignment.id ? 'active' : ''} ${!assignmentState.enabled ? 'disabled' : ''} ${assignmentState.submitted ? 'submitted' : ''}`}
+                onClick={() => handleAssignmentSelect(assignment)}
+                disabled={!assignmentState.enabled}
+                title={`${assignment.title} - ${assignment.description}`}
+              >
+                <div className="assignment-list-item-content">
+                  <div className="assignment-list-item-title">
+                    {getAssignmentDisplayName(assignment, index)}
+                  </div>
+                  <div className="assignment-list-item-meta">
+                    <span className="assignment-state">
+                      {assignmentState.submitted ? 'Submitted' : 'Not Submitted'}
+                    </span>
+                    {assignmentState.graded && (
+                      <span className="assignment-graded">✓ Graded</span>
+                    )}
+                    {assignmentState.graded && assignmentProgress && (
+                      <span className="assignment-score">
+                        {assignmentProgress.totalScore || 0}/{assignmentProgress.maxTotalScore || 0}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Main Content - Right Side */}
       <div className="assignment-content-panel">
-      {/* Header */}
-      <div className="assignment-sidebar-header">
-        <div className="assignment-title">
-          <BookOpen size={16} />
-          <span>{currentAssignment.title}</span>
-        </div>
-                 <div className="header-controls">
-           <button 
-             className="submit-btn-header"
-             onClick={handleSubmit}
-             disabled={getCurrentAssignmentResponseCount() === 0}
-             title="Submit assignment"
-           >
-             <CheckCircle size={16} />
-             Submit Assignment
-           </button>
-           <button 
-             className="close-assignment-btn"
-             onClick={exitAssignment}
-             title="Exit Assignment"
-           >
-             <X size={16} />
-           </button>
-         </div>
-      </div>
-
-
-
-                           {/* Assignment Info */}
-        <div className="assignment-info-section">
-          <div className="info-item">
-            <span className="info-label">Deadline</span>
-            <span className="info-value">
-              {currentAssignment.deadline ? 
-                new Date(currentAssignment.deadline).toLocaleDateString() : 
-                'No deadline'
-              }
-            </span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Questions</span>
-            <span className="info-value">{assignmentQuestions.length}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Progress</span>
-            <span className="info-value">
-              {getCurrentAssignmentResponseCount()}/{assignmentQuestions.length}
-            </span>
-          </div>
-          {timeRemaining && (
-            <div className="info-item">
-              <span className="info-label">Time Left</span>
-              <div className="timer-display">
-                <Clock size={14} />
-                <span className="timer-text">{formatTime(timeRemaining)}</span>
+        {/* Header - Centered Layout with Question Info */}
+        <div className="assignment-sidebar-header">
+          <div className="header-content">
+            <h3>Assignment {currentAssignment ? assignments.findIndex(a => a.id === currentAssignment.id) + 1 : ''}</h3>
+            {currentQuestion && (
+              <div className="question-info">
+                <span className="question-number">Question {currentQuestionIndex + 1} of {assignmentQuestions.length}</span>
+                <span className="question-score">{currentQuestion.maxScore} points</span>
               </div>
-              {timeRemaining < 300 && ( // Warning when less than 5 minutes
-                <div className="timer-warning">
-                  <AlertCircle size={12} />
-                  <span>Time running out!</span>
-                </div>
-              )}
+            )}
+          </div>
+          {currentQuestion && (
+            <div className="question-type-badge">
+              {currentQuestion.questionType.toUpperCase()}
             </div>
           )}
         </div>
 
-      {/* Question Navigation */}
-      <div className="question-navigation-section">
-        <div className="nav-controls">
-          <button 
-            className="nav-btn"
-            onClick={handlePrevious}
-            disabled={currentQuestionIndex === 0}
-            title="Previous Question"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          
-          <div className="question-indicators">
-            {assignmentQuestions.map((question, index) => (
-              <button
-                key={question.id}
-                className={`question-indicator ${getQuestionStatus(question.id)} ${index === currentQuestionIndex ? 'current' : ''}`}
-                onClick={() => handleQuestionSelect(index)}
-                title={`Question ${index + 1}: ${question.questionType}`}
-              >
-                {index + 1}
-              </button>
-            ))}
-          </div>
+        {/* Question Navigation - Moved below header */}
+        <div className="question-navigation-section">
+          <div className="nav-controls">
+            <button 
+              className="nav-btn"
+              onClick={handlePrevious}
+              disabled={currentQuestionIndex === 0}
+              title="Previous Question"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            
+            <div className="question-indicators">
+              {assignmentQuestions.map((question, index) => (
+                <button
+                  key={question.id}
+                  className={`question-indicator ${getQuestionStatus(question.id)} ${index === currentQuestionIndex ? 'current' : ''}`}
+                  onClick={() => handleQuestionSelect(index)}
+                  title={`Question ${index + 1}: ${question.questionType}`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
 
-          <button 
-            className="nav-btn"
-            onClick={handleNext}
-            disabled={currentQuestionIndex === assignmentQuestions.length - 1}
-            title="Next Question"
-          >
-            <ChevronRight size={16} />
-          </button>
+            <button 
+              className="nav-btn"
+              onClick={handleNext}
+              disabled={currentQuestionIndex === assignmentQuestions.length - 1}
+              title="Next Question"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* Current Question Info */}
       {currentQuestion && (
         <div className="current-question-section">
-          <div className="question-header">
-            <h3>Question {currentQuestionIndex + 1} of {assignmentQuestions.length}</h3>
-            <div className="question-meta">
-              <span className="question-type">{currentQuestion.questionType.toUpperCase()}</span>
-              <span className="question-score">{currentQuestion.maxScore} points</span>
-            </div>
-          </div>
-          
-                     <div className="question-content">
+          <div className="question-content">
              <div className="problem-area">
                <h4>Problem</h4>
                <p>{currentQuestion.question}</p>
@@ -439,57 +434,105 @@ function AssignmentSidebar() {
                <h4>Response</h4>
                {renderQuestionResponse()}
              </div>
+             
+             {/* Assessment and Correct Answer Blocks - Only show after submission */}
+             {assignmentProgress && assignmentProgress.assignmentStatus === 'submitted' && (
+               <>
+                 {/* Assessment Block */}
+                 <div className="assessment-area">
+                   <h4>Assessment</h4>
+                   {(() => {
+                     const questionResult = assignmentProgress[currentQuestion.id] || 
+                       (assignmentProgress.questionResults && assignmentProgress.questionResults[currentQuestionIndex])
+                     
+                     if (questionResult) {
+                       return (
+                         <div className="assessment-content">
+                           <div className="assessment-score">
+                             <span className="score-label">Score:</span>
+                             <span className="score-value">
+                               {questionResult.score || 0} / {questionResult.maxScore || currentQuestion.maxScore}
+                             </span>
+                           </div>
+                           <div className="assessment-status">
+                             <span className={`status ${questionResult.isCorrect ? 'correct' : 'incorrect'}`}>
+                               {questionResult.isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                             </span>
+                           </div>
+                           {questionResult.feedback && (
+                             <div className="assessment-feedback">
+                               <span className="feedback-label">Feedback:</span>
+                               <p>{questionResult.feedback}</p>
+                             </div>
+                           )}
+                         </div>
+                       )
+                     }
+                     return <p>No assessment available</p>
+                   })()}
+                 </div>
+                 
+                 {/* Correct Answer Block */}
+                 <div className="correct-answer-area">
+                   <h4>Correct Answer</h4>
+                   <div className="correct-answer-content">
+                     {currentQuestion.correctAnswer ? (
+                       <p>{currentQuestion.correctAnswer}</p>
+                     ) : (
+                       <p>No correct answer provided</p>
+                     )}
+                   </div>
+                 </div>
+               </>
+             )}
            </div>
         </div>
       )}
 
-             {/* Action Buttons */}
-       <div className="action-buttons-section">
-                   <button 
-            className={`action-btn save-response-btn ${saveStatus}`}
+      {/* Bottom Controls - Control Groups Only */}
+      <div className="assignment-bottom-controls">
+        {/* Compact Control Group */}
+        <div className="compact-control-group">
+          <button 
+            className="control-btn save-btn"
             onClick={handleSaveResponse}
             disabled={saveStatus === 'saving'}
             title={saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save current question response'}
           >
-            <Save size={16} />
-            {saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved!' : 'Save'}
+            <Save size={14} />
+            {saveStatus === 'saving' ? 'Saving' : saveStatus === 'saved' ? 'Saved' : 'Save'}
           </button>
           
-          {/* Debug Button */}
           <button 
-            className="action-btn debug-btn"
-            onClick={() => {
-              console.log('Debug button clicked!')
-              console.log('userResponses object:', userResponses)
-              console.log('userResponses keys:', Object.keys(userResponses))
-              console.log('userResponses values:', Object.values(userResponses))
-              console.log('Current assignment:', currentAssignment?.id)
-              console.log('Current question:', currentQuestion?.id)
-              setShowDebugModal(true)
-            }}
-            title="Debug: Show all responses"
-            style={{
-              backgroundColor: '#dc2626',
-              color: 'white',
-              border: 'none',
-              padding: '8px 12px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              marginLeft: '8px'
-            }}
+            className="control-btn submit-btn"
+            onClick={handleSubmit}
+            disabled={getCurrentAssignmentResponseCount() === 0 || (assignmentProgress && assignmentProgress.assignmentStatus === 'submitted')}
+            title="Submit assignment"
           >
-            🔍 DEBUG
+            <CheckCircle size={14} />
+            Submit
           </button>
-
-         
-         <div className="progress-indicator">
-           <span className="progress-text">
-             {getCurrentAssignmentResponseCount()} of {assignmentQuestions.length} questions answered
-           </span>
-         </div>
-       </div>
+          
+          <button 
+            className="control-btn grade-btn"
+            onClick={handleGrade}
+            disabled={getCurrentAssignmentResponseCount() === 0 || isGrading || (assignmentProgress && assignmentProgress.assignmentStatus === 'submitted')}
+            title="Grade assignment (Development)"
+          >
+            <CheckSquare size={14} />
+            {isGrading ? 'Grading' : 'Grade'}
+          </button>
+          
+          <button 
+            className="control-btn review-btn"
+            onClick={() => setShowDebugModal(true)}
+            title="Review: Show all responses"
+          >
+            <BookOpen size={14} />
+            Review
+          </button>
+        </div>
+      </div>
 
       {/* Resize Handle */}
       <div 
@@ -555,6 +598,7 @@ function AssignmentSidebar() {
             className="text-response"
             rows={4}
             maxLength={currentQuestion.maxLength || 1000}
+            disabled={assignmentProgress && assignmentProgress.assignmentStatus === 'submitted'}
           />
         )
       
@@ -569,6 +613,7 @@ function AssignmentSidebar() {
             placeholder="Enter your answer"
             className="nat-response"
             step="any"
+            disabled={assignmentProgress && assignmentProgress.assignmentStatus === 'submitted'}
           />
         )
       
@@ -585,6 +630,7 @@ function AssignmentSidebar() {
                   onChange={(e) => {
                     saveUserResponse(currentAssignment.id, currentQuestion.id, e.target.value)
                   }}
+                  disabled={assignmentProgress && assignmentProgress.assignmentStatus === 'submitted'}
                 />
                 <span>{option}</span>
               </label>
@@ -604,6 +650,7 @@ function AssignmentSidebar() {
                 className="action-btn reset-diagram-btn"
                 onClick={handleResetDiagram}
                 title="Reset diagram to original state"
+                disabled={assignmentProgress && assignmentProgress.assignmentStatus === 'submitted'}
               >
                 <FileText size={14} />
                 Reset Diagram
@@ -667,4 +714,4 @@ function AssignmentSidebar() {
   }
 }
 
-export default AssignmentSidebar 
+export default AssignmentPanel 

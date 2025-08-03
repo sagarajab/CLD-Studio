@@ -14,8 +14,7 @@ import ConnectionAnalysisModal from './components/ConnectionAnalysisModal'
 import SystemStatsModal from './components/SystemStatsModal'
 import AdjacencyMatrixModal from './components/AdjacencyMatrixModal'
 
-import AssignmentInterface from './components/AssignmentInterface'
-import AssignmentSidebar from './components/AssignmentSidebar'
+import AssignmentPanel from './components/AssignmentPanel'
 import AssignmentProgressModal from './components/AssignmentProgressModal'
 import TBTAuthLoadingScreen from './components/TBTAuthLoadingScreen'
 import { useCLDStore } from './stores/cldStore'
@@ -55,7 +54,18 @@ function App({ user, signOut }) {
   const { startActivityTracking, stopActivityTracking } = useUserProgressStore()
   
   // Assignment store
-  const { isAssignmentMode, showProgressModal, setShowProgressModal, startAssignment, loadAssignments, sidebarWidth, currentAssignment, currentQuestion } = useAssignmentStore()
+  const { 
+    isAssignmentMode, 
+    showProgressModal, 
+    setShowProgressModal, 
+    startAssignment, 
+    loadAssignments, 
+    loadAllUserProgress,
+    setCurrentUserEmail,
+    sidebarWidth, 
+    currentAssignment, 
+    currentQuestion 
+  } = useAssignmentStore()
   
   const { 
     nodes, 
@@ -88,6 +98,12 @@ function App({ user, signOut }) {
 
   // Handle assignment button click
   const handleAssignmentClick = async () => {
+    // Check TBT access before allowing assignment mode
+    if (!hasTBTAccess()) {
+      alert('Assignment access is restricted to TBT users only.')
+      return
+    }
+
     // If already in assignment mode, exit it
     if (isAssignmentMode) {
       const { exitAssignment } = useAssignmentStore.getState()
@@ -179,8 +195,20 @@ function App({ user, signOut }) {
     if (user && !tbtAuthLoading) {
       const userEmail = user.signInDetails?.loginId || user.attributes?.email;
       authenticateUser(userEmail);
+      
+      // Set user email in assignment store for database operations
+      if (userEmail) {
+        setCurrentUserEmail(userEmail);
+      }
     }
   }, [user?.userId]); // Only depend on user ID, not tbtAuthLoading
+
+  // Load user progress when TBT authentication is complete
+  useEffect(() => {
+    if (tbtAuthStatus === 'tbt' && !tbtAuthLoading) {
+      loadAllUserProgress();
+    }
+  }, [tbtAuthStatus, tbtAuthLoading, loadAllUserProgress]);
 
   // Hide auth loading screen when authentication is complete
   useEffect(() => {
@@ -412,7 +440,7 @@ function App({ user, signOut }) {
       )}
 
       {/* Assignment Sidebar */}
-      {isAssignmentMode && <AssignmentSidebar />}
+              {isAssignmentMode && <AssignmentPanel />}
 
       {/* Assignment Progress Modal */}
       {showProgressModal && (

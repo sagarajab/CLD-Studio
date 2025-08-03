@@ -100,7 +100,7 @@ export class FileImportValidator {
 
 /**
  * Example: Integration with assignment interface
- * This could be used in AssignmentInterface component
+ * This could be used in AssignmentPanel component
  */
 export class AssignmentValidator {
   /**

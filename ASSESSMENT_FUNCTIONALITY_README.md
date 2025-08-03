@@ -156,7 +156,7 @@ Each question type uses specific scoring:
 
 ### Key Components
 - **AssessmentService**: Core evaluation logic
-- **AssignmentInterface**: User interface for assignments
+- **AssignmentPanel**: User interface for assignments
 - **AssignmentProgressModal**: Results display
 - **assignmentStore**: State management
 

@@ -200,7 +200,7 @@ To add new users:
 
 ### Components
 
-- **AssignmentSidebar**: Main assignment interface with question handling and navigation
+- **AssignmentPanel**: Main assignment interface with question handling and navigation
 - **AssignmentProgressModal**: Shows progress and scores
 - **AssignmentStore**: Manages assignment state and logic
 - **TBTAuthService**: Handles CSV-based authentication

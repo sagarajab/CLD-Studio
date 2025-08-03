@@ -18,13 +18,13 @@ async function testInputFixes() {
   let totalTests = 0
   let passedTests = 0
 
-  // Test 1: Check CSS classes in AssignmentInterface.jsx
+  // Test 1: Check CSS classes in AssignmentPanel.jsx
   console.log('📝 Test 1: CSS Class Matching')
   try {
-    const interfacePath = path.join(process.cwd(), 'src', 'components', 'AssignmentInterface.jsx')
+    const interfacePath = path.join(process.cwd(), 'src', 'components', 'AssignmentPanel.jsx')
     const interfaceContent = fs.readFileSync(interfacePath, 'utf8')
     
-    const cssPath = path.join(process.cwd(), 'src', 'components', 'AssignmentInterface.css')
+    const cssPath = path.join(process.cwd(), 'src', 'components', 'AssignmentPanel.css')
     const cssContent = fs.readFileSync(cssPath, 'utf8')
     
     // Check if the component uses the correct CSS classes
@@ -79,7 +79,7 @@ async function testInputFixes() {
   // Test 2: Check input handlers
   console.log('\n📝 Test 2: Input Handlers')
   try {
-    const interfacePath = path.join(process.cwd(), 'src', 'components', 'AssignmentInterface.jsx')
+    const interfacePath = path.join(process.cwd(), 'src', 'components', 'AssignmentPanel.jsx')
     const interfaceContent = fs.readFileSync(interfacePath, 'utf8')
     
     // Check for proper input handlers
@@ -128,7 +128,7 @@ async function testInputFixes() {
   // Test 3: Check CSS properties
   console.log('\n📝 Test 3: CSS Properties')
   try {
-    const cssPath = path.join(process.cwd(), 'src', 'components', 'AssignmentInterface.css')
+    const cssPath = path.join(process.cwd(), 'src', 'components', 'AssignmentPanel.css')
     const cssContent = fs.readFileSync(cssPath, 'utf8')
     
     // Check for important CSS properties
@@ -177,7 +177,7 @@ async function testInputFixes() {
   // Test 4: Check initialization logic
   console.log('\n📝 Test 4: Initialization Logic')
   try {
-    const interfacePath = path.join(process.cwd(), 'src', 'components', 'AssignmentInterface.jsx')
+    const interfacePath = path.join(process.cwd(), 'src', 'components', 'AssignmentPanel.jsx')
     const interfaceContent = fs.readFileSync(interfacePath, 'utf8')
     
     // Check for proper initialization

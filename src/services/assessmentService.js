@@ -30,6 +30,7 @@ export class AssessmentService {
         input: {
           email,
           cognitoUserId,
+          tbtAuthStatus: 'guest', // Add missing field
           accessLevel: 'guest',
           createdAt: now,
           lastLoginAt: now,
@@ -72,7 +73,19 @@ export class AssessmentService {
     let maxTotalScore = 0;
 
     assignment.questions.forEach(question => {
-      const userResponse = userResponses[question.id];
+      // Try to find the response in different formats
+      let userResponse = userResponses[question.id];
+      
+      // If not found with simple question ID, try assignment-specific format
+      if (!userResponse) {
+        const assignmentSpecificId = `${assignment.id}-${question.id}`;
+        const assignmentResponse = userResponses[assignmentSpecificId];
+        if (assignmentResponse) {
+          // Extract the actual response from the stored object
+          userResponse = assignmentResponse.response || assignmentResponse;
+        }
+      }
+      
       const maxScore = question.maxScore;
       maxTotalScore += maxScore;
 
@@ -147,6 +160,8 @@ export class AssessmentService {
     let score = 0;
     let feedback = [];
     let isCorrect = false;
+    let expectedKeywords = [];
+    let matchedKeywords = [];
     
     // Exact match check
     const exactMatch = userAnswer.toLowerCase().trim() === expectedAnswer.toLowerCase().trim();
@@ -156,10 +171,10 @@ export class AssessmentService {
       feedback.push('Perfect answer!');
     } else {
       // Partial scoring based on keyword matching
-      const expectedKeywords = expectedAnswer.toLowerCase().split(/\s+/).filter(word => word.length > 3);
+      expectedKeywords = expectedAnswer.toLowerCase().split(/\s+/).filter(word => word.length > 3);
       const userKeywords = userAnswer.toLowerCase().split(/\s+/).filter(word => word.length > 3);
       
-      const matchedKeywords = expectedKeywords.filter(keyword => 
+      matchedKeywords = expectedKeywords.filter(keyword => 
         userKeywords.some(userKeyword => userKeyword.includes(keyword) || keyword.includes(userKeyword))
       );
       
@@ -187,7 +202,8 @@ export class AssessmentService {
       feedback: feedback.join(' '),
       details: {
         exactMatch,
-        keywordMatches: expectedKeywords ? expectedKeywords.length : 0,
+        keywordMatches: expectedKeywords.length,
+        matchedKeywords: matchedKeywords.length,
         userAnswerLength: userAnswer.length,
         expectedLength: expectedAnswer.length
       }
@@ -695,17 +711,37 @@ export class AssessmentService {
   /**
    * Submit assignment responses
    */
-  static async submitAssignment(email, assignmentId, userResponses) {
+  static async submitAssignment(email, assignmentId, userResponses, assignmentFilename = null) {
     try {
-      // Check if new schema is available
-      if (!client.models.UserAssessment) {
-        console.log('UserAssessment model not available, using evaluation only');
+      // Check if new schema is available or if we're in development mode
+      if (!client.models.UserAssessment || process.env.NODE_ENV === 'development') {
+        console.log('UserAssessment model not available or in development mode, using evaluation only');
         // Load assignment for evaluation
-        const assignmentResponse = await fetch(`/assignments/${assignmentId}.cldq`);
+        const filename = assignmentFilename || `${assignmentId}.cldq`;
+        const assignmentUrl = `/assignments/${filename}`;
+        console.log('Fetching assignment from:', assignmentUrl);
+        
+        const assignmentResponse = await fetch(assignmentUrl);
+        console.log('Assignment response status:', assignmentResponse.status);
+        console.log('Assignment response headers:', assignmentResponse.headers);
+        
         if (!assignmentResponse.ok) {
-          throw new Error(`Failed to load assignment: ${assignmentId}`);
+          const errorText = await assignmentResponse.text();
+          console.error('Assignment fetch failed:', errorText);
+          throw new Error(`Failed to load assignment: ${assignmentId} (${assignmentResponse.status})`);
         }
-        const assignment = await assignmentResponse.json();
+        
+        const responseText = await assignmentResponse.text();
+        console.log('Assignment response text (first 200 chars):', responseText.substring(0, 200));
+        
+        let assignment;
+        try {
+          assignment = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.error('Response text:', responseText);
+          throw new Error(`Invalid JSON in assignment file: ${parseError.message}`);
+        }
         
         // Validate assignment submission
         const submissionValidation = validateAssignmentSubmission(userResponses, assignment);
@@ -715,9 +751,12 @@ export class AssessmentService {
         }
         
         // Just evaluate responses without saving to database
-        return this.evaluateResponses(userResponses, assignment);
+        const evaluatedResponses = this.evaluateResponses(userResponses, assignment);
+        console.log('Development mode: Grading completed successfully', evaluatedResponses);
+        return evaluatedResponses;
       }
 
+      // Production mode with database access
       // Get user assessment record
       const userAssessment = await this.getUserAssessment(email);
       if (!userAssessment) {
@@ -727,11 +766,30 @@ export class AssessmentService {
       const assessmentData = JSON.parse(userAssessment.assessmentData || '{}');
 
       // Load assignment
-      const assignmentResponse = await fetch(`/assignments/${assignmentId}.cldq`);
+      const filename = assignmentFilename || `${assignmentId}.cldq`;
+      const assignmentUrl = `/assignments/${filename}`;
+      console.log('Fetching assignment from:', assignmentUrl);
+      
+      const assignmentResponse = await fetch(assignmentUrl);
+      console.log('Assignment response status:', assignmentResponse.status);
+      
       if (!assignmentResponse.ok) {
-        throw new Error(`Failed to load assignment: ${assignmentId}`);
+        const errorText = await assignmentResponse.text();
+        console.error('Assignment fetch failed:', errorText);
+        throw new Error(`Failed to load assignment: ${assignmentId} (${assignmentResponse.status})`);
       }
-      const assignment = await assignmentResponse.json();
+      
+      const responseText = await assignmentResponse.text();
+      console.log('Assignment response text (first 200 chars):', responseText.substring(0, 200));
+      
+      let assignment;
+      try {
+        assignment = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.error('Response text:', responseText);
+        throw new Error(`Invalid JSON in assignment file: ${parseError.message}`);
+      }
 
       // Validate assignment submission
       const submissionValidation = validateAssignmentSubmission(userResponses, assignment);
@@ -764,9 +822,9 @@ export class AssessmentService {
    */
   static async getAssignmentProgress(email, assignmentId) {
     try {
-      // Check if new schema is available
-      if (!client.models.UserAssessment) {
-        console.log('UserAssessment model not available, returning null');
+      // Check if new schema is available or if we're in development mode
+      if (!client.models.UserAssessment || process.env.NODE_ENV === 'development') {
+        console.log('UserAssessment model not available or in development mode, returning null');
         return null;
       }
 

@@ -13,7 +13,7 @@ import { validateCLDQFormat } from '../src/utils/validation.js'
 import fs from 'fs'
 import path from 'path'
 
-async function testAssignmentInterfaceFixes() {
+async function testAssignmentPanelFixes() {
   console.log('🧪 Testing Assignment Interface Fixes\n')
   
   let totalTests = 0
@@ -184,4 +184,4 @@ async function testAssignmentInterfaceFixes() {
 }
 
 // Run the tests
-testAssignmentInterfaceFixes() 
+testAssignmentPanelFixes() 
