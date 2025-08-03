@@ -34,22 +34,38 @@ const useAssignmentStore = create((set, get) => ({
   getCurrentUserEmail: () => {
     // Try to get user email from localStorage first
     const storedEmail = localStorage.getItem('currentUserEmail')
+    console.log('getCurrentUserEmail - stored email:', storedEmail);
+    
     if (storedEmail && storedEmail !== 'current-user@example.com') {
+      console.log('getCurrentUserEmail - returning stored email:', storedEmail);
       return storedEmail
     }
     
     // Fallback to placeholder
+    console.log('getCurrentUserEmail - returning placeholder email');
     return 'current-user@example.com' // TODO: Replace with actual user email from auth
   },
 
   // Set current user email (called from App.jsx when user logs in)
   setCurrentUserEmail: (email) => {
+    console.log('setCurrentUserEmail called with:', email);
+    
     // Store the email in a way that can be accessed by getCurrentUserEmail
     // For now, we'll use a simple approach
     if (email && email !== 'current-user@example.com') {
       // Store in localStorage as a temporary solution
       localStorage.setItem('currentUserEmail', email)
+      console.log('setCurrentUserEmail - stored email in localStorage:', email);
+    } else {
+      console.warn('setCurrentUserEmail - invalid email provided:', email);
     }
+  },
+
+  // Helper function to get current user cognito ID
+  getCurrentUserCognitoId: () => {
+    const storedCognitoId = localStorage.getItem('currentUserCognitoId')
+    console.log('getCurrentUserCognitoId - stored cognitoId:', storedCognitoId);
+    return storedCognitoId || null;
   },
 
   // Load all user progress for all assignments
@@ -494,15 +510,19 @@ const useAssignmentStore = create((set, get) => ({
     try {
       // Check if new schema is available and not in development mode
       if (client.models.UserAssessment && process.env.NODE_ENV !== 'development') {
-        // Get current user email from auth store
+        // Get current user email and cognito ID from auth store
         const userEmail = get().getCurrentUserEmail()
+        const cognitoUserId = get().getCurrentUserCognitoId()
+        
+        console.log('Submitting assignment with:', { userEmail, cognitoUserId, assignmentId: currentAssignment.id });
         
         // Submit to database using AssessmentService
         const evaluatedResponses = await AssessmentService.submitAssignment(
           userEmail,
           currentAssignment.id,
           userResponses,
-          currentAssignment.filename
+          currentAssignment.filename,
+          cognitoUserId
         )
         
         // Stop timer
@@ -529,6 +549,8 @@ const useAssignmentStore = create((set, get) => ({
         
         // Get current user email from auth store
         const userEmail = get().getCurrentUserEmail()
+        
+        console.log('Development mode: Submitting assignment with:', { userEmail, assignmentId: currentAssignment.id });
         
         // Use AssessmentService for evaluation without database
         const evaluatedResponses = await AssessmentService.submitAssignment(

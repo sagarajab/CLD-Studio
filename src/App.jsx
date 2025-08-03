@@ -194,12 +194,29 @@ function App({ user, signOut }) {
   // Perform TBT authentication when user is available
   useEffect(() => {
     if (user && !tbtAuthLoading) {
+      console.log('User object:', user);
+      console.log('User signInDetails:', user.signInDetails);
+      console.log('User attributes:', user.attributes);
+      
       const userEmail = user.signInDetails?.loginId || user.attributes?.email;
+      const cognitoUserId = user.userId || user.attributes?.sub;
+      console.log('Extracted user email:', userEmail);
+      console.log('Extracted cognitoUserId:', cognitoUserId);
+      
       authenticateUser(userEmail);
       
       // Set user email in assignment store for database operations
       if (userEmail) {
+        console.log('Setting current user email:', userEmail);
         setCurrentUserEmail(userEmail);
+        
+        // Also store cognitoUserId if available
+        if (cognitoUserId) {
+          localStorage.setItem('currentUserCognitoId', cognitoUserId);
+          console.log('Stored cognitoUserId:', cognitoUserId);
+        }
+      } else {
+        console.warn('No user email found in user object');
       }
     }
   }, [user?.userId]); // Only depend on user ID, not tbtAuthLoading
@@ -210,6 +227,21 @@ function App({ user, signOut }) {
       loadAllUserProgress();
     }
   }, [tbtAuthStatus, tbtAuthLoading, loadAllUserProgress]);
+
+  // Update user auth status in database when TBT auth changes
+  useEffect(() => {
+    if (user && tbtAuthStatus && !tbtAuthLoading) {
+      const userEmail = user.signInDetails?.loginId || user.attributes?.email;
+      if (userEmail && userEmail !== 'current-user@example.com') {
+        // Import AssessmentService dynamically to avoid circular dependencies
+        import('./services/assessmentService.js').then(({ AssessmentService }) => {
+          AssessmentService.updateUserAuthStatus(userEmail, tbtAuthStatus, accessLevel);
+        }).catch(error => {
+          console.warn('Could not update user auth status:', error);
+        });
+      }
+    }
+  }, [user, tbtAuthStatus, accessLevel, tbtAuthLoading]);
 
   // Hide auth loading screen when authentication is complete
   useEffect(() => {

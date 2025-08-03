@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { ChevronLeft, ChevronRight, Clock, Save, CheckCircle, AlertCircle, X, BookOpen, FileText, CheckSquare, Square } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Clock, Save, CheckCircle, AlertCircle, X, BookOpen, FileText, CheckSquare, Square, Bug } from 'lucide-react'
 import { useCLDStore } from '../stores/cldStore'
 import useAssignmentStore from '../stores/assignmentStore'
 import DebugResponsesModal from './DebugResponsesModal'
+import { DatabaseDiagnostics } from '../utils/databaseDiagnostics'
 import './AssignmentPanel.css'
 
 function AssignmentPanel() {
@@ -40,6 +41,8 @@ function AssignmentPanel() {
   const [isGrading, setIsGrading] = useState(false)
 
   const [showDebugModal, setShowDebugModal] = useState(false)
+  const [showDiagnostics, setShowDiagnostics] = useState(false)
+  const [diagnosticResults, setDiagnosticResults] = useState(null)
   const sidebarRef = useRef(null)
 
   // Helper function to get assignment display name
@@ -165,7 +168,22 @@ function AssignmentPanel() {
       console.log('Grading results:', gradingResults)
     } catch (error) {
       console.error('Error during grading:', error)
-      // You might want to show an error message to the user here
+      
+      // Show user-friendly error message
+      let errorMessage = 'An error occurred while grading your assignment.'
+      
+      if (error.message.includes('Authentication failed')) {
+        errorMessage = 'Authentication error. Please log out and log back in, then try again.'
+      } else if (error.message.includes('Database connectivity')) {
+        errorMessage = 'Network connectivity issue. Please check your internet connection and try again.'
+      } else if (error.message.includes('Could not get or create user assessment record')) {
+        errorMessage = 'Unable to save your submission. Please ensure you are properly logged in and try again.'
+      } else if (error.message.includes('Failed to load assignment')) {
+        errorMessage = 'Unable to load the assignment. Please refresh the page and try again.'
+      }
+      
+      // You could show this in a toast notification or modal
+      alert(errorMessage)
     } finally {
       setIsGrading(false)
     }
@@ -176,6 +194,36 @@ function AssignmentPanel() {
       await switchAssignment(assignment)
     } catch (error) {
       console.error('Error switching assignment:', error)
+    }
+  }
+
+  const handleRunDiagnostics = async () => {
+    try {
+      setShowDiagnostics(true)
+      const results = await DatabaseDiagnostics.runDiagnostics()
+      setDiagnosticResults(results)
+      
+      const summary = DatabaseDiagnostics.getDiagnosticSummary(results)
+      const recommendations = DatabaseDiagnostics.getRecommendations(results)
+      
+      console.log('🔍 Diagnostic Summary:', summary)
+      console.log('💡 Recommendations:', recommendations)
+      
+      // Show results in alert for now (could be improved with a modal)
+      let message = `Diagnostic Results:\n\n`;
+      message += `Overall: ${summary.overall}\n`;
+      message += `Tests Passed: ${summary.passedTests}/${summary.totalTests}\n\n`;
+      message += `Recommendations:\n`;
+      recommendations.forEach((rec, index) => {
+        message += `${index + 1}. ${rec}\n`;
+      });
+      
+      alert(message)
+    } catch (error) {
+      console.error('Error running diagnostics:', error)
+      alert('Error running diagnostics: ' + error.message)
+    } finally {
+      setShowDiagnostics(false)
     }
   }
 
@@ -191,7 +239,22 @@ function AssignmentPanel() {
       setShowSubmitConfirm(false)
     } catch (error) {
       console.error('Error during grading:', error)
-      // You might want to show an error message to the user here
+      
+      // Show user-friendly error message
+      let errorMessage = 'An error occurred while submitting your assignment.'
+      
+      if (error.message.includes('Authentication failed')) {
+        errorMessage = 'Authentication error. Please log out and log back in, then try again.'
+      } else if (error.message.includes('Database connectivity')) {
+        errorMessage = 'Network connectivity issue. Please check your internet connection and try again.'
+      } else if (error.message.includes('Could not get or create user assessment record')) {
+        errorMessage = 'Unable to save your submission. Please ensure you are properly logged in and try again.'
+      } else if (error.message.includes('Failed to load assignment')) {
+        errorMessage = 'Unable to load the assignment. Please refresh the page and try again.'
+      }
+      
+      // You could show this in a toast notification or modal
+      alert(errorMessage)
     } finally {
       setIsGrading(false)
     }
@@ -530,6 +593,16 @@ function AssignmentPanel() {
           >
             <BookOpen size={14} />
             Review
+          </button>
+          
+          <button 
+            className="control-btn diagnostic-btn"
+            onClick={handleRunDiagnostics}
+            disabled={showDiagnostics}
+            title="Run database diagnostics (Development)"
+          >
+            <Bug size={14} />
+            {showDiagnostics ? 'Running...' : 'Diagnose'}
           </button>
         </div>
       </div>

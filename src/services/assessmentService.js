@@ -7,8 +7,10 @@ export class AssessmentService {
   /**
    * Get or create user assessment record
    */
-  static async getUserAssessment(email, cognitoUserId) {
+  static async getUserAssessment(email, cognitoUserId = null) {
     try {
+      console.log('getUserAssessment called with:', { email, cognitoUserId });
+      
       // Check if new schema is available
       if (!client.models.UserAssessment) {
         console.log('UserAssessment model not available yet, returning null');
@@ -16,32 +18,230 @@ export class AssessmentService {
       }
 
       // Try to get existing user assessment
+      console.log('Searching for existing user with email:', email);
+      const { data: existingUsers } = await client.models.UserAssessment.list({
+        filter: { email: { eq: email } }
+      });
+
+      console.log('Existing users found:', existingUsers.length);
+
+      if (existingUsers.length > 0) {
+        console.log('Returning existing user:', existingUsers[0].id);
+        return existingUsers[0];
+      }
+
+      // Create new user assessment if doesn't exist
+      console.log('No existing user found, creating new user assessment...');
+      const now = new Date().toISOString();
+      
+      // Get TBT auth status and access level from the auth store
+      let finalTbtAuthStatus = 'guest';
+      let finalAccessLevel = 'guest';
+      
+      try {
+        const tbtAuthStore = await import('../stores/tbtAuthStore.js');
+        const tbtAuthState = tbtAuthStore.default.getState();
+        finalTbtAuthStatus = tbtAuthState.tbtAuthStatus || 'guest';
+        finalAccessLevel = tbtAuthState.accessLevel || 'guest';
+      } catch (importError) {
+        console.warn('Could not import tbtAuthStore, using defaults:', importError);
+      }
+      
+      const userInput = {
+        email,
+        cognitoUserId: cognitoUserId || 'unknown', // Use 'unknown' as fallback
+        tbtAuthStatus: finalTbtAuthStatus,
+        accessLevel: finalAccessLevel,
+        createdAt: now,
+        lastLoginAt: now,
+        assessmentData: JSON.stringify({})
+      };
+      
+      console.log('Creating user with input:', userInput);
+      
+      try {
+        const { data: newUser } = await client.models.UserAssessment.create({
+          input: userInput
+        });
+        
+        console.log('Successfully created new user:', newUser.id);
+        return newUser;
+      } catch (createError) {
+        console.error('Error creating new user assessment:', createError);
+        console.error('Create error details:', {
+          message: createError.message,
+          name: createError.name,
+          stack: createError.stack
+        });
+        throw createError;
+      }
+    } catch (error) {
+      console.error('Error getting user assessment:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Ensure user assessment record exists, create if it doesn't
+   */
+  static async ensureUserAssessment(email, cognitoUserId = null, tbtAuthStatus = null, accessLevel = null) {
+    try {
+      console.log('ensureUserAssessment called with:', { email, cognitoUserId, tbtAuthStatus, accessLevel });
+      
+      // Check if new schema is available
+      console.log('Checking if UserAssessment model is available...');
+      console.log('client.models:', client.models);
+      console.log('client.models.UserAssessment:', client.models.UserAssessment);
+      
+      if (!client.models.UserAssessment) {
+        console.log('UserAssessment model not available yet, returning null');
+        return null;
+      }
+
+      // Test database connectivity first
+      try {
+        console.log('Testing database connectivity...');
+        await client.models.UserAssessment.list({ limit: 1 });
+        console.log('Database connectivity test successful');
+      } catch (connectivityError) {
+        console.error('Database connectivity test failed:', connectivityError);
+        throw new Error(`Database connectivity issue: ${connectivityError.message}`);
+      }
+
+      // Try to get existing user assessment
+      try {
+        const { data: existingUsers } = await client.models.UserAssessment.list({
+          filter: { email: { eq: email } }
+        });
+
+        if (existingUsers.length > 0) {
+          console.log('User assessment already exists:', existingUsers[0].id);
+          return existingUsers[0];
+        }
+      } catch (listError) {
+        console.error('Error listing existing users:', listError);
+        throw new Error(`Failed to check existing user: ${listError.message}`);
+      }
+
+      // Create new user assessment
+      console.log('Creating new user assessment for:', email);
+      const now = new Date().toISOString();
+      
+      // Get TBT auth status and access level from the auth store if not provided
+      let finalTbtAuthStatus = tbtAuthStatus;
+      let finalAccessLevel = accessLevel;
+      
+      if (!finalTbtAuthStatus || !finalAccessLevel) {
+        try {
+          const tbtAuthStore = await import('../stores/tbtAuthStore.js');
+          const tbtAuthState = tbtAuthStore.default.getState();
+          finalTbtAuthStatus = finalTbtAuthStatus || tbtAuthState.tbtAuthStatus || 'guest';
+          finalAccessLevel = finalAccessLevel || tbtAuthState.accessLevel || 'guest';
+        } catch (importError) {
+          console.warn('Could not import tbtAuthStore, using defaults:', importError);
+          finalTbtAuthStatus = finalTbtAuthStatus || 'guest';
+          finalAccessLevel = finalAccessLevel || 'guest';
+        }
+      }
+      
+      const userInput = {
+        email,
+        cognitoUserId: cognitoUserId || 'unknown',
+        tbtAuthStatus: finalTbtAuthStatus,
+        accessLevel: finalAccessLevel,
+        createdAt: now,
+        lastLoginAt: now,
+        assessmentData: JSON.stringify({})
+      };
+      
+      console.log('Creating user assessment with input:', userInput);
+      
+      try {
+        console.log('About to call client.models.UserAssessment.create...');
+        const { data: newUser } = await client.models.UserAssessment.create({
+          input: userInput
+        });
+        
+        console.log('Successfully created user assessment:', newUser.id);
+        console.log('Created user data:', newUser);
+        return newUser;
+      } catch (createError) {
+        console.error('Error during UserAssessment.create:', createError);
+        console.error('Create error details:', {
+          message: createError.message,
+          name: createError.name,
+          stack: createError.stack
+        });
+        
+        // Check if it's an authentication error
+        if (createError.message.includes('Unauthorized') || createError.message.includes('Forbidden')) {
+          throw new Error('Authentication failed. Please ensure you are properly logged in.');
+        }
+        
+        // Check if it's a validation error
+        if (createError.message.includes('Validation') || createError.message.includes('invalid')) {
+          throw new Error(`Data validation failed: ${createError.message}`);
+        }
+        
+        // Generic error
+        throw new Error(`Failed to create user assessment: ${createError.message}`);
+      }
+    } catch (error) {
+      console.error('Error ensuring user assessment:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Test database connectivity
+   */
+  static async testDatabaseConnection() {
+    try {
+      console.log('Testing database connection...');
+      
+      if (!client.models.UserAssessment) {
+        console.log('UserAssessment model not available');
+        return { success: false, error: 'Model not available' };
+      }
+      
+      // Try to list users
+      const { data: users } = await client.models.UserAssessment.list();
+      console.log('Database connection test successful, found users:', users.length);
+      
+      return { success: true, userCount: users.length };
+    } catch (error) {
+      console.error('Database connection test failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Update user's TBT auth status and access level
+   */
+  static async updateUserAuthStatus(email, tbtAuthStatus, accessLevel) {
+    try {
+      if (!client.models.UserAssessment) {
+        console.log('UserAssessment model not available, skipping auth status update');
+        return;
+      }
+
+      // Find user by email
       const { data: existingUsers } = await client.models.UserAssessment.list({
         filter: { email: { eq: email } }
       });
 
       if (existingUsers.length > 0) {
-        return existingUsers[0];
+        const user = existingUsers[0];
+        await client.models.UserAssessment.update({
+          id: user.id,
+          tbtAuthStatus,
+          accessLevel,
+          lastLoginAt: new Date().toISOString()
+        });
+        console.log('Updated user auth status:', { email, tbtAuthStatus, accessLevel });
       }
-
-      // Create new user assessment if doesn't exist
-      const now = new Date().toISOString();
-      const { data: newUser } = await client.models.UserAssessment.create({
-        input: {
-          email,
-          cognitoUserId,
-          tbtAuthStatus: 'guest', // Add missing field
-          accessLevel: 'guest',
-          createdAt: now,
-          lastLoginAt: now,
-          assessmentData: JSON.stringify({})
-        }
-      });
-
-      return newUser;
     } catch (error) {
-      console.error('Error getting user assessment:', error);
-      throw error;
+      console.error('Error updating user auth status:', error);
     }
   }
 
@@ -711,10 +911,22 @@ export class AssessmentService {
   /**
    * Submit assignment responses
    */
-  static async submitAssignment(email, assignmentId, userResponses, assignmentFilename = null) {
+  static async submitAssignment(email, assignmentId, userResponses, assignmentFilename = null, cognitoUserId = null) {
     try {
+      console.log('submitAssignment called with:', { email, assignmentId, assignmentFilename });
+      console.log('Environment:', process.env.NODE_ENV);
+      console.log('UserAssessment model available:', !!client.models.UserAssessment);
+      
       // Check if new schema is available or if we're in development mode
-      if (!client.models.UserAssessment || process.env.NODE_ENV === 'development') {
+      const isDevelopmentMode = process.env.NODE_ENV === 'development';
+      const hasUserAssessmentModel = !!client.models.UserAssessment;
+      
+      console.log('Development mode check:', { isDevelopmentMode, hasUserAssessmentModel });
+      console.log('process.env.NODE_ENV:', process.env.NODE_ENV);
+      console.log('client.models available:', !!client.models);
+      console.log('client.models.UserAssessment available:', !!client.models.UserAssessment);
+      
+      if (!hasUserAssessmentModel || isDevelopmentMode) {
         console.log('UserAssessment model not available or in development mode, using evaluation only');
         // Load assignment for evaluation
         const filename = assignmentFilename || `${assignmentId}.cldq`;
@@ -757,10 +969,70 @@ export class AssessmentService {
       }
 
       // Production mode with database access
-      // Get user assessment record
-      const userAssessment = await this.getUserAssessment(email);
+      console.log('Attempting database submission with email:', email);
+      
+      // Test database connection first
+      const dbTest = await this.testDatabaseConnection();
+      console.log('Database connection test result:', dbTest);
+      
+      // Validate email
+      console.log('Email validation - email:', email);
+      console.log('Email validation - email type:', typeof email);
+      console.log('Email validation - email === current-user@example.com:', email === 'current-user@example.com');
+      
+      // Temporary: Allow placeholder email for testing
+      if (!email) {
+        console.error('No email provided');
+        throw new Error('No user email provided. Please ensure you are properly authenticated.');
+      }
+      
+      // Use a test email if placeholder is provided
+      const finalEmail = email === 'current-user@example.com' ? 'test-user@example.com' : email;
+      console.log('Using email for database operations:', finalEmail);
+      
+      // Get TBT auth status and access level from the auth store
+      let tbtAuthStatus = 'guest';
+      let accessLevel = 'guest';
+      
+      try {
+        const tbtAuthStore = await import('../stores/tbtAuthStore.js');
+        const tbtAuthState = tbtAuthStore.default.getState();
+        tbtAuthStatus = tbtAuthState.tbtAuthStatus || 'guest';
+        accessLevel = tbtAuthState.accessLevel || 'guest';
+      } catch (importError) {
+        console.warn('Could not import tbtAuthStore, using defaults:', importError);
+      }
+      
+      // Ensure user assessment record exists (create if it doesn't)
+      console.log('About to call ensureUserAssessment with:', { email: finalEmail, cognitoUserId, tbtAuthStatus, accessLevel });
+      
+      let userAssessment;
+      try {
+        userAssessment = await this.ensureUserAssessment(finalEmail, cognitoUserId, tbtAuthStatus, accessLevel);
+        console.log('ensureUserAssessment result:', userAssessment);
+      } catch (ensureError) {
+        console.error('ensureUserAssessment failed:', ensureError);
+        
+        // If we're in development mode, fall back to evaluation-only mode
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Development mode: Falling back to evaluation-only mode due to database error');
+          return this.submitAssignment(email, assignmentId, userResponses, assignmentFilename, cognitoUserId);
+        }
+        
+        // In production, re-throw the error with more context
+        throw new Error(`Database operation failed: ${ensureError.message}. Please try again or contact support if the issue persists.`);
+      }
+      
       if (!userAssessment) {
-        throw new Error('Could not get or create user assessment record');
+        console.error('ensureUserAssessment returned null/undefined');
+        
+        // If we're in development mode, fall back to evaluation-only mode
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Development mode: Falling back to evaluation-only mode due to null user assessment');
+          return this.submitAssignment(email, assignmentId, userResponses, assignmentFilename, cognitoUserId);
+        }
+        
+        throw new Error('Could not get or create user assessment record. Please ensure you are properly authenticated.');
       }
 
       const assessmentData = JSON.parse(userAssessment.assessmentData || '{}');
@@ -828,7 +1100,7 @@ export class AssessmentService {
         return null;
       }
 
-      const userAssessment = await this.getUserAssessment(email);
+      const userAssessment = await this.ensureUserAssessment(email);
       if (!userAssessment) {
         return null;
       }
@@ -853,7 +1125,7 @@ export class AssessmentService {
         return {};
       }
 
-      const userAssessment = await this.getUserAssessment(email);
+      const userAssessment = await this.ensureUserAssessment(email);
       if (!userAssessment) {
         return {};
       }
