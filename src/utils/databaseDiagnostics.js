@@ -57,30 +57,85 @@ export class DatabaseDiagnostics {
       console.error('❌ Error checking UserAssessment model:', error);
     }
 
-    // Test 3: Test basic database connectivity
-    try {
-      if (client.models?.UserAssessment) {
-        const { data } = await client.models.UserAssessment.list({ limit: 1 });
-        results.tests.databaseConnectivity = {
-          success: true,
-          message: `Database connection successful. Found ${data.length} records.`
-        };
-        console.log('✅ Database connectivity test passed');
-      } else {
-        results.tests.databaseConnectivity = {
-          success: false,
-          message: 'Cannot test connectivity - UserAssessment model not available'
-        };
-        console.error('❌ Cannot test database connectivity');
-      }
-    } catch (error) {
-      results.tests.databaseConnectivity = {
-        success: false,
-        message: error.message,
-        error: error
-      };
-      console.error('❌ Database connectivity test failed:', error);
-    }
+         // Test 3: Test basic database connectivity
+     try {
+       if (client.models?.UserAssessment) {
+         const { data } = await client.models.UserAssessment.list({ limit: 1 });
+         results.tests.databaseConnectivity = {
+           success: true,
+           message: `Database connection successful. Found ${data.length} records.`
+         };
+         console.log('✅ Database connectivity test passed');
+       } else {
+         results.tests.databaseConnectivity = {
+           success: false,
+           message: 'Cannot test connectivity - UserAssessment model not available'
+         };
+         console.error('❌ Cannot test database connectivity');
+       }
+     } catch (error) {
+       results.tests.databaseConnectivity = {
+         success: false,
+         message: error.message,
+         error: error
+       };
+       console.error('❌ Database connectivity test failed:', error);
+     }
+
+     // Test 3.5: Test user creation capability
+     try {
+       if (client.models?.UserAssessment) {
+         console.log('Testing user creation capability...');
+         const testUserInput = {
+           email: 'test-diagnostic@example.com',
+           cognitoUserId: 'test-diagnostic-id',
+           tbtAuthStatus: 'guest',
+           accessLevel: 'guest',
+           createdAt: new Date().toISOString(),
+           lastLoginAt: new Date().toISOString(),
+           assessmentData: JSON.stringify({})
+         };
+         
+         const createResponse = await client.models.UserAssessment.create({
+           input: testUserInput
+         });
+         
+         if (createResponse && createResponse.data && createResponse.data.id) {
+           results.tests.userCreation = {
+             success: true,
+             message: 'User creation test successful'
+           };
+           console.log('✅ User creation test passed');
+           
+           // Clean up test user
+           try {
+             await client.models.UserAssessment.delete({ id: createResponse.data.id });
+             console.log('✅ Test user cleaned up');
+           } catch (cleanupError) {
+             console.warn('⚠️ Could not cleanup test user:', cleanupError);
+           }
+         } else {
+           results.tests.userCreation = {
+             success: false,
+             message: 'User creation returned null/undefined response'
+           };
+           console.error('❌ User creation test failed - null response');
+         }
+       } else {
+         results.tests.userCreation = {
+           success: false,
+           message: 'Cannot test user creation - UserAssessment model not available'
+         };
+         console.error('❌ Cannot test user creation');
+       }
+     } catch (error) {
+       results.tests.userCreation = {
+         success: false,
+         message: error.message,
+         error: error
+       };
+       console.error('❌ User creation test failed:', error);
+     }
 
     // Test 4: Check authentication status
     try {
@@ -173,9 +228,13 @@ export class DatabaseDiagnostics {
       recommendations.push('Database schema not deployed - run amplify push to deploy backend');
     }
 
-    if (!results.tests.databaseConnectivity?.success) {
-      recommendations.push('Network or authentication issue - check internet connection and AWS credentials');
-    }
+         if (!results.tests.databaseConnectivity?.success) {
+       recommendations.push('Network or authentication issue - check internet connection and AWS credentials');
+     }
+
+     if (!results.tests.userCreation?.success) {
+       recommendations.push('User creation failed - check database permissions and schema validation');
+     }
 
     if (!results.tests.authentication?.success) {
       recommendations.push('User not properly authenticated - log out and log back in');

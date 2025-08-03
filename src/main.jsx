@@ -6,7 +6,7 @@ import './index.css'
 import './components/AuthCustomization.css'
 import App from './App.jsx'
 import { initializeAmplify } from './config/amplifyConfig.js'
-import appIcon from './assets/app_icon.png'
+import appIcon from './assets/app_n_tbt_icon.png'
 
 // Custom components for the Authenticator
 const components = {
@@ -17,7 +17,7 @@ const components = {
         <Image
           alt="CLD Studio"
           src={appIcon}
-          style={{ width: '480px', height: '80px', margin: '0 auto 0px' }}
+          style={{ width: '420px', height: '80px', margin: '0 auto 0px' }}
         />
 
         <Text fontSize="sm" color="white" fontWeight="semibold" lineHeight="1.2">

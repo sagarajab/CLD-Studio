@@ -18,7 +18,11 @@ const schema = a.schema({
       assessmentData: a.string(), // JSON with all assignment responses and scores
     })
     .authorization((allow) => [
-      allow.owner().to(['create', 'read', 'update']),
+      // Allow authenticated users to create records
+      allow.authenticated().to(['create']),
+      
+      // Allow users to read and update their own records
+      allow.owner().to(['read', 'update']),
     ]),
 });
 

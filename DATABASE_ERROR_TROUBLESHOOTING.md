@@ -4,6 +4,15 @@
 
 This error occurs when the application fails to create or retrieve a user assessment record from the AWS AppSync database. This guide will help you diagnose and fix the issue.
 
+### Specific Error: "Cannot read properties of null (reading 'id')"
+
+If you see this specific error, it means the database create operation is returning `null` instead of a valid user object. This typically indicates:
+
+1. **Database schema validation failure** - The input data doesn't match the expected schema
+2. **Permission issues** - The user doesn't have permission to create records
+3. **Network connectivity problems** - The request is failing silently
+4. **Backend configuration issues** - The database isn't properly configured
+
 ## Quick Diagnosis
 
 ### 1. Run the Diagnostic Tool
@@ -29,6 +38,22 @@ In the assignment panel, click the "Diagnose" button (bug icon) to run automated
 
 ```bash
 node scripts/test-database-connection.js
+```
+
+### 4. Test User Creation Specifically
+
+If you're seeing the "Cannot read properties of null (reading 'id')" error:
+
+```bash
+node scripts/test-user-creation.js
+```
+
+### 5. Test Authorization Configuration
+
+To check if authorization is causing the issue:
+
+```bash
+node scripts/test-authorization.js
 ```
 
 ## Common Causes and Solutions
@@ -119,7 +144,31 @@ node scripts/test-database-connection.js
    amplify push
    ```
 
-### 5. Permission Issues
+### 5. Authorization Issues
+
+**Symptoms:**
+- "Access Denied" errors
+- "Unauthorized" errors
+- User creation fails with null response
+- Database operations fail even when authenticated
+
+**Solutions:**
+1. **Check authorization configuration**
+   - Run the authorization test script: `node scripts/test-authorization.js`
+   - Verify the schema authorization rules are correct
+   - Check if user is properly authenticated
+
+2. **Verify schema configuration**
+   - Ensure `amplify/data/resource.ts` has correct authorization rules
+   - Check that enum values match what the code is using
+   - Verify required fields are properly defined
+
+3. **Deploy schema changes**
+   ```bash
+   amplify push
+   ```
+
+### 6. Permission Issues
 
 **Symptoms:**
 - "Access Denied" errors
@@ -172,11 +221,13 @@ If you're in development mode (`NODE_ENV=development`), the application will aut
 | Error Message | Likely Cause | Solution |
 |---------------|--------------|----------|
 | "Could not get or create user assessment record" | Database operation failed | Check authentication and network |
+| "Cannot read properties of null (reading 'id')" | Database create returned null | Run user creation test script |
 | "Authentication failed" | User not properly logged in | Log out and log back in |
 | "Database connectivity issue" | Network problem | Check internet connection |
 | "UserAssessment model not available" | Backend not deployed | Run `amplify push` |
-| "Unauthorized" | Permission issue | Check user permissions |
+| "Unauthorized" | Authorization issue | Check schema authorization rules |
 | "Validation failed" | Data format issue | Check input data |
+| "Access Denied" | Permission issue | Check user permissions |
 
 ## Getting Help
 
