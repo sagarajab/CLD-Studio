@@ -323,9 +323,55 @@ export class AssessmentService {
           
           console.log('Creating with minimal required fields:', createInput);
           
-          const createResponse = await client.models.UserAssessment.create({
-            input: createInput
-          });
+          // Try different call patterns to find what works
+          console.log('🔍 Attempting multiple creation patterns...');
+          
+          // Pattern 1: Standard approach (current)
+          try {
+            console.log('Pattern 1: Standard with input wrapper');
+            const createResponse = await client.models.UserAssessment.create({
+              input: createInput
+            });
+            console.log('✅ Pattern 1 success:', createResponse);
+            if (createResponse?.data) return createResponse;
+          } catch (e) {
+            console.log('❌ Pattern 1 failed:', e.message.substring(0, 100));
+          }
+          
+          // Pattern 2: Direct object (no input wrapper)
+          try {
+            console.log('Pattern 2: Direct object without input wrapper');
+            const createResponse = await client.models.UserAssessment.create(createInput);
+            console.log('✅ Pattern 2 success:', createResponse);
+            if (createResponse?.data) return createResponse;
+          } catch (e) {
+            console.log('❌ Pattern 2 failed:', e.message.substring(0, 100));
+          }
+          
+          // Pattern 3: Only email field
+          try {
+            console.log('Pattern 3: Only email field');
+            const createResponse = await client.models.UserAssessment.create({
+              input: { email: email }
+            });
+            console.log('✅ Pattern 3 success:', createResponse);
+            if (createResponse?.data) return createResponse;
+          } catch (e) {
+            console.log('❌ Pattern 3 failed:', e.message.substring(0, 100));
+          }
+          
+          // Pattern 4: Direct email only
+          try {
+            console.log('Pattern 4: Direct email without input wrapper');
+            const createResponse = await client.models.UserAssessment.create({ email: email });
+            console.log('✅ Pattern 4 success:', createResponse);
+            if (createResponse?.data) return createResponse;
+          } catch (e) {
+            console.log('❌ Pattern 4 failed:', e.message.substring(0, 100));
+          }
+          
+          // If we get here, throw the original error
+          throw new Error('All creation patterns failed');
           
           console.log('Raw create response:', createResponse);
           
