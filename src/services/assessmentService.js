@@ -110,6 +110,9 @@ export class AssessmentService {
     const maxRetries = 3;
     let retryCount = 0;
     
+    // Reset client cache to ensure we're using the latest schema
+    resetAssessmentServiceClient();
+    
     while (retryCount < maxRetries) {
       try {
         console.log(`ensureUserAssessment called with:`, { email, cognitoUserId, tbtAuthStatus, accessLevel });
@@ -271,11 +274,47 @@ export class AssessmentService {
           console.log('About to call client.models.UserAssessment.create...');
           console.log('User input for creation:', userInput);
           
+          // For creation, only pass the required fields
+          const createInput = {
+            email,
+            cognitoUserId: finalCognitoUserId
+          };
+          
+          console.log('Creating with minimal required fields:', createInput);
+          
           const createResponse = await client.models.UserAssessment.create({
-            input: userInput
+            input: createInput
           });
           
           console.log('Raw create response:', createResponse);
+          
+          // If creation successful, update with additional fields
+          if (createResponse && createResponse.data && createResponse.data.id) {
+            console.log('User created successfully, updating with additional fields...');
+            
+            const updateInput = {
+              id: createResponse.data.id,
+              tbtAuthStatus: finalTbtAuthStatus,
+              accessLevel: finalAccessLevel,
+              assessmentData: JSON.stringify({})
+            };
+            
+            console.log('Updating with additional fields:', updateInput);
+            
+            const updateResponse = await client.models.UserAssessment.update({
+              input: updateInput
+            });
+            
+            console.log('Update response:', updateResponse);
+            
+            if (updateResponse && updateResponse.data) {
+              console.log('User updated successfully:', updateResponse.data);
+              return updateResponse.data;
+            } else {
+              console.log('Update failed, returning created user:', createResponse.data);
+              return createResponse.data;
+            }
+          }
           
           // Check if the response is null or undefined
           if (!createResponse) {

@@ -10,8 +10,7 @@ const schema = a.schema({
       tbtAuthStatus: a.enum(['guest', 'tbt', 'pending']),
       accessLevel: a.enum(['guest', 'tbt', 'admin']),
       
-      // Basic user info
-      createdAt: a.datetime(),
+      // Basic user info (Amplify automatically adds createdAt, updatedAt, id)
       lastLoginAt: a.datetime(),
       
       // Assessment data (JSON string containing all assignment responses and scores)
