@@ -71,10 +71,10 @@ export class AssessmentService {
         console.warn('Could not import tbtAuthStore, using defaults:', importError);
       }
       
-      // For creation, only use required fields
-      // Let Amplify handle ownership automatically based on authenticated user
+      // Simple creation with just email and empty assessment data
       const createInput = {
-        email
+        email,
+        assessmentData: JSON.stringify({})
       };
       
       console.log('Creating user with minimal input:', createInput);
@@ -308,14 +308,18 @@ export class AssessmentService {
           console.log('About to call client.models.UserAssessment.create...');
           console.log('User input for creation:', userInput);
           
-          // For creation, let Amplify handle ownership automatically
-          // Since we have allow.owner() authorization, Amplify will automatically
-          // set the owner field based on the authenticated user
+          // Based on amplify_outputs.json - exact fields that are deployed
           const createInput = {
-            email
+            email: email,
+            assessmentData: JSON.stringify({
+              cognitoUserId: finalCognitoUserId,
+              tbtAuthStatus: finalTbtAuthStatus,
+              accessLevel: finalAccessLevel,
+              userProgress: {}
+            })
           };
           
-          console.log('🔍 Debugging: Creating with email only, letting Amplify handle ownership:', createInput);
+          console.log('✨ Creating user with deployed schema format:', createInput);
           
           console.log('Creating with minimal required fields:', createInput);
           
@@ -325,33 +329,10 @@ export class AssessmentService {
           
           console.log('Raw create response:', createResponse);
           
-          // If creation successful, update with additional fields
+          // If creation successful, return the user
           if (createResponse && createResponse.data && createResponse.data.id) {
-            console.log('User created successfully, updating with additional fields...');
-            
-            const updateInput = {
-              id: createResponse.data.id,
-              tbtAuthStatus: finalTbtAuthStatus,
-              accessLevel: finalAccessLevel,
-              assessmentData: JSON.stringify({})
-              // Note: Not including cognitoUserId since Amplify handles ownership automatically
-            };
-            
-            console.log('Updating with additional fields:', updateInput);
-            
-            const updateResponse = await client.models.UserAssessment.update({
-              input: updateInput
-            });
-            
-            console.log('Update response:', updateResponse);
-            
-            if (updateResponse && updateResponse.data) {
-              console.log('User updated successfully:', updateResponse.data);
-              return updateResponse.data;
-            } else {
-              console.log('Update failed, returning created user:', createResponse.data);
-              return createResponse.data;
-            }
+            console.log('✅ User created successfully:', createResponse.data);
+            return createResponse.data;
           }
           
           // Check if the response is null or undefined
@@ -396,6 +377,9 @@ export class AssessmentService {
             name: createError.name,
             stack: createError.stack
           });
+          
+          // Simple error handling - just throw the original error
+          console.log('❌ User creation failed with simplified schema');
           
           // Check if it's an authentication error
           if (createError.message.includes('Unauthorized') || createError.message.includes('Forbidden')) {

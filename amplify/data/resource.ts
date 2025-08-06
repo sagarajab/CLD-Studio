@@ -1,27 +1,16 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
 const schema = a.schema({
-  // Single consolidated database for all user and assessment data
+  // Simplified user assessment storage
   UserAssessment: a
     .model({
-      // Core user fields
+      // Only essential fields - start simple
       email: a.string().required(),
-      cognitoUserId: a.string().required(),
-      tbtAuthStatus: a.enum(['guest', 'tbt', 'pending']),
-      accessLevel: a.enum(['guest', 'tbt', 'admin']),
-      
-      // Basic user info (Amplify automatically adds createdAt, updatedAt, id)
-      lastLoginAt: a.datetime(),
-      
-      // Assessment data (JSON string containing all assignment responses and scores)
-      assessmentData: a.string(), // JSON with all assignment responses and scores
+      assessmentData: a.string(), // JSON string for all data
     })
     .authorization((allow) => [
-      // Allow authenticated users to create records
-      allow.authenticated().to(['create']),
-      
-      // Allow users to read and update their own records
-      allow.owner().to(['read', 'update']),
+      // Simplified: allow authenticated users full access
+      allow.authenticated().to(['create', 'read', 'update', 'delete']),
     ]),
 });
 
