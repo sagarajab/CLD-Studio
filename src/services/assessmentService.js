@@ -71,22 +71,44 @@ export class AssessmentService {
         console.warn('Could not import tbtAuthStore, using defaults:', importError);
       }
       
-      const userInput = {
+      // For creation, only use required fields
+      const createInput = {
         email,
-        cognitoUserId: cognitoUserId || 'unknown', // Use 'unknown' as fallback
-        tbtAuthStatus: finalTbtAuthStatus,
-        accessLevel: finalAccessLevel,
-        assessmentData: JSON.stringify({})
+        cognitoUserId: cognitoUserId || 'unknown'
       };
       
-      console.log('Creating user with input:', userInput);
+      console.log('Creating user with minimal input:', createInput);
       
       try {
         const { data: newUser } = await getClient().models.UserAssessment.create({
-          input: userInput
+          input: createInput
         });
         
         console.log('Successfully created new user:', newUser.id);
+        
+        // Update with additional fields if creation was successful
+        if (newUser && newUser.id) {
+          const updateInput = {
+            id: newUser.id,
+            tbtAuthStatus: finalTbtAuthStatus,
+            accessLevel: finalAccessLevel,
+            assessmentData: JSON.stringify({})
+          };
+          
+          try {
+            const updateResponse = await getClient().models.UserAssessment.update({
+              input: updateInput
+            });
+            
+            if (updateResponse && updateResponse.data) {
+              console.log('User updated with additional fields:', updateResponse.data.id);
+              return updateResponse.data;
+            }
+          } catch (updateError) {
+            console.warn('Failed to update user with additional fields:', updateError);
+          }
+        }
+        
         return newUser;
       } catch (createError) {
         console.error('Error creating new user assessment:', createError);
@@ -133,27 +155,24 @@ export class AssessmentService {
         if (process.env.NODE_ENV === 'development') {
           console.log('Development mode: Checking if we should use fallback...');
           try {
-            // Test if we can actually create a user
+            // Test if we can actually create a user with minimal input
             const testResponse = await client.models.UserAssessment.create({
               input: {
                 email: 'test@example.com',
-                cognitoUserId: 'test-user-id',
-                tbtAuthStatus: 'guest',
-                accessLevel: 'guest',
-                assessmentData: JSON.stringify({})
+                cognitoUserId: 'test-user-id'
               }
             });
             
             if (!testResponse || !testResponse.data) {
               console.log('Development mode: Database create test failed, using fallback');
-                          return {
-              id: 'dev-fallback-id',
-              email: email,
-              cognitoUserId: cognitoUserId || 'dev-user-id',
-              tbtAuthStatus: 'guest',
-              accessLevel: 'guest',
-              assessmentData: JSON.stringify({})
-            };
+              return {
+                id: 'dev-fallback-id',
+                email: email,
+                cognitoUserId: cognitoUserId || 'dev-user-id',
+                tbtAuthStatus: 'guest',
+                accessLevel: 'guest',
+                assessmentData: JSON.stringify({})
+              };
             }
             
             // Clean up test user
