@@ -72,9 +72,9 @@ export class AssessmentService {
       }
       
       // For creation, only use required fields
+      // Let Amplify handle ownership automatically based on authenticated user
       const createInput = {
-        email,
-        cognitoUserId: cognitoUserId || 'unknown'
+        email
       };
       
       console.log('Creating user with minimal input:', createInput);
@@ -308,11 +308,14 @@ export class AssessmentService {
           console.log('About to call client.models.UserAssessment.create...');
           console.log('User input for creation:', userInput);
           
-          // For creation, only pass the required fields
+          // For creation, let Amplify handle ownership automatically
+          // Since we have allow.owner() authorization, Amplify will automatically
+          // set the owner field based on the authenticated user
           const createInput = {
-            email,
-            cognitoUserId: finalCognitoUserId
+            email
           };
+          
+          console.log('🔍 Debugging: Creating with email only, letting Amplify handle ownership:', createInput);
           
           console.log('Creating with minimal required fields:', createInput);
           
@@ -331,6 +334,7 @@ export class AssessmentService {
               tbtAuthStatus: finalTbtAuthStatus,
               accessLevel: finalAccessLevel,
               assessmentData: JSON.stringify({})
+              // Note: Not including cognitoUserId since Amplify handles ownership automatically
             };
             
             console.log('Updating with additional fields:', updateInput);
