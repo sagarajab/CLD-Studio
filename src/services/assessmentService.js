@@ -135,6 +135,21 @@ export class AssessmentService {
     // Reset client cache to ensure we're using the latest schema
     resetAssessmentServiceClient();
     
+    // Also reset other client caches to ensure consistency
+    try {
+      const { resetDatabaseDiagnosticsClient } = await import('../utils/databaseDiagnostics.js');
+      resetDatabaseDiagnosticsClient();
+    } catch (error) {
+      console.warn('Could not reset database diagnostics client:', error);
+    }
+    
+    try {
+      const { resetAssignmentStoreClient } = await import('../stores/assignmentStore.js');
+      resetAssignmentStoreClient();
+    } catch (error) {
+      console.warn('Could not reset assignment store client:', error);
+    }
+    
     while (retryCount < maxRetries) {
       try {
         console.log(`ensureUserAssessment called with:`, { email, cognitoUserId, tbtAuthStatus, accessLevel });

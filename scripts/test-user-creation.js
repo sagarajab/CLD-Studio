@@ -63,30 +63,21 @@ async function testUserCreation() {
         name: 'Basic user creation',
         input: {
           email: 'test-user-1@example.com',
-          cognitoUserId: 'test-user-1-id',
-          tbtAuthStatus: 'guest',
-          accessLevel: 'guest',
-          assessmentData: JSON.stringify({})
+          cognitoUserId: 'test-user-1-id'
         }
       },
       {
         name: 'TBT user creation',
         input: {
           email: 'test-tbt-user@example.com',
-          cognitoUserId: 'test-tbt-user-id',
-          tbtAuthStatus: 'tbt',
-          accessLevel: 'tbt',
-          assessmentData: JSON.stringify({})
+          cognitoUserId: 'test-tbt-user-id'
         }
       },
       {
         name: 'Admin user creation',
         input: {
           email: 'test-admin@example.com',
-          cognitoUserId: 'test-admin-id',
-          tbtAuthStatus: 'tbt',
-          accessLevel: 'admin',
-          assessmentData: JSON.stringify({})
+          cognitoUserId: 'test-admin-id'
         }
       }
     ];

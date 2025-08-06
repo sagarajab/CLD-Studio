@@ -44,10 +44,7 @@ async function testAuthorization() {
       const createResponse = await client.models.UserAssessment.create({
         input: {
           email: 'test-unauth@example.com',
-          cognitoUserId: 'test-unauth-id',
-          tbtAuthStatus: 'guest',
-          accessLevel: 'guest',
-          assessmentData: JSON.stringify({})
+          cognitoUserId: 'test-unauth-id'
         }
       });
       
@@ -88,10 +85,7 @@ async function testAuthorization() {
         name: 'Valid guest user',
         input: {
           email: 'test-guest@example.com',
-          cognitoUserId: 'test-guest-id',
-          tbtAuthStatus: 'guest',
-          accessLevel: 'guest',
-          assessmentData: JSON.stringify({})
+          cognitoUserId: 'test-guest-id'
         },
         shouldWork: false // Should fail due to auth, not validation
       },
@@ -99,10 +93,7 @@ async function testAuthorization() {
         name: 'Valid TBT user',
         input: {
           email: 'test-tbt@example.com',
-          cognitoUserId: 'test-tbt-id',
-          tbtAuthStatus: 'tbt',
-          accessLevel: 'tbt',
-          assessmentData: JSON.stringify({})
+          cognitoUserId: 'test-tbt-id'
         },
         shouldWork: false // Should fail due to auth, not validation
       },
@@ -110,10 +101,7 @@ async function testAuthorization() {
         name: 'Invalid tbtAuthStatus',
         input: {
           email: 'test-invalid@example.com',
-          cognitoUserId: 'test-invalid-id',
-          tbtAuthStatus: 'invalid-status',
-          accessLevel: 'guest',
-          assessmentData: JSON.stringify({})
+          cognitoUserId: 'test-invalid-id'
         },
         shouldWork: false // Should fail due to validation
       }
@@ -160,19 +148,13 @@ async function testAuthorization() {
       {
         name: 'Missing email',
         input: {
-          cognitoUserId: 'test-no-email-id',
-          tbtAuthStatus: 'guest',
-          accessLevel: 'guest',
-          assessmentData: JSON.stringify({})
+          cognitoUserId: 'test-no-email-id'
         }
       },
       {
         name: 'Missing cognitoUserId',
         input: {
-          email: 'test-no-cognito@example.com',
-          tbtAuthStatus: 'guest',
-          accessLevel: 'guest',
-          assessmentData: JSON.stringify({})
+          email: 'test-no-cognito@example.com'
         }
       }
     ];

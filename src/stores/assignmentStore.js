@@ -4,7 +4,27 @@ import { useCLDStore } from './cldStore'
 import { validateCLDQFormat } from '../utils/validation.js'
 import useTBTAuthStore from './tbtAuthStore'
 
-const client = generateClient()
+// Lazy initialization of client to avoid calling generateClient before Amplify is configured
+let _client = null;
+
+const getClient = () => {
+  if (!_client) {
+    try {
+      _client = generateClient();
+      console.log('✅ AssignmentStore: Data client created successfully');
+    } catch (error) {
+      console.error('❌ AssignmentStore: Failed to create Data client:', error);
+      throw error;
+    }
+  }
+  return _client;
+};
+
+// Reset function to clear client cache (useful for testing or re-initialization)
+export const resetAssignmentStoreClient = () => {
+  _client = null;
+  console.log('🔄 AssignmentStore: Client cache cleared');
+};
 
 const useAssignmentStore = create((set, get) => ({
   // Assignment state
@@ -85,7 +105,7 @@ const useAssignmentStore = create((set, get) => ({
       }
 
       // Check if new schema is available
-      if (!client.models.UserAssessment) {
+      if (!getClient().models.UserAssessment) {
         console.log('UserAssessment model not available, skipping progress load')
         return
       }
@@ -314,7 +334,7 @@ const useAssignmentStore = create((set, get) => ({
       const userEmail = get().getCurrentUserEmail()
       
       // Check if new schema is available
-      if (client.models.UserAssessment) {
+      if (getClient().models.UserAssessment) {
         // Dynamic import to avoid initialization issues
         const { AssessmentService } = await import('../services/assessmentService')
         const progress = await AssessmentService.getAssignmentProgress(userEmail, assignmentId)
@@ -512,7 +532,7 @@ const useAssignmentStore = create((set, get) => ({
     
     try {
       // Check if new schema is available and not in development mode
-      if (client.models.UserAssessment && process.env.NODE_ENV !== 'development') {
+      if (getClient().models.UserAssessment && process.env.NODE_ENV !== 'development') {
         // Get current user email and cognito ID from auth store
         const userEmail = get().getCurrentUserEmail()
         const cognitoUserId = get().getCurrentUserCognitoId()

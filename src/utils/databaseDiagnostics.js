@@ -1,7 +1,27 @@
 // databaseDiagnostics.js - Utility for diagnosing database and authentication issues
 import { generateClient } from 'aws-amplify/api';
 
-const client = generateClient();
+// Lazy initialization of client to avoid calling generateClient before Amplify is configured
+let _client = null;
+
+const getClient = () => {
+  if (!_client) {
+    try {
+      _client = generateClient();
+      console.log('✅ DatabaseDiagnostics: Data client created successfully');
+    } catch (error) {
+      console.error('❌ DatabaseDiagnostics: Failed to create Data client:', error);
+      throw error;
+    }
+  }
+  return _client;
+};
+
+// Reset function to clear client cache (useful for testing or re-initialization)
+export const resetDatabaseDiagnosticsClient = () => {
+  _client = null;
+  console.log('🔄 DatabaseDiagnostics: Client cache cleared');
+};
 
 export class DatabaseDiagnostics {
   /**
@@ -21,7 +41,7 @@ export class DatabaseDiagnostics {
       results.tests.clientAvailable = {
         success: true,
         message: 'Data client is available',
-        models: Object.keys(client.models || {})
+        models: Object.keys(getClient().models || {})
       };
       console.log('✅ Data client available');
     } catch (error) {
@@ -35,7 +55,7 @@ export class DatabaseDiagnostics {
 
     // Test 2: Check if UserAssessment model is available
     try {
-      if (client.models?.UserAssessment) {
+      if (getClient().models?.UserAssessment) {
         results.tests.userAssessmentModel = {
           success: true,
           message: 'UserAssessment model is available'
@@ -57,10 +77,10 @@ export class DatabaseDiagnostics {
       console.error('❌ Error checking UserAssessment model:', error);
     }
 
-         // Test 3: Test basic database connectivity
-     try {
-       if (client.models?.UserAssessment) {
-         const { data } = await client.models.UserAssessment.list({ limit: 1 });
+             // Test 3: Test basic database connectivity
+    try {
+      if (getClient().models?.UserAssessment) {
+        const { data } = await getClient().models.UserAssessment.list({ limit: 1 });
          results.tests.databaseConnectivity = {
            success: true,
            message: `Database connection successful. Found ${data.length} records.`
@@ -82,9 +102,9 @@ export class DatabaseDiagnostics {
        console.error('❌ Database connectivity test failed:', error);
      }
 
-     // Test 3.5: Test user creation capability
-     try {
-       if (client.models?.UserAssessment) {
+         // Test 3.5: Test user creation capability
+    try {
+      if (getClient().models?.UserAssessment) {
          console.log('Testing user creation capability...');
          
          // First check if user is authenticated
@@ -105,17 +125,15 @@ export class DatabaseDiagnostics {
            return results;
          }
          
+         // For creation, only use required fields
          const testUserInput = {
            email: 'test-diagnostic@example.com',
-           cognitoUserId: 'test-diagnostic-id',
-           tbtAuthStatus: 'guest',
-           accessLevel: 'guest',
-           assessmentData: JSON.stringify({})
+           cognitoUserId: 'test-diagnostic-id'
          };
          
-         const createResponse = await client.models.UserAssessment.create({
-           input: testUserInput
-         });
+                   const createResponse = await getClient().models.UserAssessment.create({
+            input: testUserInput
+          });
          
          if (createResponse && createResponse.data && createResponse.data.id) {
            results.tests.userCreation = {
@@ -124,9 +142,9 @@ export class DatabaseDiagnostics {
            };
            console.log('✅ User creation test passed');
            
-           // Clean up test user
-           try {
-             await client.models.UserAssessment.delete({ id: createResponse.data.id });
+                       // Clean up test user
+            try {
+              await getClient().models.UserAssessment.delete({ id: createResponse.data.id });
              console.log('✅ Test user cleaned up');
            } catch (cleanupError) {
              console.warn('⚠️ Could not cleanup test user:', cleanupError);
